@@ -1,36 +1,11 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Box, ImageIcon, UserRound, X } from "lucide-react";
 import { db } from "./lib/supabase";
-import type { Sprite } from "./lib/model";
 
-export function SpriteBadge({
-  sprite,
-  large = false,
-}: {
-  sprite?: Sprite;
-  large?: boolean;
-}) {
-  const Icon = sprite?.category === "user" ? UserRound : Box;
-  return (
-    <div
-      className={`sprite ${large ? "sprite-large" : ""}`}
-      style={
-        {
-          "--sprite-colour": sprite?.colour || "#879c87",
-        } as React.CSSProperties
-      }
-      aria-label={`${sprite?.category || "item"} sprite placeholder`}
-    >
-      <Icon strokeWidth={1.5} />
-    </div>
-  );
-}
-
+// Uploaded files are opened explicitly instead of displayed as thumbnails.
 export function StorageImage({
   bucket,
   path,
   alt,
-  className = "",
 }: {
   bucket: string;
   path: string | null;
@@ -53,12 +28,11 @@ export function StorageImage({
     };
   }, [bucket, path]);
   return url ? (
-    <img src={url} alt={alt} className={className} onError={() => setUrl("")} />
+    <a href={url} target="_blank" rel="noreferrer">
+      View {alt}
+    </a>
   ) : (
-    <div className={`image-placeholder ${className}`}>
-      <ImageIcon aria-hidden="true" />
-      <span>{alt}</span>
-    </div>
+    <span>{alt}: unavailable</span>
   );
 }
 
@@ -82,7 +56,6 @@ export function Modal({
   return (
     <dialog
       ref={dialog}
-      className="modal"
       aria-labelledby="modal-title"
       onCancel={(e) => {
         e.preventDefault();
@@ -94,13 +67,8 @@ export function Modal({
     >
       <div className="modal-heading">
         <h2 id="modal-title">{title}</h2>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Close dialog"
-          onClick={close}
-        >
-          <X size={20} />
+        <button type="button" aria-label="Close dialog" onClick={close}>
+          Close
         </button>
       </div>
       {children}
@@ -109,34 +77,27 @@ export function Modal({
 }
 
 export function Empty({
-  icon,
   title,
   text,
   action,
 }: {
-  icon: ReactNode;
   title: string;
   text: string;
   action?: ReactNode;
 }) {
   return (
     <div className="empty">
-      <div className="empty-icon">{icon}</div>
-      <h3>{title}</h3>
+      <p>
+        <strong>{title}</strong>
+      </p>
       <p>{text}</p>
       {action}
     </div>
   );
 }
 
-export function Pill({
-  children,
-  tone = "",
-}: {
-  children: ReactNode;
-  tone?: string;
-}) {
-  return <span className={`pill ${tone}`}>{children}</span>;
+export function Pill({ children }: { children: ReactNode; tone?: string }) {
+  return <span className="pill">{children}</span>;
 }
 
 export function FileField({
@@ -157,7 +118,7 @@ export function FileField({
         required={required}
         onChange={(e) => onChange(e.target.files?.[0] || null)}
       />
-      <small>JPEG, PNG, or WebP · Up to 5 MB</small>
+      <small>JPEG, PNG, or WebP. Up to 5 MB.</small>
     </label>
   );
 }

@@ -108,14 +108,18 @@ describe("authentication and connected forms", () => {
     const u = userEvent.setup();
     render(<App />);
     await u.click(screen.getByRole("button", { name: "My loans" }));
-    expect(screen.getByText("A space for your circle")).toBeTruthy();
+    expect(screen.getByText("Sign in required")).toBeTruthy();
     await u.click(
       within(screen.getByRole("banner")).getByRole("button", {
         name: "Sign in",
       }),
     );
     await u.click(screen.getByRole("button", { name: "Create an account" }));
-    await u.click(screen.getByRole("button", { name: "Create account" }));
+    await u.click(
+      within(screen.getByRole("dialog")).getByRole("button", {
+        name: "Create account",
+      }),
+    );
     expect(fake.signUp).not.toHaveBeenCalled();
   });
 
@@ -142,7 +146,7 @@ describe("authentication and connected forms", () => {
     fake.session = { user };
     const u = userEvent.setup();
     render(<App />);
-    await u.click(screen.getByRole("button", { name: "Add to your shelf" }));
+    await u.click(screen.getByRole("button", { name: "Add an item" }));
     const d = within(screen.getByRole("dialog"));
     await u.type(d.getByLabelText("Item name"), "Camera");
     await u.type(d.getByLabelText("Description"), "With charger");
@@ -172,12 +176,10 @@ describe("authentication and connected forms", () => {
     await u.click(d.getByRole("button", { name: "Sign in" }));
     expect(await screen.findByRole("status")).toHaveProperty(
       "textContent",
-      "Welcome back.",
+      "Signed in.",
     );
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(
-      screen.getByRole("button", { name: "Add to your shelf" }),
-    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Add an item" })).toBeTruthy();
     expect(fake.reload).not.toHaveBeenCalled();
   });
 
@@ -188,7 +190,7 @@ describe("authentication and connected forms", () => {
     });
     const u = userEvent.setup();
     render(<App />);
-    await u.click(screen.getByRole("button", { name: "Create your account" }));
+    await u.click(screen.getByRole("button", { name: "Create account" }));
     const d = within(screen.getByRole("dialog"));
     await u.type(d.getByLabelText("Your name"), "Alice");
     await u.type(d.getByLabelText("Email"), "owner@example.test");
@@ -197,7 +199,7 @@ describe("authentication and connected forms", () => {
     expect((await d.findByRole("status")).textContent).toContain(
       "check your email",
     );
-    expect(d.getByRole("heading", { name: "Welcome back" })).toBeTruthy();
+    expect(d.getByRole("heading", { name: "Sign in" })).toBeTruthy();
     expect(fake.reload).not.toHaveBeenCalled();
   });
 

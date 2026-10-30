@@ -1,30 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
-import {
-  ArrowDownLeft,
-  ArrowRight,
-  ArrowUpRight,
-  BookOpen,
-  Box,
-  CalendarDays,
-  Check,
-  ChevronRight,
-  CircleHelp,
-  Heart,
-  Leaf,
-  LoaderCircle,
-  LogOut,
-  MapPin,
-  MessageCircle,
-  Plus,
-  RefreshCw,
-  Search,
-  Settings2,
-  ShieldCheck,
-  Sparkles,
-  Users,
-  X,
-} from "lucide-react";
 import { configured, db, supabase } from "./lib/supabase";
 import { check, uploadImage, useData } from "./lib/data";
 import {
@@ -37,14 +12,7 @@ import {
   type Item,
   type Loan,
 } from "./lib/model";
-import {
-  Empty,
-  FileField,
-  Modal,
-  Pill,
-  SpriteBadge,
-  StorageImage,
-} from "./components";
+import { Empty, FileField, Modal, Pill, StorageImage } from "./components";
 
 type Page = "shelf" | "items" | "loans" | "friends" | "chats" | "profile";
 type Dialog =
@@ -56,12 +24,13 @@ type Dialog =
   | { kind: "photo"; item: Item }
   | { kind: "avatar" }
   | null;
-const nav: { id: Page; label: string; icon: typeof Box }[] = [
-  { id: "shelf", label: "Community shelf", icon: BookOpen },
-  { id: "items", label: "My items", icon: Box },
-  { id: "loans", label: "My loans", icon: CalendarDays },
-  { id: "friends", label: "My circle", icon: Users },
-  { id: "chats", label: "Chats", icon: MessageCircle },
+const nav: { id: Page; label: string }[] = [
+  { id: "shelf", label: "Community items" },
+  { id: "items", label: "My items" },
+  { id: "loans", label: "My loans" },
+  { id: "friends", label: "Friends" },
+  { id: "chats", label: "Chats" },
+  { id: "profile", label: "Profile" },
 ];
 const text = (fd: FormData, key: string) => String(fd.get(key) || "").trim();
 const date = (value: string) =>
@@ -225,37 +194,20 @@ export default function App() {
     const locations = data.locations.filter((l) => l.item_id === item.id);
     return (
       <article className="item-card" key={item.id}>
-        <div
-          className="item-art"
-          style={
-            {
-              "--art-colour": spriteOf(item.sprite_id)?.colour || "#a2ad91",
-            } as React.CSSProperties
-          }
-        >
-          {images[0] ? (
-            <StorageImage
-              bucket="item-images"
-              path={images[0].storage_path}
-              alt={item.name}
-            />
-          ) : (
-            <SpriteBadge sprite={spriteOf(item.sprite_id)} large />
-          )}
-          <Pill tone={item.status === "available" ? "green" : "orange"}>
-            {item.status === "available" ? "Available" : "On loan"}
-          </Pill>
-        </div>
+        <p>Status: {item.status === "available" ? "Available" : "On loan"}</p>
+        {images.map((image, index) => (
+          <StorageImage
+            key={image.id}
+            bucket="item-images"
+            path={image.storage_path}
+            alt={`${item.name} photo ${index + 1}`}
+          />
+        ))}
         <div className="item-content">
-          <div className="eyebrow">
-            {mine ? "YOUR SHELF" : nameOf(item.owner_id)}
-          </div>
           <h3>{item.name}</h3>
-          <p className="clamp">
-            {item.description || "A little something to share."}
-          </p>
+          <p>Owner: {mine ? "You" : nameOf(item.owner_id)}</p>
+          <p className="clamp">{item.description || "No description."}</p>
           <div className="location-line">
-            <MapPin size={14} />
             {locations.length
               ? locations.map((l) => l.name).join(" · ")
               : "No locations added"}
@@ -263,10 +215,7 @@ export default function App() {
           {item.compliments.length > 0 && (
             <div className="tags">
               {[...new Set(item.compliments)].map((c) => (
-                <Pill key={c}>
-                  <Heart size={11} />
-                  {c}
-                </Pill>
+                <Pill key={c}>{c}</Pill>
               ))}
             </div>
           )}
@@ -274,7 +223,7 @@ export default function App() {
             {mine ? (
               <>
                 <button onClick={() => open({ kind: "loan", item })}>
-                  Create loan <ArrowUpRight size={15} />
+                  Create loan
                 </button>
                 <button
                   className="icon-button"
@@ -282,7 +231,7 @@ export default function App() {
                   aria-label={`Add location for ${item.name}`}
                   onClick={() => open({ kind: "location", item })}
                 >
-                  <MapPin size={16} />
+                  Add location
                 </button>
                 <button
                   className="icon-button"
@@ -290,7 +239,7 @@ export default function App() {
                   aria-label={`Add photo for ${item.name}`}
                   onClick={() => open({ kind: "photo", item })}
                 >
-                  <Plus size={16} />
+                  Add photo
                 </button>
               </>
             ) : (
@@ -304,10 +253,10 @@ export default function App() {
                         user_two_id: item.owner_id,
                       }),
                     );
-                  }, "Chat created. Message content can be added in the next iteration.");
+                  }, "Chat created. Messaging is not implemented yet.");
                 }}
               >
-                Start a chat <ArrowRight size={15} />
+                Start a chat
               </button>
             )}
           </div>
@@ -318,13 +267,7 @@ export default function App() {
 
   const submitButton = (label: string) => (
     <button className="button primary" type="submit" disabled={busy}>
-      {busy ? (
-        <>
-          <LoaderCircle size={16} className="spin" /> Saving…
-        </>
-      ) : (
-        label
-      )}
+      {busy ? <>Saving…</> : label}
     </button>
   );
   const feedback = notice && (
@@ -338,571 +281,485 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <button className="brand" onClick={() => setPage("shelf")}>
-          <div className="brand-mark">
-            <Box size={25} strokeWidth={1.7} />
-          </div>
+      <header>
+        <h1>CS4353 prototype</h1>
+        <div className="account-controls">
           <span>
-            share<span className="brand-light">shelf</span>
-            <small>A LITTLE GOES AROUND</small>
+            {connection === "ready"
+              ? "Database connected"
+              : connection === "checking"
+                ? "Connecting…"
+                : "Connection needs attention"}
           </span>
-        </button>
-        <div className="nav-caption">YOUR NEIGHBOURHOOD</div>
-        <nav aria-label="Main navigation">
-          {nav.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              className={`nav-item ${page === id ? "active" : ""}`}
-              aria-current={page === id ? "page" : undefined}
-              onClick={() => {
-                setPage(id);
-                setQuery("");
-              }}
-            >
-              <Icon size={19} />
-              <span>{label}</span>
-              {id === "friends" && pending.length > 0 && (
-                <span className="nav-count">{pending.length}</span>
-              )}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-note">
-          <Leaf size={22} />
-          <strong>Good things go around.</strong>
-          <p>
-            Borrow what you need.
-            <br />
-            Share what you have.
-          </p>
-          <span>CS4353 · FINAL PROTOTYPE</span>
-        </div>
-        <div className="sidebar-bottom">
           {user ? (
-            <button className="account" onClick={() => setPage("profile")}>
-              <SpriteBadge sprite={spriteOf(me?.sprite_id)} />
-              <span>
-                <strong>{me?.display_name || "Your profile"}</strong>
-                <small>View your profile</small>
-              </span>
-              <Settings2 size={16} />
-            </button>
-          ) : (
-            <button
-              className="button secondary full"
-              onClick={() => open({ kind: "auth", mode: "signin" })}
-            >
-              Sign in to your circle <ArrowRight size={15} />
-            </button>
-          )}
-        </div>
-      </aside>
-
-      <div className="main-wrap">
-        <header className="topbar">
-          <div className="breadcrumb">
-            Your space <ChevronRight size={13} />
-            <strong>
-              {nav.find((n) => n.id === page)?.label || "My profile"}
-            </strong>
-          </div>
-          <div className="topbar-actions">
-            <span className={`connection ${connection}`}>
-              <i />
-              {connection === "ready"
-                ? "Supabase connected"
-                : connection === "checking"
-                  ? "Connecting…"
-                  : "Connection needs attention"}
-            </span>
-            {user ? (
-              <>
-                <button
-                  className="icon-button"
-                  aria-label="My profile"
-                  onClick={() => setPage("profile")}
-                >
-                  <Settings2 size={17} />
-                </button>
-                <button
-                  className="icon-button"
-                  aria-label="Refresh data"
-                  title="Refresh data"
-                  onClick={() => void data.reload()}
-                  disabled={data.loading}
-                >
-                  <RefreshCw size={17} className={data.loading ? "spin" : ""} />
-                </button>
-              </>
-            ) : (
-              <button
-                className="text-button"
-                onClick={() => open({ kind: "auth", mode: "signin" })}
-              >
-                Sign in <ArrowUpRight size={15} />
-              </button>
-            )}
-          </div>
-        </header>
-        <main>
-          {!dialog && feedback}
-          {!configured && (
-            <div role="alert" className="notice error">
-              Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to .env,
-              then restart the app.
-            </div>
-          )}
-          {data.error && (
-            <div role="alert" className="notice error">
-              Could not load your shelf: {data.error}{" "}
-              <button onClick={() => void data.reload()}>Try again</button>
-            </div>
-          )}
-
-          {(page === "shelf" || page === "items") && (
             <>
-              <section className="hero">
-                <div className="hero-copy">
-                  <div className="eyebrow">
-                    <span className="mini-dot" /> MADE FOR YOUR CIRCLE
-                  </div>
-                  <h1>
-                    {user ? (
-                      <>
-                        A good day
-                        <br />
-                        to share,{" "}
-                        <em>{(me?.display_name || "friend").split(" ")[0]}.</em>
-                      </>
-                    ) : (
-                      <>
-                        A little less buying.
-                        <br />A little more <em>sharing.</em>
-                      </>
-                    )}
-                  </h1>
-                  <p>
-                    The things you need might be closer than you think.
-                    <br className="desktop-break" /> Borrow and lend with people
-                    you know.
-                  </p>
-                  <button className="button primary" onClick={newItem}>
-                    {user ? (
-                      <>
-                        <Plus size={17} /> Add to your shelf
-                      </>
-                    ) : (
-                      <>
-                        Create your account <ArrowUpRight size={17} />
-                      </>
-                    )}
-                  </button>
-                  <div className="hero-foot">
-                    <ShieldCheck size={15} /> A shared shelf. A trusted circle.
-                  </div>
-                </div>
-                <div className="hero-art" aria-hidden="true">
-                  <div className="orbit orbit-one" />
-                  <div className="orbit orbit-two" />
-                  <div className="art-card art-card-one">
-                    <BookOpen />
-                    <span>Borrow a good story</span>
-                  </div>
-                  <div className="art-card art-card-two">
-                    <Box />
-                    <span>Share something useful</span>
-                  </div>
-                  <div className="art-card art-card-three">
-                    <Leaf />
-                    <span>A little kindness</span>
-                  </div>
-                  <div className="orbit-icon">
-                    <ArrowUpRight />
-                  </div>
-                  <Sparkles className="sparkle-one" />
-                  <Sparkles className="sparkle-two" />
-                  <span className="art-caption">YOURS. MINE. OURS.</span>
-                </div>
-              </section>
-              <div className="stat-row">
-                <div>
-                  <Box size={19} />
-                  <span>
-                    <strong>{ownItems.length}</strong> items on your shelf
-                  </span>
-                </div>
-                <div>
-                  <Users size={19} />
-                  <span>
-                    <strong>{acceptedIds.length}</strong> friends in your circle
-                  </span>
-                </div>
-                <div>
-                  <ArrowDownLeft size={19} />
-                  <span>
-                    <strong>
-                      {
-                        data.loans.filter(
-                          (l) =>
-                            l.borrower_id === user?.id &&
-                            l.temporal_status === "current",
-                        ).length
-                      }
-                    </strong>{" "}
-                    current borrowed loans
-                  </span>
-                </div>
-              </div>
-              <div className="section-heading">
-                <div>
-                  <div className="eyebrow">
-                    {page === "items"
-                      ? "A LITTLE OF WHAT YOU HAVE"
-                      : "BETTER WHEN SHARED"}
-                  </div>
-                  <h2>
-                    {page === "items"
-                      ? "Your personal shelf"
-                      : "The community shelf"}{" "}
-                    <span className="count">{visibleItems.length}</span>
-                  </h2>
-                </div>
-                <button className="text-button" onClick={newItem}>
-                  Add an item <Plus size={16} />
-                </button>
-              </div>
-              <div className="filter-bar">
-                <div className="segmented">
-                  <button
-                    className={!availableOnly ? "selected" : ""}
-                    onClick={() => setAvailableOnly(false)}
-                  >
-                    All items
-                  </button>
-                  <button
-                    className={availableOnly ? "selected" : ""}
-                    onClick={() => setAvailableOnly(true)}
-                  >
-                    Available now
-                  </button>
-                </div>
-                <label className="search">
-                  <Search size={16} />
-                  <input
-                    aria-label="Search items"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Find something to borrow…"
-                  />
-                </label>
-              </div>
-              {authLoading || data.loading ? (
-                <div className="loading">
-                  <LoaderCircle className="spin" />
-                  Loading your shelf…
-                </div>
-              ) : !user ? (
-                <Empty
-                  icon={<BookOpen />}
-                  title="Your circle starts with you"
-                  text="Sign in to see your own items and the things your friends are sharing."
-                  action={
-                    <button
-                      className="button secondary"
-                      onClick={() => open({ kind: "auth", mode: "signin" })}
-                    >
-                      Sign in to explore <ArrowRight size={16} />
-                    </button>
-                  }
-                />
-              ) : visibleItems.length ? (
-                <div className="item-grid">{visibleItems.map(itemCard)}</div>
-              ) : (
-                <Empty
-                  icon={<Box />}
-                  title={
-                    query || availableOnly
-                      ? "Nothing here just yet"
-                      : "Make room for sharing"
-                  }
-                  text={
-                    query || availableOnly
-                      ? "Try another search or switch to all items."
-                      : "Add your first item, then invite a friend into your circle."
-                  }
-                  action={
-                    <button className="button secondary" onClick={newItem}>
-                      <Plus size={16} /> Add your first item
-                    </button>
-                  }
-                />
-              )}
+              <span>{me?.display_name || user.email}</span>
+              <button
+                onClick={() => void data.reload()}
+                disabled={data.loading}
+              >
+                Refresh data
+              </button>
+            </>
+          ) : (
+            <>
+              <button onClick={() => open({ kind: "auth", mode: "signin" })}>
+                Sign in
+              </button>
+              <button onClick={() => open({ kind: "auth", mode: "signup" })}>
+                Create account
+              </button>
             </>
           )}
+        </div>
+      </header>
+      <nav aria-label="Main navigation">
+        {nav.map(({ id, label }) => (
+          <button
+            key={id}
+            aria-current={page === id ? "page" : undefined}
+            onClick={() => {
+              setPage(id);
+              setQuery("");
+            }}
+          >
+            {label}
+            {id === "friends" && pending.length > 0
+              ? ` (${pending.length})`
+              : ""}
+          </button>
+        ))}
+      </nav>
+      <main>
+        {!dialog && feedback}
+        {!configured && (
+          <div role="alert" className="notice error">
+            Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY to .env,
+            then restart the app.
+          </div>
+        )}
+        {data.error && (
+          <div role="alert" className="notice error">
+            Could not load your shelf: {data.error}{" "}
+            <button onClick={() => void data.reload()}>Try again</button>
+          </div>
+        )}
 
-          {page !== "shelf" && page !== "items" && (
-            <>
-              <div className="page-heading">
-                <div className="eyebrow">YOUR SHARING SPACE</div>
-                <h1>
-                  {page === "loans"
-                    ? "A little give and take."
-                    : page === "friends"
-                      ? "Good company, good sharing."
-                      : page === "chats"
-                        ? "Keep the circle talking."
-                        : "Make yourself at home."}
-                </h1>
-                <p>
-                  {page === "loans"
-                    ? "Plan a loan, verify each handover, and keep things moving."
-                    : page === "friends"
-                      ? "Find your friends and see what you can share together."
-                      : page === "chats"
-                        ? "Your two-person chat spaces. Messaging is next on the roadmap."
-                        : "Your profile, your sprite, and the little things you share."}
-                </p>
+        {(page === "shelf" || page === "items") && (
+          <>
+            <div className="section-heading">
+              <div>
+                <h2>
+                  {page === "items" ? "My items" : "Community items"}{" "}
+                  <span className="count">{visibleItems.length}</span>
+                </h2>
               </div>
-              {!user ? (
-                <Empty
-                  icon={<Users />}
-                  title="A space for your circle"
-                  text="Sign in or create an account to get started."
-                  action={
-                    <button
-                      className="button primary"
-                      onClick={() => open({ kind: "auth", mode: "signin" })}
-                    >
-                      Sign in <ArrowRight size={16} />
-                    </button>
-                  }
+              <button className="text-button" onClick={newItem}>
+                Add an item
+              </button>
+            </div>
+            <div className="filter-bar">
+              <div className="segmented">
+                <button
+                  className={!availableOnly ? "selected" : ""}
+                  onClick={() => setAvailableOnly(false)}
+                >
+                  All items
+                </button>
+                <button
+                  className={availableOnly ? "selected" : ""}
+                  onClick={() => setAvailableOnly(true)}
+                >
+                  Available now
+                </button>
+              </div>
+              <label className="search">
+                <input
+                  aria-label="Search items"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Find something to borrow…"
                 />
-              ) : data.loading ? (
-                <div className="loading">
-                  <LoaderCircle className="spin" />
-                  Loading…
-                </div>
-              ) : (
-                <>
-                  {page === "loans" && (
-                    <>
-                      <div className="filter-bar">
-                        <div className="segmented">
-                          {["all", "current", "upcoming", "past"].map((s) => (
-                            <button
-                              key={s}
-                              className={loanFilter === s ? "selected" : ""}
-                              onClick={() => setLoanFilter(s)}
-                            >
-                              {s === "all"
-                                ? "All loans"
-                                : s[0].toUpperCase() + s.slice(1)}
-                            </button>
-                          ))}
-                        </div>
-                        <small>Dates include both start and end days.</small>
+              </label>
+            </div>
+            {authLoading || data.loading ? (
+              <div className="loading">Loading your shelf…</div>
+            ) : !user ? (
+              <Empty
+                title="Sign in required"
+                text="Sign in to see your own items and the things your friends are sharing."
+                action={
+                  <button
+                    className="button secondary"
+                    onClick={() => open({ kind: "auth", mode: "signin" })}
+                  >
+                    Sign in to explore
+                  </button>
+                }
+              />
+            ) : visibleItems.length ? (
+              <div className="item-grid">{visibleItems.map(itemCard)}</div>
+            ) : (
+              <Empty
+                title={
+                  query || availableOnly ? "No matching items" : "No items yet"
+                }
+                text={
+                  query || availableOnly
+                    ? "Try another search or switch to all items."
+                    : "Add your first item, then invite a friend into your circle."
+                }
+                action={
+                  <button className="button secondary" onClick={newItem}>
+                    Add your first item
+                  </button>
+                }
+              />
+            )}
+          </>
+        )}
+
+        {page !== "shelf" && page !== "items" && (
+          <>
+            <h2>{nav.find((n) => n.id === page)?.label}</h2>
+            {!user ? (
+              <Empty
+                title="Sign in required"
+                text="Sign in or create an account to get started."
+                action={
+                  <button
+                    className="button primary"
+                    onClick={() => open({ kind: "auth", mode: "signin" })}
+                  >
+                    Sign in
+                  </button>
+                }
+              />
+            ) : data.loading ? (
+              <div className="loading">Loading…</div>
+            ) : (
+              <>
+                {page === "loans" && (
+                  <>
+                    <div className="filter-bar">
+                      <div className="segmented">
+                        {["all", "current", "upcoming", "past"].map((s) => (
+                          <button
+                            key={s}
+                            className={loanFilter === s ? "selected" : ""}
+                            onClick={() => setLoanFilter(s)}
+                          >
+                            {s === "all"
+                              ? "All loans"
+                              : s[0].toUpperCase() + s.slice(1)}
+                          </button>
+                        ))}
                       </div>
-                      {filteredLoans.length ? (
-                        <div className="loan-list">
-                          {filteredLoans.map((loan) => {
-                            const item = data.items.find(
-                              (i) => i.id === loan.item_id,
-                            );
-                            const mine = item?.owner_id === user.id;
-                            const next = nextMilestone(loan);
-                            const canVerify =
-                              next &&
-                              (next.actor === "owner"
-                                ? mine
-                                : loan.borrower_id === user.id);
-                            return (
-                              <article
-                                className="panel loan-card"
-                                key={loan.id}
-                              >
-                                <div className="loan-title">
-                                  <div className="loan-item">
-                                    <div
-                                      className="small-colour"
-                                      style={{ background: loan.sprite_colour }}
-                                    />
-                                    <div>
-                                      <h3>
-                                        {item?.name ||
-                                          "Item from a previous connection"}
-                                      </h3>
-                                      <small>
-                                        {mine
-                                          ? `Lending to ${nameOf(loan.borrower_id)}`
-                                          : item
-                                            ? `Borrowing from ${nameOf(item.owner_id)}`
-                                            : "Your borrowed loan"}
-                                      </small>
-                                    </div>
-                                  </div>
-                                  <div className="tags">
-                                    <Pill
-                                      tone={
-                                        loan.temporal_status === "past"
-                                          ? ""
-                                          : "green"
-                                      }
-                                    >
-                                      {loan.temporal_status}
-                                    </Pill>
-                                    <Pill>
-                                      {loan.specific_status.replace("_", "-")}
-                                    </Pill>
+                      <small>Dates include both start and end days.</small>
+                    </div>
+                    {filteredLoans.length ? (
+                      <div className="loan-list">
+                        {filteredLoans.map((loan) => {
+                          const item = data.items.find(
+                            (i) => i.id === loan.item_id,
+                          );
+                          const mine = item?.owner_id === user.id;
+                          const next = nextMilestone(loan);
+                          const canVerify =
+                            next &&
+                            (next.actor === "owner"
+                              ? mine
+                              : loan.borrower_id === user.id);
+                          return (
+                            <article className="panel loan-card" key={loan.id}>
+                              <div className="loan-title">
+                                <div className="loan-item">
+                                  <div>
+                                    <h3>
+                                      {item?.name ||
+                                        "Item from a previous connection"}
+                                    </h3>
+                                    <small>
+                                      {mine
+                                        ? `Lending to ${nameOf(loan.borrower_id)}`
+                                        : item
+                                          ? `Borrowing from ${nameOf(item.owner_id)}`
+                                          : "Your borrowed loan"}
+                                    </small>
                                   </div>
                                 </div>
-                                <div className="loan-dates">
-                                  <CalendarDays size={16} />
-                                  {date(loan.starts_on)}{" "}
-                                  <ArrowRight size={13} /> {date(loan.due_on)}
+                                <div className="tags">
+                                  <Pill
+                                    tone={
+                                      loan.temporal_status === "past"
+                                        ? ""
+                                        : "green"
+                                    }
+                                  >
+                                    {loan.temporal_status}
+                                  </Pill>
+                                  <Pill>
+                                    {loan.specific_status.replace("_", "-")}
+                                  </Pill>
                                 </div>
-                                <div className="milestones">
-                                  {MILESTONES.map((step) => (
-                                    <div
-                                      key={step.key}
-                                      className={`milestone ${loan[step.field] ? "complete" : ""}`}
-                                    >
-                                      <span>
-                                        {loan[step.field] ? (
-                                          <Check size={13} />
-                                        ) : (
-                                          <span className="step-dot" />
-                                        )}
-                                      </span>
-                                      <small>{step.label}</small>
-                                      {loan[step.image] && (
-                                        <StorageImage
-                                          bucket="loan-verification"
-                                          path={loan[step.image]}
-                                          alt={step.label}
-                                          className="proof-thumbnail"
-                                        />
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="loan-footer">
-                                  <span>
-                                    {next
-                                      ? canVerify
-                                        ? `Your next step: ${next.label.toLowerCase()}.`
-                                        : `Waiting for ${next.actor === "owner" ? "owner" : "borrower"} ${next.label.split(" ")[1]}.`
-                                      : "Completed and verified by the owner."}
-                                  </span>
-                                  {canVerify && (
+                              </div>
+                              <div className="loan-dates">
+                                {date(loan.starts_on)} to {date(loan.due_on)}
+                              </div>
+                              <div className="milestones">
+                                {MILESTONES.map((step) => (
+                                  <div
+                                    key={step.key}
+                                    className={`milestone ${loan[step.field] ? "complete" : ""}`}
+                                  >
+                                    <span>
+                                      {loan[step.field]
+                                        ? "Done: "
+                                        : "Pending: "}
+                                    </span>
+                                    <small>{step.label}</small>
+                                    {loan[step.image] && (
+                                      <StorageImage
+                                        bucket="loan-verification"
+                                        path={loan[step.image]}
+                                        alt={step.label}
+                                        className="proof-thumbnail"
+                                      />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="loan-footer">
+                                <span>
+                                  {next
+                                    ? canVerify
+                                      ? `Your next step: ${next.label.toLowerCase()}.`
+                                      : `Waiting for ${next.actor === "owner" ? "owner" : "borrower"} ${next.label.split(" ")[1]}.`
+                                    : "Completed and verified by the owner."}
+                                </span>
+                                {canVerify && (
+                                  <button
+                                    className="button secondary"
+                                    disabled={busy}
+                                    onClick={() =>
+                                      open({ kind: "proof", loan })
+                                    }
+                                  >
+                                    Upload verification{" "}
+                                  </button>
+                                )}
+                                {loan.returned_at &&
+                                  loan.borrower_id === user.id && (
                                     <button
                                       className="button secondary"
-                                      disabled={busy}
                                       onClick={() =>
-                                        open({ kind: "proof", loan })
+                                        open({ kind: "review", loan })
                                       }
                                     >
-                                      Upload verification{" "}
-                                      <ArrowUpRight size={15} />
+                                      {loan.review_text
+                                        ? "Edit review"
+                                        : "Leave a review"}{" "}
                                     </button>
                                   )}
-                                  {loan.returned_at &&
-                                    loan.borrower_id === user.id && (
-                                      <button
-                                        className="button secondary"
-                                        onClick={() =>
-                                          open({ kind: "review", loan })
-                                        }
-                                      >
-                                        {loan.review_text
-                                          ? "Edit review"
-                                          : "Leave a review"}{" "}
-                                        <Heart size={15} />
-                                      </button>
-                                    )}
-                                </div>
-                                {loan.review_text && (
-                                  <div className="review">
-                                    <Heart size={15} />
-                                    <div>
-                                      <p>{loan.review_text}</p>
-                                      <small>
-                                        {loan.review_compliments.join(" · ") ||
-                                          "No compliments selected"}
-                                      </small>
-                                      {loan.review_image_path && (
-                                        <StorageImage
-                                          bucket="loan-review-images"
-                                          path={loan.review_image_path}
-                                          alt="Loan review"
-                                          className="review-photo"
-                                        />
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </article>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <Empty
-                          icon={<CalendarDays />}
-                          title="Nothing borrowed, nothing lent. Yet."
-                          text="Create a loan from one of your items after a friend accepts your request."
-                          action={
-                            <button
-                              className="button secondary"
-                              onClick={() => setPage("items")}
-                            >
-                              Go to my items <ArrowRight size={16} />
-                            </button>
-                          }
-                        />
-                      )}
-                    </>
-                  )}
-
-                  {page === "friends" && (
-                    <>
-                      {pending.length > 0 && (
-                        <section className="panel">
-                          <h3>
-                            Friend requests <Pill>{pending.length}</Pill>
-                          </h3>
-                          {pending.map((f) => (
-                            <div className="person-row" key={f.id}>
-                              <SpriteBadge
-                                sprite={spriteOf(
-                                  data.profiles.find(
-                                    (p) => p.id === f.requester_id,
-                                  )?.sprite_id,
-                                )}
-                              />
-                              <div>
-                                <strong>{nameOf(f.requester_id)}</strong>
-                                <small>Would like to join your circle</small>
                               </div>
+                              {loan.review_text && (
+                                <div className="review">
+                                  <div>
+                                    <p>{loan.review_text}</p>
+                                    <small>
+                                      {loan.review_compliments.join(" · ") ||
+                                        "No compliments selected"}
+                                    </small>
+                                    {loan.review_image_path && (
+                                      <StorageImage
+                                        bucket="loan-review-images"
+                                        path={loan.review_image_path}
+                                        alt="Loan review"
+                                        className="review-photo"
+                                      />
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </article>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <Empty
+                        title="No loans"
+                        text="Create a loan from one of your items after a friend accepts your request."
+                        action={
+                          <button
+                            className="button secondary"
+                            onClick={() => setPage("items")}
+                          >
+                            Go to my items
+                          </button>
+                        }
+                      />
+                    )}
+                  </>
+                )}
+
+                {page === "friends" && (
+                  <>
+                    {pending.length > 0 && (
+                      <section className="panel">
+                        <h3>
+                          Friend requests <Pill>{pending.length}</Pill>
+                        </h3>
+                        {pending.map((f) => (
+                          <div className="person-row" key={f.id}>
+                            <div>
+                              <strong>{nameOf(f.requester_id)}</strong>
+                              <small>Would like to join your circle</small>
+                            </div>
+                            <button
+                              className="button primary"
+                              disabled={busy}
+                              onClick={() =>
+                                void perform(async () => {
+                                  check(
+                                    await db()
+                                      .from("friendships")
+                                      .update({ status: "accepted" })
+                                      .eq("id", f.id),
+                                  );
+                                }, "Friend request accepted.")
+                              }
+                            >
+                              Accept
+                            </button>
+                            <button
+                              className="icon-button"
+                              disabled={busy}
+                              aria-label={`Decline request from ${nameOf(f.requester_id)}`}
+                              onClick={() =>
+                                void perform(async () => {
+                                  check(
+                                    await db()
+                                      .from("friendships")
+                                      .delete()
+                                      .eq("id", f.id),
+                                  );
+                                }, "Friend request declined.")
+                              }
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        ))}
+                      </section>
+                    )}
+                    <div className="section-heading">
+                      <h2>Find your people</h2>
+                      <Pill>{acceptedIds.length} friends</Pill>
+                    </div>
+                    <label className="search standalone">
+                      <input
+                        aria-label="Find a friend"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        placeholder="Search by name or username…"
+                      />
+                    </label>
+                    <div className="people-grid">
+                      {data.profiles
+                        .filter(
+                          (p) =>
+                            p.id !== user.id &&
+                            `${p.display_name} ${p.username || ""}`
+                              .toLowerCase()
+                              .includes(query.toLowerCase()),
+                        )
+                        .map((p) => {
+                          const friends = acceptedIds.includes(p.id);
+                          const sent = data.friends.some(
+                            (f) =>
+                              f.requester_id === user.id &&
+                              f.recipient_id === p.id &&
+                              f.status === "pending",
+                          );
+                          return (
+                            <article className="panel person-card" key={p.id}>
+                              <h3>
+                                {p.display_name ||
+                                  p.username ||
+                                  "New neighbour"}
+                              </h3>
+                              <small>
+                                {p.username
+                                  ? `@${p.username}`
+                                  : "No username yet"}
+                              </small>
                               <button
-                                className="button primary"
-                                disabled={busy}
+                                className={`button ${friends ? "secondary" : "primary"}`}
+                                disabled={busy || sent}
                                 onClick={() =>
-                                  void perform(async () => {
-                                    check(
-                                      await db()
-                                        .from("friendships")
-                                        .update({ status: "accepted" })
-                                        .eq("id", f.id),
-                                    );
-                                  }, "Friend request accepted.")
+                                  friends
+                                    ? (setPage("chats"),
+                                      void perform(async () => {
+                                        check(
+                                          await db().from("chats").insert({
+                                            user_one_id: user.id,
+                                            user_two_id: p.id,
+                                          }),
+                                        );
+                                      }, "New chat created."))
+                                    : void perform(async () => {
+                                        check(
+                                          await db()
+                                            .from("friendships")
+                                            .insert({
+                                              requester_id: user.id,
+                                              recipient_id: p.id,
+                                            }),
+                                        );
+                                      }, "Friend request sent.")
                                 }
                               >
-                                Accept
+                                {friends ? (
+                                  <>Start a chat</>
+                                ) : sent ? (
+                                  "Request sent"
+                                ) : (
+                                  <>Add friend</>
+                                )}
                               </button>
+                              {friends && (
+                                <Pill tone="green">In your circle</Pill>
+                              )}
+                            </article>
+                          );
+                        })}
+                    </div>
+                    {data.profiles.filter((p) => p.id !== user.id).length ===
+                      0 && (
+                      <Empty
+                        title="No other users yet"
+                        text="Ask a groupmate to create an account. They will appear here so you can connect."
+                      />
+                    )}
+                    {data.friends.some(
+                      (f) =>
+                        f.requester_id === user.id && f.status === "pending",
+                    ) && (
+                      <section className="panel">
+                        <h3>Sent requests</h3>
+                        {data.friends
+                          .filter(
+                            (f) =>
+                              f.requester_id === user.id &&
+                              f.status === "pending",
+                          )
+                          .map((f) => (
+                            <div className="person-row" key={f.id}>
+                              <strong>{nameOf(f.recipient_id)}</strong>
+                              <Pill>Pending</Pill>
                               <button
-                                className="icon-button"
+                                className="text-button"
                                 disabled={busy}
-                                aria-label={`Decline request from ${nameOf(f.requester_id)}`}
                                 onClick={() =>
                                   void perform(async () => {
                                     check(
@@ -911,355 +768,196 @@ export default function App() {
                                         .delete()
                                         .eq("id", f.id),
                                     );
-                                  }, "Friend request declined.")
+                                  }, "Request cancelled.")
                                 }
                               >
-                                <X size={18} />
+                                Cancel request
                               </button>
                             </div>
                           ))}
-                        </section>
-                      )}
-                      <div className="section-heading">
-                        <h2>Find your people</h2>
-                        <Pill>{acceptedIds.length} friends</Pill>
-                      </div>
-                      <label className="search standalone">
-                        <Search size={16} />
-                        <input
-                          aria-label="Find a friend"
-                          value={query}
-                          onChange={(e) => setQuery(e.target.value)}
-                          placeholder="Search by name or username…"
-                        />
-                      </label>
-                      <div className="people-grid">
-                        {data.profiles
-                          .filter(
-                            (p) =>
-                              p.id !== user.id &&
-                              `${p.display_name} ${p.username || ""}`
-                                .toLowerCase()
-                                .includes(query.toLowerCase()),
-                          )
-                          .map((p) => {
-                            const friends = acceptedIds.includes(p.id);
-                            const sent = data.friends.some(
-                              (f) =>
-                                f.requester_id === user.id &&
-                                f.recipient_id === p.id &&
-                                f.status === "pending",
-                            );
-                            return (
-                              <article className="panel person-card" key={p.id}>
-                                <SpriteBadge sprite={spriteOf(p.sprite_id)} />
-                                <h3>
-                                  {p.display_name ||
-                                    p.username ||
-                                    "New neighbour"}
-                                </h3>
-                                <small>
-                                  {p.username
-                                    ? `@${p.username}`
-                                    : "No username yet"}
-                                </small>
-                                <button
-                                  className={`button ${friends ? "secondary" : "primary"}`}
-                                  disabled={busy || sent}
-                                  onClick={() =>
-                                    friends
-                                      ? (setPage("chats"),
-                                        void perform(async () => {
-                                          check(
-                                            await db().from("chats").insert({
-                                              user_one_id: user.id,
-                                              user_two_id: p.id,
-                                            }),
-                                          );
-                                        }, "New chat created."))
-                                      : void perform(async () => {
-                                          check(
-                                            await db()
-                                              .from("friendships")
-                                              .insert({
-                                                requester_id: user.id,
-                                                recipient_id: p.id,
-                                              }),
-                                          );
-                                        }, "Friend request sent.")
-                                  }
-                                >
-                                  {friends ? (
-                                    <>
-                                      <MessageCircle size={15} /> Start a chat
-                                    </>
-                                  ) : sent ? (
-                                    "Request sent"
-                                  ) : (
-                                    <>
-                                      <Plus size={15} /> Add friend
-                                    </>
-                                  )}
-                                </button>
-                                {friends && (
-                                  <Pill tone="green">In your circle</Pill>
-                                )}
-                              </article>
-                            );
-                          })}
-                      </div>
-                      {data.profiles.filter((p) => p.id !== user.id).length ===
-                        0 && (
-                        <Empty
-                          icon={<Users />}
-                          title="Be the start of something good"
-                          text="Ask a groupmate to create an account. They will appear here so you can connect."
-                        />
-                      )}
-                      {data.friends.some(
-                        (f) =>
-                          f.requester_id === user.id && f.status === "pending",
-                      ) && (
-                        <section className="panel">
-                          <h3>Sent requests</h3>
-                          {data.friends
-                            .filter(
-                              (f) =>
-                                f.requester_id === user.id &&
-                                f.status === "pending",
-                            )
-                            .map((f) => (
-                              <div className="person-row" key={f.id}>
-                                <strong>{nameOf(f.recipient_id)}</strong>
-                                <Pill>Pending</Pill>
-                                <button
-                                  className="text-button"
-                                  disabled={busy}
-                                  onClick={() =>
-                                    void perform(async () => {
-                                      check(
-                                        await db()
-                                          .from("friendships")
-                                          .delete()
-                                          .eq("id", f.id),
-                                      );
-                                    }, "Request cancelled.")
-                                  }
-                                >
-                                  Cancel request
-                                </button>
-                              </div>
-                            ))}
-                        </section>
-                      )}
-                    </>
-                  )}
-
-                  {page === "chats" && (
-                    <>
-                      {data.chats.length ? (
-                        <div className="panel chat-list">
-                          {data.chats.map((c) => {
-                            const other =
-                              c.user_one_id === user.id
-                                ? c.user_two_id
-                                : c.user_one_id;
-                            return (
-                              <div className="person-row" key={c.id}>
-                                <SpriteBadge
-                                  sprite={spriteOf(
-                                    data.profiles.find((p) => p.id === other)
-                                      ?.sprite_id,
-                                  )}
-                                />
-                                <div>
-                                  <strong>{nameOf(other)}</strong>
-                                  <small>
-                                    Two-person chat · Created{" "}
-                                    {date(c.created_at.slice(0, 10))}
-                                  </small>
-                                </div>
-                                <Pill>Chat space ready</Pill>
-                              </div>
-                            );
-                          })}
-                          <div className="subtle-note">
-                            <CircleHelp size={17} />
-                            These are real chat records. Sending messages will
-                            be added in a later iteration.
-                          </div>
-                        </div>
-                      ) : (
-                        <Empty
-                          icon={<MessageCircle />}
-                          title="A conversation starts with a friend"
-                          text="Create a two-person chat from your circle. Each new chat is stored separately."
-                          action={
-                            <button
-                              className="button secondary"
-                              onClick={() => setPage("friends")}
-                            >
-                              Find a friend <ArrowRight size={16} />
-                            </button>
-                          }
-                        />
-                      )}
-                    </>
-                  )}
-
-                  {page === "profile" && (
-                    <div className="profile-grid">
-                      <section className="panel profile-card">
-                        <div className="profile-avatar">
-                          {me?.avatar_path ? (
-                            <StorageImage
-                              bucket="profile-images"
-                              path={me.avatar_path}
-                              alt="Your profile image"
-                            />
-                          ) : (
-                            <SpriteBadge
-                              sprite={spriteOf(me?.sprite_id)}
-                              large
-                            />
-                          )}
-                        </div>
-                        <h2>{me?.display_name || "Make it yours"}</h2>
-                        <p>{user.email}</p>
-                        <button
-                          className="button secondary"
-                          onClick={() => open({ kind: "avatar" })}
-                        >
-                          Change profile photo
-                        </button>
-                        <form
-                          className="stack"
-                          onSubmit={form(async (fd) => {
-                            check(
-                              await db()
-                                .from("profiles")
-                                .update({
-                                  display_name: text(fd, "name"),
-                                  username: text(fd, "username") || null,
-                                })
-                                .eq("id", user.id),
-                            );
-                          }, "Profile updated.")}
-                        >
-                          <label>
-                            Display name
-                            <input
-                              name="name"
-                              required
-                              maxLength={100}
-                              defaultValue={me?.display_name}
-                            />
-                          </label>
-                          <label>
-                            Username
-                            <input
-                              name="username"
-                              pattern="[a-z0-9_]{3,30}"
-                              placeholder="lowercase_name"
-                              defaultValue={me?.username || ""}
-                            />
-                            <small>
-                              3–30 lowercase letters, numbers, or underscores.
-                            </small>
-                          </label>
-                          {submitButton("Save profile")}
-                        </form>
-                        <button
-                          className="text-button signout"
-                          disabled={busy}
-                          onClick={() =>
-                            void perform(
-                              async () => {
-                                check(await db().auth.signOut());
-                                setPage("shelf");
-                              },
-                              "Signed out.",
-                              true,
-                              false,
-                            )
-                          }
-                        >
-                          <LogOut size={15} /> Sign out
-                        </button>
                       </section>
-                      <section className="panel">
-                        <div className="section-heading">
-                          <h2>Your sprite</h2>
-                          <Sparkles size={19} />
+                    )}
+                  </>
+                )}
+
+                {page === "chats" && (
+                  <>
+                    {data.chats.length ? (
+                      <div className="panel chat-list">
+                        {data.chats.map((c) => {
+                          const other =
+                            c.user_one_id === user.id
+                              ? c.user_two_id
+                              : c.user_one_id;
+                          return (
+                            <div className="person-row" key={c.id}>
+                              <div>
+                                <strong>{nameOf(other)}</strong>
+                                <small>
+                                  Two-person chat · Created{" "}
+                                  {date(c.created_at.slice(0, 10))}
+                                </small>
+                              </div>
+                              <Pill>Chat space ready</Pill>
+                            </div>
+                          );
+                        })}
+                        <div className="subtle-note">
+                          These are real chat records. Sending messages will be
+                          added in a later iteration.
                         </div>
-                        {me && (
+                      </div>
+                    ) : (
+                      <Empty
+                        title="No chats"
+                        text="Create a two-person chat from your circle. Each new chat is stored separately."
+                        action={
+                          <button
+                            className="button secondary"
+                            onClick={() => setPage("friends")}
+                          >
+                            Find a friend
+                          </button>
+                        }
+                      />
+                    )}
+                  </>
+                )}
+
+                {page === "profile" && (
+                  <div className="profile-grid">
+                    <section className="panel profile-card">
+                      {me?.avatar_path && (
+                        <StorageImage
+                          bucket="profile-images"
+                          path={me.avatar_path}
+                          alt="Profile image"
+                        />
+                      )}
+                      <h2>{me?.display_name || "Profile"}</h2>
+                      <p>{user.email}</p>
+                      <button
+                        className="button secondary"
+                        onClick={() => open({ kind: "avatar" })}
+                      >
+                        Change profile photo
+                      </button>
+                      <form
+                        className="stack"
+                        onSubmit={form(async (fd) => {
+                          check(
+                            await db()
+                              .from("profiles")
+                              .update({
+                                display_name: text(fd, "name"),
+                                username: text(fd, "username") || null,
+                              })
+                              .eq("id", user.id),
+                          );
+                        }, "Profile updated.")}
+                      >
+                        <label>
+                          Display name
+                          <input
+                            name="name"
+                            required
+                            maxLength={100}
+                            defaultValue={me?.display_name}
+                          />
+                        </label>
+                        <label>
+                          Username
+                          <input
+                            name="username"
+                            pattern="[a-z0-9_]{3,30}"
+                            placeholder="lowercase_name"
+                            defaultValue={me?.username || ""}
+                          />
+                          <small>
+                            3–30 lowercase letters, numbers, or underscores.
+                          </small>
+                        </label>
+                        {submitButton("Save profile")}
+                      </form>
+                      <button
+                        className="text-button signout"
+                        disabled={busy}
+                        onClick={() =>
+                          void perform(
+                            async () => {
+                              check(await db().auth.signOut());
+                              setPage("shelf");
+                            },
+                            "Signed out.",
+                            true,
+                            false,
+                          )
+                        }
+                      >
+                        Sign out
+                      </button>
+                    </section>
+                    <section className="panel">
+                      <div className="section-heading">
+                        <h2>Your sprite</h2>
+                      </div>
+                      {me && (
+                        <SpriteForm
+                          key={me.sprite_id}
+                          sprite={spriteOf(me.sprite_id)}
+                          disabled={busy}
+                          submit={(job) => void perform(job, "Sprite updated.")}
+                        />
+                      )}
+                      <div className="subtle-note">
+                        Head and torso are placeholder asset IDs for your
+                        group's artwork.
+                      </div>
+                      <h3 className="space-top">Compliments on your shelf</h3>
+                      <div className="tags">
+                        {COMPLIMENTS.map((c) => (
+                          <Pill key={c}>
+                            {c} ·{" "}
+                            {ownItems.reduce(
+                              (sum, item) =>
+                                sum +
+                                item.compliments.filter((x) => x === c).length,
+                              0,
+                            )}
+                          </Pill>
+                        ))}
+                      </div>
+                      <h3 className="space-top">Your item sprites</h3>
+                      {ownItems.map((item) => (
+                        <details key={item.id}>
+                          <summary>{item.name}</summary>
                           <SpriteForm
-                            key={me.sprite_id}
-                            sprite={spriteOf(me.sprite_id)}
+                            sprite={spriteOf(item.sprite_id)}
                             disabled={busy}
                             submit={(job) =>
-                              void perform(job, "Sprite updated.")
+                              void perform(job, "Item sprite updated.")
                             }
                           />
-                        )}
-                        <div className="subtle-note">
-                          Head and torso are placeholder asset IDs for your
-                          group's artwork.
-                        </div>
-                        <h3 className="space-top">Compliments on your shelf</h3>
-                        <div className="tags">
-                          {COMPLIMENTS.map((c) => (
-                            <Pill key={c}>
-                              <Heart size={12} />
-                              {c} ·{" "}
-                              {ownItems.reduce(
-                                (sum, item) =>
-                                  sum +
-                                  item.compliments.filter((x) => x === c)
-                                    .length,
-                                0,
-                              )}
-                            </Pill>
-                          ))}
-                        </div>
-                        <h3 className="space-top">Your item sprites</h3>
-                        {ownItems.map((item) => (
-                          <details key={item.id}>
-                            <summary>{item.name}</summary>
-                            <SpriteForm
-                              sprite={spriteOf(item.sprite_id)}
-                              disabled={busy}
-                              submit={(job) =>
-                                void perform(job, "Item sprite updated.")
-                              }
-                            />
-                          </details>
-                        ))}
-                      </section>
-                    </div>
-                  )}
-                </>
-              )}
-            </>
-          )}
-          <footer className="footer">
-            <span>
-              <Box size={14} /> A little goes around.
-            </span>
-            <span>Share Shelf · CS4353 prototype</span>
-          </footer>
-        </main>
-      </div>
+                        </details>
+                      ))}
+                    </section>
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </main>
 
       {dialog && (
         <Modal
           title={
             dialog.kind === "auth"
               ? dialog.mode === "signup"
-                ? "Start your sharing circle"
-                : "Welcome back"
+                ? "Create account"
+                : "Sign in"
               : dialog.kind === "item"
-                ? "Add something to share"
+                ? "Add item"
                 : dialog.kind === "loan"
                   ? `Lend ${dialog.item.name}`
                   : dialog.kind === "location"
@@ -1267,7 +965,7 @@ export default function App() {
                     : dialog.kind === "proof"
                       ? "Verify the next handover"
                       : dialog.kind === "review"
-                        ? "A little appreciation"
+                        ? "Loan review"
                         : dialog.kind === "avatar"
                           ? "Your profile photo"
                           : "Add an item photo"
@@ -1317,7 +1015,7 @@ export default function App() {
                     },
                     mode === "signup"
                       ? "Account created. If confirmation is enabled, check your email before signing in."
-                      : "Welcome back.",
+                      : "Signed in.",
                     mode !== "signup",
                     false,
                   );
@@ -1571,7 +1269,13 @@ export default function App() {
               </div>
               <label>
                 Loan sprite colour
-                <input name="colour" type="color" defaultValue="#A2AD91" />
+                <input
+                  name="colour"
+                  type="text"
+                  required
+                  pattern="#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})"
+                  defaultValue="#A2AD91"
+                />
               </label>
               <small>
                 Both dates are included. Overlapping bookings are blocked by the
@@ -1742,17 +1446,14 @@ function SpriteForm({
       }}
     >
       <div className="sprite-form-preview">
-        <SpriteBadge sprite={sprite} large />
         <label>
           Colour
           <input
             name="colour"
-            type="color"
-            defaultValue={
-              sprite.colour.length === 4
-                ? "#" + [...sprite.colour.slice(1)].map((c) => c + c).join("")
-                : sprite.colour.slice(0, 7)
-            }
+            pattern="#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})"
+            required
+            type="text"
+            defaultValue={sprite.colour}
           />
         </label>
       </div>

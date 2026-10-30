@@ -25,6 +25,11 @@ can create an account so you can send/accept friend requests and try lending.
 
 ## React starter
 
+The interface is deliberately plain: a horizontal row of tabs, native controls,
+and text lists. Decorative artwork, icons, sprite previews, and marketing sections
+are removed so the group can focus on functionality. Uploaded photos and
+verification images remain accessible through explicit “View” links.
+
 - Community shelf and personal shelf, with search and availability filters.
 - Supabase email/password signup, confirmation guidance, sign-in, and sign-out.
 - Item creation, photo uploads, and named locations with coordinates.
@@ -33,8 +38,8 @@ can create an account so you can send/accept friend requests and try lending.
   uploads, and borrower reviews with optional images and fixed compliments.
 - Profile/avatar editing and placeholder user/item sprite configuration.
 
-Chat messaging and actual sprite artwork are intentionally left for the next
-iteration. Data is loaded from the existing schema; the UI has no seeded demo
+Chat messaging and sprite rendering are left for the next iteration; sprite fields
+can still be edited as plain inputs. Data is loaded from the existing schema; the UI has no seeded demo
 records. Use the refresh button to pick up changes made in another session.
 
 ```sh
