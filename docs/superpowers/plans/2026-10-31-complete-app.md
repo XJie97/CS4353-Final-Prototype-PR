@@ -17,10 +17,13 @@
 Date boundaries/overlaps; invalid actor or skipped handovers; storage corruption or unavailability; user-uploaded image failures; navigation restoration and stale dialogs.
 
 ## Tasks
-- [ ] Foundation: add app/domain.ts, seed.ts, storage.ts and domain tests. Cover request/plan/role/date transitions first; test serialization and storage errors.
-- [ ] Borrowing: add app/context.tsx, App.tsx, navigation and shared UI, LoanForm and LoansPage. Wire existing ItemDetails, search and BorrowHome to the shared catalog.
-- [ ] Communication: add ChatsPage and NotificationsPage with persisted local messages and loan updates; test unread/read behavior and membership.
-- [ ] Handover: add LockerFlow and condition verification, actor-specific next actions, photo validation and valid preview-code checks. Test all four stages, mismatch and out-of-order actions.
-- [ ] Community: add ReviewForm, SharePage, FriendsPage and ProfilePage. Test ratings/compliments, listing ownership, edits, friendship transitions and persisted profile changes.
-- [ ] Integration: run all tests/build, rendered UI checks and available browser verification. Review the whole branch, fix material issues, document demo walkthrough and real-system limitations.
+- [x] Foundation: add app/domain.ts, seed.ts, storage.ts and domain tests. Cover request/plan/role/date transitions first; test serialization and storage errors.
+- [x] Borrowing: add app/context.tsx, App.tsx, navigation and shared UI, LoanForm and LoansPage. Wire existing ItemDetails, search and BorrowHome to the shared catalog.
+- [x] Communication: add ChatsPage and NotificationsPage with persisted local messages and loan updates; test unread/read behavior and membership.
+- [x] Handover: add LockerFlow and condition verification, actor-specific next actions, photo validation and valid preview-code checks. Test all four stages, mismatch and out-of-order actions.
+- [x] Community: add ReviewForm, SharePage, FriendsPage and ProfilePage. Test ratings/compliments, listing ownership, edits, friendship transitions and persisted profile changes.
+- [x] Integration: run all tests/build, rendered UI checks and available browser verification. Review the whole branch, fix material issues, document demo walkthrough and real-system limitations.
 
+
+## Verification record
+32 frontend tests passed, including the complete two-person lifecycle; eight routed server-rendered views, local assets and QR generation passed. TypeScript and production build passed. Independent review identified routing and corrupt-state defects; both were fixed and regression checks added. The local browser binary is unavailable, so interactive visual/camera verification is still outstanding.
