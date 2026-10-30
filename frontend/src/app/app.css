@@ -99,3 +99,32 @@
 .chip-row { display:flex; gap:6px; flex-wrap:wrap; }
 .chip { border:1px solid #bda9d9; border-radius:8px; padding:5px 8px; background:var(--purple-surface); font-size:12px; }
 @media(max-width:370px){.app-header h1{font-size:21px}.app-scroll{padding-inline:16px}.loan-summary{padding:16px;gap:14px}.loan-summary h2{font-size:21px}.loan-timeline>li.current>h2{font-size:20px}.loan-card-body{grid-template-columns:1fr}.loan-card-body>div:last-child{align-items:flex-start}.app-modal{padding:16px}}
+.section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.section-heading h2 { margin:0; }
+.conversation-row,.person-row { display:flex; align-items:center; gap:12px; width:100%; border:0; border-bottom:1px solid #ece9ed; background:transparent; padding:16px 0; text-align:left; }
+.conversation-row>span:nth-child(2) { display:flex; flex-direction:column; gap:5px; min-width:0; flex:1; }
+.conversation-preview { color:var(--text-muted); font-size:14px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.conversation-meta { display:flex; flex-direction:column; align-items:flex-end; gap:8px; font-size:11px; color:var(--text-muted); }
+.unread-count { border-radius:50%; background:var(--purple-primary); color:white; font-weight:600; padding:3px 7px; }
+.person-row>svg { margin-left:auto; }
+.chat-person { display:flex; align-items:center; gap:10px; padding-bottom:16px; }
+.chat-person p { color:var(--text-muted); font-size:13px; margin:3px 0 0; }
+.chat-loan-card { padding:14px; background:var(--green-panel); border:1px solid var(--line); border-radius:8px; margin-bottom:16px; }
+.chat-loan-card p { font-size:13px; margin:5px 0; }
+.older-loans { font-size:13px; margin:12px 0; }
+.older-loans summary { margin-bottom:12px; }
+.message-list { display:flex; flex-direction:column; align-items:flex-start; gap:12px; padding:8px 0; }
+.message { max-width:86%; padding:12px 14px 8px; border-radius:12px 12px 12px 2px; background:#edf3e7; }
+.message p { margin:0 0 6px; white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.45; }
+.message span { display:block; font-size:10px; color:#6b626f; text-align:right; }
+.message.sent { align-self:flex-end; border-radius:12px 12px 2px 12px; background:var(--purple-surface); }
+.message-composer { padding:12px 16px; background:#faf7fd; border-top:1px solid var(--line); }
+.message-composer>div { display:flex; align-items:flex-end; gap:8px; }
+.message-composer textarea { flex:1; min-width:0; border:1px solid #b2b2b2; border-radius:12px; resize:vertical; max-height:100px; padding:10px 12px; font-size:14px; line-height:1.4; }
+.message-composer .button { min-height:40px; }
+.notification-row { width:100%; display:flex; align-items:flex-start; gap:12px; text-align:left; padding:16px 12px; border:0; border-bottom:1px solid #ebe6ef; background:white; }
+.notification-row.unread { background:#f4edff; }
+.notification-row strong { font-size:14px; font-weight:500; line-height:1.4; }
+.notification-row time { display:block; font-size:11px; color:var(--text-muted); margin-top:6px; }
+.notification-dot { margin-top:5px; width:8px; height:8px; flex-shrink:0; border-radius:50%; background:#ddd; }
+.notification-row.unread .notification-dot { background:var(--purple-primary); }

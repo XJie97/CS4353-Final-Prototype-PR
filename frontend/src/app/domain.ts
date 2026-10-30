@@ -105,6 +105,15 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   case 'submit-review':{
    const l=loanFor(command.loanId);requireValue(me===l.borrowerId&&l.status==='complete','Only the borrower can review a completed loan.');requireValue(!l.review,'You have already reviewed this loan.');requireValue(Number.isInteger(command.rating)&&command.rating>=1&&command.rating<=5,'Choose a rating from 1 to 5.');requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a review of up to 2000 characters.');requireValue(command.compliments.every(c=>COMPLIMENTS.includes(c)),'Choose one of the available compliments.');requireValue(!command.photo||photoValid(command.photo),'Choose a valid review photo.');l.review={rating:command.rating,text:command.text.trim(),compliments:[...new Set(command.compliments)],...(command.photo?{photo:command.photo}:{}),at:env.now};notify(l.ownerId,`${name} left a review.`,l.id);break;
   }
+  case 'send-message':{
+   requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a message of up to 2000 characters.');requireValue(command.to!==me,'You cannot message yourself.');requireValue(person(command.to),'This person could not be found.');
+   if(command.loanId){const loan=s.loans.find(l=>l.id===command.loanId);requireValue(loan&&[loan.ownerId,loan.borrowerId].includes(me)&&[loan.ownerId,loan.borrowerId].includes(command.to),'Only the loan participants can discuss this loan.');}
+   s.messages.push({id:env.id,from:me,to:command.to,text:command.text.trim(),at:env.now,read:false,...(command.loanId?{loanId:command.loanId}:{})});notify(command.to,`${name} sent you a message.`,undefined,me);break;
+  }
+  case 'read-thread':{
+   requireValue(person(command.peerId),'This person could not be found.');s.messages.forEach(m=>{if(m.to===me&&m.from===command.peerId)m.read=true;});s.notices.forEach(n=>{if(n.to===me&&n.peerId===command.peerId)n.read=true;});break;
+  }
+  case 'read-notices':s.notices.forEach(n=>{if(n.to===me&&(!command.id||command.id===n.id))n.read=true;});break;
   default:throw new AppError('This action is not available.');
  }
  return s;
