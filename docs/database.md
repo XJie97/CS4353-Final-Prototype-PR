@@ -128,5 +128,7 @@ it exercises the superseded automatic-upload workflow and is not the current sui
 A separate live HTTP check verified real demo sign-ins, friend acceptance, item
 creation, reservations/overlap rejection, all four scans with real Storage uploads,
 review create/edit/delete, chat messages/image uploads, Realtime and outsider privacy.
-The temporary integration rows/files were removed after verification. Frontend
-unit/component tests and `pnpm build` provide local checks without hosted writes.
+Live checks create temporary `[smoke]` rows; an administrator can remove these
+after reviewing the results. Uploaded test files are removed by the test workflow.
+Frontend unit/component tests and `pnpm build` provide local checks without hosted
+writes.
