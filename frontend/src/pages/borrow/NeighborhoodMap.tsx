@@ -1,10 +1,10 @@
 import { Icon } from '../../components/Icon';
 import type { BorrowItem } from './items';
 
-type Props = { items: BorrowItem[]; selected: BorrowItem | null; onSelect: (item: BorrowItem) => void };
+type Props = { items: BorrowItem[]; selected: BorrowItem | null; onSelect: (item: BorrowItem) => void; onOpenItem: (item: BorrowItem) => void };
 
 // A schematic neighborhood matching Figma; this is not a geographic map.
-export function NeighborhoodMap({ items, selected, onSelect }: Props) {
+export function NeighborhoodMap({ items, selected, onSelect, onOpenItem }: Props) {
   return (
     <section className="neighborhood-map" aria-label="Browse items in the neighborhood">
       <div className="map-blocks" aria-hidden="true">
@@ -23,14 +23,14 @@ export function NeighborhoodMap({ items, selected, onSelect }: Props) {
         </button>
       ))}
       {selected && (
-        <article className="map-item" aria-label={`${selected.name}, ${selected.location}`}>
-          <img className="map-item-photo" src={selected.image} alt={selected.name} width={140} height={72} />
+        <button type="button" className="map-item" aria-label={`View ${selected.name}, ${selected.location}`} onClick={() => onOpenItem(selected)}>
+          <img className={`map-item-photo${selected.image.endsWith('item-placeholder.png') ? ' map-item-photo--placeholder' : ''}`} src={selected.image} alt={selected.name} width={140} height={72} />
           <div className="map-item-info">
             <h2>{selected.name}</h2>
             <p><Icon name="map-pin" width={18} /><span>{selected.location}</span></p>
           </div>
           <Icon name="card-tail" width={14} height={8} className="map-item-tail" />
-        </article>
+        </button>
       )}
     </section>
   );

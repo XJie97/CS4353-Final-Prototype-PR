@@ -1,9 +1,9 @@
 import { Icon } from './Icon';
 
-export function BottomNavigation() {
+export function BottomNavigation({ onBorrow }: { onBorrow?: () => void }) {
   return (
     <nav className="bottom-navigation" aria-label="Main navigation">
-      <a className="navigation-tab navigation-tab--active" href="#borrow" aria-current="page" aria-label="Borrow">
+      <a className="navigation-tab navigation-tab--active" href="#borrow" aria-current="page" aria-label="Borrow" onClick={event => { if (onBorrow) { event.preventDefault(); onBorrow(); } }}>
         <Icon name="borrow-tab" width={86} height={48.5} />
       </a>
       <button className="navigation-tab" type="button" disabled title="Share is not available yet">
