@@ -85,7 +85,8 @@ borrower identities, review text, or verification images, to accepted friends.
 ## App operations
 
 The examples assume an authenticated `@supabase/supabase-js` client. Check every
-returned `error`. The repository has no frontend implementation yet.
+returned `error`. The React starter in `src/` implements these flows using the
+client in `src/lib/supabase.ts` and browser-safe `VITE_` environment variables.
 
 ```js
 // User lists: owner items, borrowed loans, chats, friendships.

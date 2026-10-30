@@ -4,3 +4,7 @@ Thumbs.db
 .env.*
 !.env.example
 *.log
+node_modules/
+dist/
+coverage/
+.pnpm-store/
