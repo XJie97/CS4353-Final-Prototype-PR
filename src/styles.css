@@ -249,3 +249,37 @@ dialog::backdrop {
 .count::after {
   content: ")";
 }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+.inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 12px;
+}
+article {
+  padding: 12px 0;
+  border-bottom: 1px solid #ccc;
+}
+.filter-bar {
+  align-items: end;
+}
+.filter-bar > label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.filter-bar > .inline {
+  flex-direction: row;
+}
+h4 {
+  margin: 12px 0;
+}
+.message-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

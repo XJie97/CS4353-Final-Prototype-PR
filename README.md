@@ -1,70 +1,78 @@
 # CS4353 - Final Prototype
 
-Shared repository for the CS4353 final prototype.
+A deliberately plain React + TypeScript frame connected to Supabase. The app has
+exactly five pages: **Borrow, Share, Loans, Friends, Me**. Item details, chats, QR
+handoffs, photos and reviews open within those pages.
 
-## Getting started
+## Run locally
 
-The starter is a React + TypeScript app built with Vite and connected to Supabase.
-Use Node.js 24 (or a supported version >=22.12) and pnpm 11.
+Use Node.js 24 (or >=22.12) and pnpm 11.
 
 ```sh
 pnpm install
 cp .env.example .env
-# Fill in VITE_SUPABASE_PUBLISHABLE_KEY in .env using the project's publishable key.
+# Fill in VITE_SUPABASE_PUBLISHABLE_KEY using the project's publishable key.
 pnpm dev
 ```
 
-Open **http://localhost:3000**. This machine already has the connection configured
-in the ignored `.env`. Groupmates need their own copy of that configuration. Only
-the publishable client key belongs in `VITE_` settings; privileged keys stay out of
-the app. Configure Supabase Auth's Site URL/allowed redirects for
-`http://localhost:3000` during local development and your actual origin before hosting.
+Open **http://localhost:3000**. This machine already has the connection in its
+ignored `.env`. Groupmates need their own copy. Only the publishable key belongs
+in `VITE_` settings; administrator keys and passwords must stay out of the app and Git.
 
-Create an account, confirm the email if requested, and sign in. A second groupmate
-can create an account so you can send/accept friend requests and try lending.
+Sign in with one of the administrator-provisioned accounts:
+`alice@cs4353.example.test`, `bob@cs4353.example.test`,
+`charlie@cs4353.example.test`, or `dana@cs4353.example.test`.
+Passwords are supplied privately. These use real Supabase sessions and permissions.
+Public signup is disabled in Supabase and is not offered by the app.
 
-## React starter
-
-The interface is deliberately plain: a horizontal row of tabs, native controls,
-and text lists. Decorative artwork, icons, sprite previews, and marketing sections
-are removed so the group can focus on functionality. Uploaded photos and
-verification images remain accessible through explicit “View” links.
-
-- Community shelf and personal shelf, with search and availability filters.
-- Supabase email/password signup, confirmation guidance, sign-in, and sign-out.
-- Item creation, photo uploads, and named locations with coordinates.
-- Friend discovery, request acceptance, and two-person chat records.
-- Loan booking with date-overlap feedback, temporal filters, four verification
-  uploads, and borrower reviews with optional images and fixed compliments.
-- Profile/avatar editing and placeholder user/item sprite configuration.
-
-Chat messaging and sprite rendering are left for the next iteration; sprite fields
-can still be edited as plain inputs. Data is loaded from the existing schema; the UI has no seeded demo
-records. Use the refresh button to pick up changes made in another session.
+For another development project, an administrator can provision the four accounts:
 
 ```sh
-pnpm test    # Frontend unit/component tests; does not write to Supabase.
-pnpm build   # Typecheck and production build.
-pnpm preview # Preview the production build locally.
+node scripts/seed-demo-users.mjs --key-file /absolute/path/to/private-key
 ```
 
-The frontend tests mock Supabase for auth/form behaviour. The browser smoke check
-verifies the live connection and signed-out desktop/mobile layouts. A full
-authenticated, two-account handover with real image uploads still needs to be run
-with your own accounts. No user accounts are created automatically by the app setup.
+The script writes `.demo-accounts.txt` with private file permissions and does not
+reset existing users' passwords. Never commit this file or the administrator key.
+Configure Auth's Site URL/allowed redirects for your local or hosted origin.
 
-## Database
+## Try the frame
 
-The Supabase schema supports profiles, sprites, two-user chats and friendships,
-item locations and images, and non-overlapping dated loans with four verification
-images and borrower reviews. See [database setup and app operations](docs/database.md).
-The schema is deployed to the **CS4353 Final Project** Supabase project
-(`ejgvfgvrmcwrixxdvwwt`). Migration `20261030000200` implements the revised model;
-database integration checks passed on 30 October 2026.
+1. Sign in as Alice. In **Share**, create an item with category tags and allowed
+   lockers. Photos and sprite settings are optional.
+2. In **Friends**, send Bob a request. Sign in as Bob and accept it.
+3. Bob finds Alice's item in **Borrow** and requests dates and one allowed locker.
+   Pending requests reserve those dates immediately; overlapping bookings fail.
+4. Alice approves in **Loans**. Use **Get QR → Bypass: simulate locker scan** for
+   the owner's dropoff. Save the required photo of the item inside the locker.
+5. Bob repeats the bypass and photo for collection, then for return. Alice performs
+   the final collection. The loan becomes Returned/Past immediately; her final photo
+   and checklist remain required before a review or the next physical handoff.
+6. Bob can optionally create, edit or delete a review. In **Friends**, either person
+   can start a two-person conversation and send text or an image.
+7. **Me** saves profile/avatar and placeholder sprite asset settings.
 
-## Collaboration
+A borrower may modify a plan before collection; this clears approval and invalidates
+old QR challenges. Either participant may cancel before collection, keeping history
+and releasing the dates. These rules are also enforced by the database.
 
-- Create a branch for each feature or fix.
-- Open a pull request to merge changes into `main`.
-- Use GitHub Issues to track tasks and bugs.
-- Keep passwords, API keys, and other secrets out of the repository.
+## Develop and verify
+
+```sh
+pnpm test    # Local unit/component tests; no hosted writes.
+pnpm build   # Typecheck and production build.
+pnpm preview # Local production preview.
+pnpm format
+```
+
+Feature services are separate from page components and from the Supabase adapter.
+See [architecture and extension points](docs/architecture.md) before changing a
+workflow, and [database operations](docs/database.md) for server commands and access rules.
+
+The deployed project is **CS4353 Final Project** (`ejgvfgvrmcwrixxdvwwt`). Migration
+`20261030000300_feature_frame.sql` adds this frame without discarding earlier data.
+The locker interaction is simulated; real hardware and sprite rendering are future work.
+
+## Collaborate
+
+Create a branch per feature, open a pull request to `main`, and keep changes within
+the relevant feature service and subview. Never put real credentials in source code.
