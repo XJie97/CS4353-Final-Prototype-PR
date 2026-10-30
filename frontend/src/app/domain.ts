@@ -19,7 +19,7 @@ export const LOCKERS = [
  { id: 'toa-payoh', name: 'Toa Payoh', label: 'Toa Payoh Locker', number: '08' },
  { id: 'kent-ridge', name: 'Kent Ridge', label: 'Kent Ridge Locker', number: '21' },
 ] as const;
-export const COMPLIMENTS = ['Great communication', 'Returned on time', 'Careful with items'];
+export const COMPLIMENTS = ['Great communication', 'Easy collection', 'As described'];
 export const PROOF_STEPS: ProofStep[] = ['ownerDropoff', 'borrowerPickup', 'borrowerDropoff', 'ownerPickup'];
 export const PROOF_LABELS: Record<ProofStep, string> = { ownerDropoff: 'Drop off item', borrowerPickup: 'Pick up item', borrowerDropoff: 'Return item', ownerPickup: 'Collect returned item' };
 export function todayLocal() {
@@ -104,6 +104,26 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   }
   case 'submit-review':{
    const l=loanFor(command.loanId);requireValue(me===l.borrowerId&&l.status==='complete','Only the borrower can review a completed loan.');requireValue(!l.review,'You have already reviewed this loan.');requireValue(Number.isInteger(command.rating)&&command.rating>=1&&command.rating<=5,'Choose a rating from 1 to 5.');requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a review of up to 2000 characters.');requireValue(command.compliments.every(c=>COMPLIMENTS.includes(c)),'Choose one of the available compliments.');requireValue(!command.photo||photoValid(command.photo),'Choose a valid review photo.');l.review={rating:command.rating,text:command.text.trim(),compliments:[...new Set(command.compliments)],...(command.photo?{photo:command.photo}:{}),at:env.now};notify(l.ownerId,`${name} left a review.`,l.id);break;
+  }
+  case 'create-item':case 'edit-item':{
+   const existing=s.items.find(i=>i.id===command.id);
+   if(command.type==='edit-item')requireValue(existing?.ownerId===me,'Only the owner can edit this listing.');else requireValue(!existing,'This listing already exists.');
+   requireValue(command.name.trim().length>0&&command.name.trim().length<=100,'Choose an item name of up to 100 characters.');requireValue(command.description.trim().length>0&&command.description.length<=2000,'Write a description of up to 2000 characters.');requireValue(['Home','Electronics','Party Supplies','Outdoors','Clothing','Tools','Sports'].includes(command.category),'Choose an item category.');requireValue(LOCKERS.some(l=>l.name===command.location),'Choose a community location.');
+   requireValue(command.images.length<=4&&command.images.every(image=>photoValid(image)||['/assets/item-placeholder.png','/assets/denim-jacket.png'].includes(image)),'Choose valid listing photos.');const images=command.images.length?command.images:['/assets/item-placeholder.png'];
+   const value={name:command.name.trim(),title:command.name.trim(),description:command.description.trim(),category:command.category,location:command.location,images,image:images[0]};
+   if(existing)Object.assign(existing,value);else s.items.unshift({id:command.id,...value,ownerId:me,owner:name,isFriend:false,listed:true});break;
+  }
+  case 'toggle-item':{const item=s.items.find(i=>i.id===command.id);requireValue(item?.ownerId===me,'Only the owner can change this listing.');item.listed=!item.listed;break;}
+  case 'request-friend':{
+   requireValue(person(command.to)&&command.to!==me,'Choose another person to add.');requireValue(!s.friends.some(f=>(f.from===me&&f.to===command.to)||(f.from===command.to&&f.to===me)),'You are already friends or have a pending request.');s.friends.push({id:command.id,from:me,to:command.to,status:'pending'});notify(command.to,`${name} sent you a friend request.`);break;
+  }
+  case 'accept-friend':case 'decline-friend':case 'remove-friend':{
+   const friend=s.friends.find(f=>f.id===command.id);requireValue(friend,'This friend request is no longer available.');
+   if(command.type==='accept-friend'){requireValue(friend.to===me&&friend.status==='pending','Only the recipient can accept a pending request.');friend.status='accepted';notify(friend.from,`${name} accepted your friend request.`);}
+   else{requireValue(friend.from===me||friend.to===me,'Only a participant can change this friendship.');requireValue(command.type!=='decline-friend'||friend.status==='pending','This request has already been accepted.');s.friends=s.friends.filter(f=>f.id!==friend.id);}break;
+  }
+  case 'update-profile':{
+   const profile=person(me)!;const username=command.username.trim().toLowerCase();requireValue(command.name.trim().length>0&&command.name.length<=80,'Enter a display name of up to 80 characters.');requireValue(/^[a-z0-9_]{3,24}$/.test(username),'Use 3–24 letters, numbers or underscores for your username.');requireValue(!s.people.some(p=>p.id!==me&&p.username.toLowerCase()===username),'This username is already taken.');requireValue(command.bio.length<=500,'Keep your bio to 500 characters.');requireValue(LOCKERS.some(l=>l.name===command.location),'Choose a community location.');requireValue(!command.avatar||photoValid(command.avatar),'Choose a valid profile photo.');Object.assign(profile,{name:command.name.trim(),username,location:command.location,bio:command.bio.trim()});if(command.avatar)profile.avatar=command.avatar;else delete profile.avatar;break;
   }
   case 'send-message':{
    requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a message of up to 2000 characters.');requireValue(command.to!==me,'You cannot message yourself.');requireValue(person(command.to),'This person could not be found.');
