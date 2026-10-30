@@ -1,97 +1,163 @@
 # Supabase database
 
-This database is deployed to **CS4353 Final Project** (project reference
-`ejgvfgvrmcwrixxdvwwt`, project URL `https://ejgvfgvrmcwrixxdvwwt.supabase.co`).
-The project uses the Free plan in Frankfurt (`eu-central-1`).
+Project: **CS4353 Final Project**, reference `ejgvfgvrmcwrixxdvwwt`.
+The local ignored `.env` contains its project URL and publishable client key.
+The hosted project remains on the Free plan in Frankfurt (`eu-central-1`).
 
 ## Model
 
-| Entity | Purpose |
+| Entity | Fields and relationships |
 | --- | --- |
-| `auth.users` | Supabase-managed accounts and login credentials |
-| `profiles` | Display name, optional unique username, and one avatar path |
-| `user_locations` | One current location per user, with optional coordinates |
-| `friendships` | A pending request that the recipient can accept; either person can remove it |
-| `items` | A physical asset owned by one user |
-| `item_images` | Multiple ordered images for an item |
-| `loans` | Borrower, start date, due date, and actual return timestamp |
-| `item_catalog` | Items with their owner's current location and derived availability |
+| `profiles` | Supabase Auth user ID, display name, username, avatar image, exactly one user sprite |
+| `items` | One owner, name, description, exactly one item sprite; multiple item images, locations, and loans |
+| `item_locations` | One item, location name, latitude, longitude |
+| `friendships` | Exactly two distinct users (`requester_id`, `recipient_id`); pending/accepted |
+| `chats` | Exactly two distinct users (`user_one_id`, `user_two_id`); no messages yet |
+| `sprites` | Category and hex colour; user sprites additionally have head/torso asset IDs and an integer level |
+| `loans` | One item and borrower, inclusive start/end dates, sprite colour, four verification image slots and timestamps, one embedded borrower review |
 
-Items inherit location through a join, so moving a user changes all their items' displayed locations. This represents the owner's pickup location, not the item's live physical location while borrowed. Items have one owner; ownership cannot be changed by the client.
+A user acts as owner through `items.owner_id` and as borrower through
+`loans.borrower_id`. Their item list, loan list, chat list, and friend list use those
+relationships; they are not duplicated in array columns. A pair can have multiple
+chat records and multiple friendship records. A recipient must accept each friendship
+request. Any remaining accepted record keeps the pair connected.
 
-An item is `on_loan` while any loan has no return timestamp, otherwise `available`. An overdue loan stays active until its owner confirms return. The database permits only one active loan per item. Start and due dates are inclusive calendar dates; a loan may last one day. Start dates cannot be in the future. Reservations and a separate borrow-request approval flow are outside this initial model.
+Profiles keep their earlier avatar images; items keep their earlier item photos.
+Every user/item receives its own sprite automatically. The unique, non-null sprite
+reference and category foreign key prevent missing, shared, or mismatched sprites.
+User defaults are `head-placeholder`, `torso-placeholder`, and level `0`; all default
+colours are `#808080`. Colours accept `#RGB`, `#RRGGBB`, or `#RRGGBBAA` hex codes.
+Item sprites cannot contain head, torso, or level fields.
 
-The owner starts a loan to an accepted friend and confirms its return. Loan records remain as history. An item with loan history cannot be deleted; add an archive field later if needed. Removing a friendship does not erase loan history or prevent the owner from confirming return. Account deletion needs a separate history-retention workflow because items and loans reference profiles.
+Locations belong only to items. `user_locations` is now a read-only view that derives
+a user's location list through their owned items. It includes the source item ID so
+multiple item locations are not silently merged. This replaces the former writable
+user location table. No chat-to-item or chat-to-loan relationships are introduced.
 
-## Access rules
+## Loan dates and states
 
-- Signed-in users can discover basic profiles and avatars, so they can find friends. Email addresses and passwords stay in Supabase Auth.
-- Only the user can edit their profile and location. Locations and items are visible to their owner and accepted friends.
-- Only the recipient can accept a pending friendship request. Either participant can cancel, reject, or remove the relationship by deleting the row.
-- Only an item's owner can edit it, attach images, or create and return its loans.
-- Loan details are visible only to the borrower and owner. Other friends see availability without seeing the borrower's identity.
-- Images use private Storage buckets, with a 5 MB limit per JPEG, PNG, or WebP file. Database and Storage access both use row-level policies.
+`date_range` is a generated PostgreSQL date range containing both `starts_on` and
+`due_on`. A database exclusion constraint rejects overlapping ranges for the same
+item, including under concurrent writes. Ranges remain reserved in historical
+records after return. A loan ending on a date blocks another loan starting on that
+same date; the next loan may start the following day. Single-day loans are valid.
 
-Do not expose the `private` schema through the Supabase Data API. It contains policy helper functions. The migration explicitly sets function permissions and uses invoker security for the catalog view.
+`loan_catalog` adds a derived temporal status independent of the loan stage:
 
-## Create the free hosted database
+- `upcoming`: start date is later than the database's current date, and owner pickup has not occurred.
+- `current`: start date has arrived, and owner pickup has not occurred, even if overdue.
+- `past`: owner pickup is verified, regardless of the planned dates.
 
-1. Sign in at https://supabase.com/dashboard and create a project in a **Free** organization. Choose a suitable region and create the database password privately.
-2. Open SQL Editor and run `supabase/migrations/20261030000100_lending.sql` once in a new project. It creates the tables, access policies, signup trigger, functions, and image buckets in a transaction. Use migrations rather than rerunning the initial file on an existing schema.
-3. In a disposable development project, run `supabase/tests/lending.sql`. It rolls back its test users and rows. This verifies database behavior; it does not exercise real Storage uploads or authentication emails.
-4. Configure Supabase Auth's site URL, redirect URLs, and desired sign-in provider when a frontend exists.
-5. Copy `.env.example` to `.env` and supply the project URL and publishable key locally. Adapt the environment variable names to the frontend framework when chosen.
+`specific_status` is generated from verification milestones:
 
-The Free plan has usage limits and can pause inactive projects. Check the dashboard before a demo. See https://supabase.com/pricing for current limits.
+| Uploaded milestone | Required uploader | Resulting specific status |
+| --- | --- | --- |
+| `owner_dropoff` | Item owner | `pre_collection` |
+| `borrower_pickup` | Borrower | `on_loan` |
+| `borrower_dropoff` | Borrower | `on_loan` |
+| `owner_pickup` | Item owner | `returned`; temporal status becomes `past` |
+
+A new loan is `pre_collection` even before the first image. Exactly one image is
+permitted for each milestone, in this order. Completion therefore requires four
+images. A Storage insert trigger marks each step automatically in the same database
+transaction as its upload metadata. The client cannot directly write statuses,
+verification fields, or return timestamps. Uploaded verification images cannot be
+overwritten or deleted through client credentials.
+
+`item_catalog.status` is `on_loan` from verified borrower pickup until verified owner
+pickup; otherwise it is `available`. Availability does not promise that every date is
+free: future reservations still block their date ranges. An additional unique index
+prevents a second borrower pickup while the item is still physically on loan, even
+if that earlier loan is overdue and the planned date ranges do not overlap.
+
+## Reviews and inherited compliments
+
+The borrower may submit or edit one review embedded in their completed loan. Text
+is required (1–5000 characters); an image is optional. Compliments are selected from
+`Compliment 1`, `Compliment 2`, and `Compliment 3`. Duplicate selections in one review
+are removed, and values outside this list are rejected.
+
+`item_catalog.compliments` derives the item's compliment list from its loan reviews.
+`user_compliments` derives counts for each owner via their items. Repeated compliments
+across separate reviews count separately. These views expose compliments, not private
+borrower identities, review text, or verification images, to accepted friends.
 
 ## App operations
 
-These JavaScript examples assume an authenticated `supabase` client created with `@supabase/supabase-js`. Check `error` after every operation. No frontend framework or SDK dependency has been added yet.
+The examples assume an authenticated `@supabase/supabase-js` client. Check every
+returned `error`. The repository has no frontend implementation yet.
 
 ```js
-// Signup creates the profile automatically. Edit the display name afterward.
-await supabase.from('profiles').update({ display_name: 'Alice', username: 'alice' })
-  .eq('id', user.id)
+// User lists: owner items, borrowed loans, chats, friendships.
+await supabase.from('item_catalog').select('*').eq('owner_id', user.id)
+await supabase.from('loan_catalog').select('*').eq('borrower_id', user.id)
+await supabase.from('chats').select('*') // RLS restricts to participant records.
+await supabase.from('friendships').select('*') // RLS restricts to participant records.
+await supabase.from('user_locations').select('*').eq('user_id', user.id)
+await supabase.from('user_compliments').select('*').eq('user_id', user.id)
 
-// Set or update the user's current pickup location.
-await supabase.from('user_locations').upsert({ user_id: user.id, label: 'Campus' })
+// New items and users automatically receive their sprite.
+await supabase.from('items').insert({ name: 'Camera', description: 'With charger' })
+await supabase.from('item_locations').insert({
+  item_id: itemId, name: 'Campus', latitude: 1.2966, longitude: 103.7764
+})
+await supabase.from('sprites').update({ colour: '#ABCDEF' }).eq('id', spriteId)
 
-// Send a request; only the recipient can accept it.
+// Chat participants are immutable; each insert creates a new two-user chat.
+await supabase.from('chats').insert({ user_one_id: user.id, user_two_id: friendId })
 await supabase.from('friendships').insert({ requester_id: user.id, recipient_id: friendId })
 await supabase.from('friendships').update({ status: 'accepted' }).eq('id', requestId)
 
-// Create an item, then read items with inherited locations and availability.
-await supabase.from('items').insert({ name: 'Camera', description: 'With charger' })
-await supabase.from('item_catalog').select('*')
-
-// Owner records a handover. Use YYYY-MM-DD date strings.
+// Only the owner creates loans, to an accepted friend. Future dates are supported.
 await supabase.rpc('start_loan', {
   target_item: itemId, borrower: friendId,
-  start_date: '2026-10-30', due_date: '2026-11-06'
+  start_date: '2026-11-01', due_date: '2026-11-06'
 })
-await supabase.rpc('return_loan', { target_loan: loanId })
+await supabase.from('loans').update({ sprite_colour: '#AABBCC' }).eq('id', loanId)
+
+// The relevant participant uploads one image at the next milestone.
+// Successful upload automatically updates the database; no return/status RPC is needed.
+await supabase.storage.from('loan-verification')
+  .upload(`${loanId}/${milestone}/${crypto.randomUUID()}.jpg`, imageFile, { upsert: false })
+
+// After verified owner pickup, the borrower submits their review.
+await supabase.rpc('submit_loan_review', {
+  target_loan: loanId, body: 'Great item', compliments: ['Compliment 1'], image_path: null
+})
 ```
 
-For an avatar, upload a new unique filename to `profile-images/<user-id>/<filename>`, then set `profiles.avatar_path` to `<user-id>/<filename>`. For an item image, upload to `item-images/<user-id>/<item-id>/<filename>`, then insert an `item_images` row with that path and its `item_id`. Bucket names are not part of the stored path. Use UUID filenames and avoid overwriting objects; no Storage update policy is provided. To replace an image, upload a new object, update its database reference, and delete the old object through the Storage API. Reorder item images by deleting and reinserting their metadata with a new `sort_order`.
+To include a review image, first upload to `loan-review-images/<loan-id>/<filename>`
+as the borrower, then pass `<loan-id>/<filename>` to `submit_loan_review.image_path`.
+Use `.createSignedUrl(path, 60)` for private image display. Issued links work until
+expiry even if access subsequently changes.
 
-Read images with `storage.from(bucket).createSignedUrl(path, 60)`. An issued URL remains usable until its expiry even if friendship or image visibility changes. Remove image metadata before deleting the underlying object. Database deletions do not remove Storage objects automatically; delete files through the Storage API, not SQL.
+For avatars, upload to `profile-images/<user-id>/<filename>` and update
+`profiles.avatar_path` with `<user-id>/<filename>`. Item photos use
+`item-images/<user-id>/<item-id>/<filename>` and an `item_images` metadata row.
+Bucket names are not part of stored paths. All four image buckets are private and
+limit JPEG/PNG/WebP images to 5 MB. Verification/review images are private to the
+loan's owner and borrower. Basic profiles and avatars are discoverable by signed-in
+users; items, their photos, locations, and inherited compliments are visible to their
+owner and accepted friends. Only chat participants can read their chat records.
 
-If "asset" means a downloadable digital file rather than the physical object, add a separate private bucket and file metadata after defining who can download it.
+Do not expose the `private` or `supabase_migrations` schemas through the Data API.
+Do not put service-role keys or database passwords in frontend code or Git.
 
-## Validation status
+## Deployment and verification
 
-The initial migration was applied through the authenticated Supabase SQL Editor on
-30 October 2026 and recorded as version `20261030000100` (`lending`) in
-`supabase_migrations.schema_migrations`. Migration metadata is restricted from client
-roles. All six application tables have RLS enabled, and both image buckets are private.
-The local ignored `.env` contains the project URL and client publishable key; no
-database password or privileged key was retrieved or saved.
+The revised model was deployed on 30 October 2026 as migration `20261030000200`
+(`prototype_model`), following a successful rollback-only rehearsal. Its exact SQL
+source is recorded in restricted migration history.
 
-The integration tests passed against the hosted database, including
-profile creation, friend visibility, owner-only operations, date validation, duplicate
-active loans, overdue availability, inherited locations, loan-detail privacy, returns,
-and anonymous access denial. All synthetic test users and rows were rolled back.
+For a new project, apply migrations in filename order. For this existing project,
+apply only the new migration `20261030000200_prototype_model.sql` after the recorded
+initial migration `20261030000100_lending.sql`. The new migration refuses to silently
+reinterpret legacy loans or discard nonempty legacy user locations.
 
-The tests exercise PostgreSQL permissions and RLS with simulated authenticated roles;
-they do not verify real authentication emails or file uploads through the Storage API.
-The frontend and its Supabase SDK still need to be implemented.
+Run `supabase/tests/lending.sql` as postgres against a development database. It rolls
+back all synthetic users, rows, and Storage metadata fixtures. These tests verify
+schema constraints, RLS, sprite defaults and categories, duplicate chat/friend pairs,
+location/compliment inheritance, date overlap rejection, automatic milestone
+transitions, and loan/review privacy. Storage fixtures exercise the database trigger
+and policies without uploading physical files; real Storage API uploads and frontend
+flows require separate integration testing.

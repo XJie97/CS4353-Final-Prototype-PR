@@ -8,10 +8,12 @@ Clone this repository, then add the prototype source code and setup instructions
 
 ## Database
 
-The proposed Supabase schema supports profiles, friendships, user locations, items,
-images, and dated loans. See [database setup and app operations](docs/database.md).
+The Supabase schema supports profiles, sprites, two-user chats and friendships,
+item locations and images, and non-overlapping dated loans with four verification
+images and borrower reviews. See [database setup and app operations](docs/database.md).
 The schema is deployed to the **CS4353 Final Project** Supabase project
-(`ejgvfgvrmcwrixxdvwwt`). Database integration checks passed on 30 October 2026.
+(`ejgvfgvrmcwrixxdvwwt`). Migration `20261030000200` implements the revised model;
+database integration checks passed on 30 October 2026.
 
 ## Collaboration
 
