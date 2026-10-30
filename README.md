@@ -2,6 +2,13 @@
 
 Shared repository for the CS4353 final prototype.
 
+## Figma frontend
+
+The new Borrow Page / Home implementation is in [`frontend/`](frontend/README.md).
+Run `cd frontend && npm install && npm run dev` to open it at http://localhost:3001.
+It currently uses the Figma sample items; the existing Supabase starter below
+continues to run independently at port 3000.
+
 ## Getting started
 
 The starter is a React + TypeScript app built with Vite and connected to Supabase.
@@ -63,3 +70,4 @@ database integration checks passed on 30 October 2026.
 - Open a pull request to merge changes into `main`.
 - Use GitHub Issues to track tasks and bugs.
 - Keep passwords, API keys, and other secrets out of the repository.
+
