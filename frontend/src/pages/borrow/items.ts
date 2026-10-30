@@ -95,15 +95,16 @@ export const allItems = [mapFeaturedItem, nearbyCakeStand, ...itemCatalog];
 export const categories = [...new Set(allItems.map(item => item.category))];
 export const locations = [...new Set(allItems.map(item => item.location))];
 
-export function getBrowseItems(filters: BorrowFilters): BorrowItem[] {
+export function getBrowseItems(filters: BorrowFilters, catalog?: BorrowItem[]): BorrowItem[] {
   const isHome = !filters.query.trim() && filters.category === 'all' && filters.location === 'all' && !filters.friendsOnly;
-  return filterItems(isHome ? sampleItems : itemCatalog, filters);
+  const source = catalog ? (isHome ? [...catalog.filter(i => !allItems.some(base => base.id === i.id)), ...catalog.filter(i => sampleItems.some(base => base.id === i.id))] : catalog) : (isHome ? sampleItems : itemCatalog);
+  return filterItems(source, filters);
 }
 
-export function getSearchSuggestions(query: string, recent: string[]): string[] {
+export function getSearchSuggestions(query: string, recent: string[], catalog: BorrowItem[] = itemCatalog): string[] {
   const prefix = query.trim().toLocaleLowerCase();
   const featured = ['Cake stand', 'Cordless drill', 'Folding chairs', 'Projector', 'Vacuum Cleaner model Philips', 'Waffle maker'];
-  const candidates = prefix ? itemCatalog.map(item => item.name).sort((a, b) => a.localeCompare(b)) : featured;
+  const candidates = prefix ? catalog.map(item => item.name).sort((a, b) => a.localeCompare(b)) : [...featured.filter(name => catalog.some(item => item.name === name)), ...catalog.map(item => item.name)];
   const seen = new Set<string>();
   return [...recent, ...candidates].filter(value => {
     const normalized = value.trim().toLocaleLowerCase();

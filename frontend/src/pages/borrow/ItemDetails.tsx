@@ -1,7 +1,7 @@
 import { Icon } from '../../components/Icon';
 import type { BorrowItem } from './items';
 
-export function ItemDetails({ item, onBack }: { item: BorrowItem; onBack: () => void }) {
+export function ItemDetails({ item, onBack, onBorrow }: { item: BorrowItem; onBack: () => void; onBorrow?: () => void }) {
   return <>
     <header className="details-banner">
       <button type="button" className="plain-icon" aria-label="Back to results" onClick={onBack}><Icon name="back" width={24} /></button>
@@ -19,7 +19,7 @@ export function ItemDetails({ item, onBack }: { item: BorrowItem; onBack: () => 
           {item.isFriend && <span role="img" aria-label="Friend"><Icon name="owner-friend" width={25.615} height={15} /></span>}
         </div>
         {item.description && <p className="details-description">{item.description}</p>}
-        <div className="details-actions"><button type="button" disabled title="Borrow requests are not available in this preview">Borrow</button></div>
+        <div className="details-actions"><button type="button" disabled={!onBorrow} onClick={onBorrow}>Borrow</button></div>
       </div>
     </main>
   </>;

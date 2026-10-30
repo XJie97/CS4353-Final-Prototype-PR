@@ -1,13 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { Icon } from '../../components/Icon';
-import { getSearchSuggestions } from './items';
+import { getSearchSuggestions, type BorrowItem } from './items';
 
 type Props = {
-  value: string; recentSearches: string[];
+  value: string; recentSearches: string[]; catalog?: BorrowItem[];
   onChange: (value: string) => void; onSubmit: (value: string) => void; onClose: () => void;
 };
 
-export function SearchOverlay({ value, recentSearches, onChange, onSubmit, onClose }: Props) {
+export function SearchOverlay({ value, recentSearches, catalog, onChange, onSubmit, onClose }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -16,7 +16,7 @@ export function SearchOverlay({ value, recentSearches, onChange, onSubmit, onClo
     input.current?.focus();
     return () => node?.close();
   }, []);
-  const suggestions = getSearchSuggestions(value, recentSearches);
+  const suggestions = getSearchSuggestions(value, recentSearches, catalog);
   const prefix = value.trim();
 
   return (
