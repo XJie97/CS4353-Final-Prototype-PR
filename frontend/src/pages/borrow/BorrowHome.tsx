@@ -4,39 +4,41 @@ import { Icon } from '../../components/Icon';
 import { NeighborhoodMap } from './NeighborhoodMap';
 import { SearchOverlay } from './SearchOverlay';
 import { ItemDetails } from './ItemDetails';
-import { allItems, categories, locations, filterItems, getBrowseItems } from './items';
+import { allItems, categories, locations, filterItems, getBrowseItems, type BorrowItem } from './items';
 import { borrowReducer, initialBorrowState } from './flow';
 import './borrow.css';
 
-function itemFromHash() {
+function itemFromHash(source: BorrowItem[] = allItems) {
   if (typeof window === 'undefined') return undefined;
-  return allItems.find(item => window.location.hash === `#borrow/item/${item.id}`);
+  return source.find(item => window.location.hash === `#borrow/item/${item.id}`);
 }
 
-export default function BorrowHome() {
+export default function BorrowHome({ catalog = allItems, embedded = false, onRequest, onChat, onNotifications }: { catalog?: BorrowItem[]; embedded?: boolean; onRequest?: (id: string) => void; onChat?: () => void; onNotifications?: () => void }) {
+  const categories = [...new Set(catalog.map(item => item.category))];
+  const locations = [...new Set(catalog.map(item => item.location))];
   const [state, dispatch] = useReducer(borrowReducer, initialBorrowState, initial => {
-    const item = itemFromHash();
+    const item = itemFromHash(catalog);
     return item ? { ...initial, view: 'details' as const, itemId: item.id } : initial;
   });
   const scrollArea = useRef<HTMLElement>(null);
   const savedScroll = useRef(0);
   const lastOpenedItem = useRef<string | null>(null);
   const { filters } = state;
-  const visibleItems = getBrowseItems(filters);
-  const mapItems = filterItems(allItems, filters);
+  const visibleItems = getBrowseItems(filters, catalog);
+  const mapItems = filterItems(catalog, filters);
   const selected = mapItems.find(item => item.id === state.selectedMapId)
     ?? mapItems.find(item => item.id === 'cake-stand') ?? mapItems[0] ?? null;
-  const detailsItem = allItems.find(item => item.id === state.itemId);
+  const detailsItem = catalog.find(item => item.id === state.itemId);
 
   useEffect(() => {
     function handleBack() {
-      const item = itemFromHash();
+      const item = itemFromHash(catalog);
       if (item) lastOpenedItem.current = item.id;
-      dispatch(item ? { type: 'open-item', id: item.id } : { type: 'back-to-results' });
+      dispatch(item ? { type: 'open-item', id: item.id, knownItemIds: catalog.map(i => i.id) } : { type: 'back-to-results' });
     }
     window.addEventListener('popstate', handleBack);
     return () => window.removeEventListener('popstate', handleBack);
-  }, []);
+  }, [catalog]);
   useEffect(() => {
     if (state.view === 'details') document.getElementById('item-details')?.focus({ preventScroll: true });
     if (state.view === 'browse' && scrollArea.current) {
@@ -53,7 +55,7 @@ export default function BorrowHome() {
     savedScroll.current = scrollArea.current?.scrollTop ?? 0;
     lastOpenedItem.current = id;
     window.history.pushState(null, '', `#borrow/item/${id}`);
-    dispatch({ type: 'open-item', id });
+    dispatch({ type: 'open-item', id, knownItemIds: catalog.map(i => i.id) });
   }
   function backToResults() {
     if (window.location.hash.startsWith('#borrow/item/')) {
@@ -70,7 +72,7 @@ export default function BorrowHome() {
   }
 
   return (
-    <div className="borrow-app" id="borrow">
+    <div className={embedded ? "borrow-feature" : "borrow-app"} id="borrow">
       <a className="skip-link" href={state.view === 'details' ? '#item-details' : '#borrow-content'}>Skip to content</a>
       {state.view !== 'details' && <header className="top-banner">
         <button className="search-field search-trigger" type="button" aria-label="Search for an item"
@@ -79,8 +81,8 @@ export default function BorrowHome() {
           <Icon name="search" width={18} />
         </button>
         <div className="header-actions">
-          <button type="button" className="header-action" aria-label="Notifications (not available yet)" disabled><Icon name="notifications" width={35} /></button>
-          <button type="button" className="header-action" aria-label="Chats (not available yet)" disabled><Icon name="chat" width={35} /></button>
+          <button type="button" className="header-action" aria-label="Notifications" disabled={!onNotifications} onClick={onNotifications}><Icon name="notifications" width={35} /></button>
+          <button type="button" className="header-action" aria-label="Chats" disabled={!onChat} onClick={onChat}><Icon name="chat" width={35} /></button>
         </div>
       </header>}
 
@@ -127,9 +129,9 @@ export default function BorrowHome() {
           </div>}
         </section>
       </main>
-      {state.view === 'details' && detailsItem && <ItemDetails item={detailsItem} onBack={backToResults} />}
-      <BottomNavigation onBorrow={resetFilters} />
-      {state.view === 'search' && <SearchOverlay value={state.draftQuery} recentSearches={state.recentSearches}
+      {state.view === 'details' && detailsItem && <ItemDetails item={detailsItem} onBack={backToResults} onBorrow={onRequest ? () => onRequest(detailsItem.id) : undefined} />}
+      {!embedded && <BottomNavigation onBorrow={resetFilters} />}
+      {state.view === 'search' && <SearchOverlay catalog={catalog} value={state.draftQuery} recentSearches={state.recentSearches}
         onChange={value => dispatch({ type: 'edit-search', value })}
         onClose={() => dispatch({ type: 'close-search' })}
         onSubmit={query => dispatch({ type: 'submit-search', query })} />}
