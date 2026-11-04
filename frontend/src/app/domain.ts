@@ -8,6 +8,7 @@ export type Review = { rating: number; text: string; compliments: string[]; phot
 export type Loan = {
  id: string; itemId: string; ownerId: string; borrowerId: string; start: string; end: string; lockerId: string;
  status: LoanStatus; approvals: string[]; proofs: Partial<Record<ProofStep, Proof>>; code: string; createdAt: string;
+ previousPlan?: PlanInput;
  condition?: { result: 'good' | 'issue'; note: string; at: string; resolution?: string }; review?: Review;
 };
 export type Message = { id: string; from: string; to: string; text: string; at: string; read: boolean; loanId?: string };
@@ -47,7 +48,7 @@ export type Command =
  | {type:'record-proof';loanId:string;step:ProofStep;photo:string;code:string;lockerNumber:string}
  | {type:'verify-condition';loanId:string;condition:'good'|'issue';note:string}
  | {type:'resolve-condition';loanId:string;note:string}
- | {type:'submit-review';loanId:string;rating:number;text:string;compliments:string[];photo?:string}
+ | {type:'submit-review'|'edit-review';loanId:string;rating:number;text:string;compliments:string[];photo?:string}
  | {type:'send-message';to:string;text:string;loanId?:string}
  | {type:'read-thread';peerId:string}
  | {type:'read-notices';id?:string}
@@ -82,6 +83,7 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   case 'edit-plan':{
    const l=loanFor(command.loanId);requireValue(['requested','arranging','ready'].includes(l.status)&&!l.proofs.ownerDropoff,'The exchange plan can no longer be edited.');validatePlan(l.itemId,command,l.id);
    if(l.start===command.start&&l.end===command.end&&l.lockerId===command.lockerId)return original;
+   l.previousPlan={start:l.start,end:l.end,lockerId:l.lockerId};
    Object.assign(l,{start:command.start,end:command.end,lockerId:command.lockerId,approvals:[me],status:'arranging'});notify(me===l.ownerId?l.borrowerId:l.ownerId,`${name} proposed a new exchange plan.`,l.id);break;
   }
   case 'cancel-loan':case 'decline-loan':{
@@ -102,8 +104,8 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   case 'resolve-condition':{
    const l=loanFor(command.loanId);requireValue(me===l.ownerId&&l.status==='verifying'&&l.condition?.result==='issue','Only the owner can resolve this condition issue.');requireValue(command.note.trim().length>=5,'Add a short resolution note.');l.condition.resolution=command.note.trim().slice(0,2000);l.status='complete';notify(l.borrowerId,'The condition issue has been resolved. You can now leave a review.',l.id);break;
   }
-  case 'submit-review':{
-   const l=loanFor(command.loanId);requireValue(me===l.borrowerId&&l.status==='complete','Only the borrower can review a completed loan.');requireValue(!l.review,'You have already reviewed this loan.');requireValue(Number.isInteger(command.rating)&&command.rating>=1&&command.rating<=5,'Choose a rating from 1 to 5.');requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a review of up to 2000 characters.');requireValue(command.compliments.every(c=>COMPLIMENTS.includes(c)),'Choose one of the available compliments.');requireValue(!command.photo||photoValid(command.photo),'Choose a valid review photo.');l.review={rating:command.rating,text:command.text.trim(),compliments:[...new Set(command.compliments)],...(command.photo?{photo:command.photo}:{}),at:env.now};notify(l.ownerId,`${name} left a review.`,l.id);break;
+  case 'submit-review':case 'edit-review':{
+   const l=loanFor(command.loanId);requireValue(me===l.borrowerId&&l.status==='complete','Only the borrower can review a completed loan.');requireValue(command.type==='edit-review'?!!l.review:!l.review,command.type==='edit-review'?'No review exists to edit.':'You have already reviewed this loan.');requireValue(Number.isInteger(command.rating)&&command.rating>=1&&command.rating<=5,'Choose a rating from 1 to 5.');requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a review of up to 2000 characters.');requireValue(command.compliments.every(c=>COMPLIMENTS.includes(c)),'Choose one of the available compliments.');requireValue(!command.photo||photoValid(command.photo),'Choose a valid review photo.');l.review={rating:command.rating,text:command.text.trim(),compliments:[...new Set(command.compliments)],...(command.photo?{photo:command.photo}:{}),at:env.now};notify(l.ownerId,`${name} left a review.`,l.id);break;
   }
   case 'create-item':case 'edit-item':{
    const existing=s.items.find(i=>i.id===command.id);

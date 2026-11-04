@@ -36,12 +36,13 @@ function Application() {
  const catalog=useMemo(()=>store.items.filter(item=>item.listed&&item.ownerId!==store.activeUserId).map(item=>({...item,owner:store.people.find(p=>p.id===item.ownerId)?.name,isFriend:areFriends(store,store.activeUserId,item.ownerId)})),[store]);
  function navigate(page:Page,id?:string){window.history.pushState(null,'',`#${page}${id?'/'+encodeURIComponent(id):''}`);setRoute({page,...(id?{id}:{})});if(page==='borrow'&&!id)setHomeEpoch(n=>n+1);}
  useEffect(()=>{setRequestId(null);setHandoverId(null);setReviewId(null);document.querySelector<HTMLElement>('.app-header h1')?.focus({preventScroll:true});},[route.page,route.id]);
- function viewItem(id:string){window.history.pushState(null,'',`#borrow/item/${encodeURIComponent(id)}`);setHomeEpoch(n=>n+1);setRoute({page:'borrow'});}
+ function viewItem(id:string){window.history.pushState({fromFriend:true},'',`#borrow/item/${encodeURIComponent(id)}`);setHomeEpoch(n=>n+1);setRoute({page:'borrow'});}
  const me=store.people.find(p=>p.id===store.activeUserId)!;const requestItem=store.items.find(i=>i.id===requestId);
  const title=route.page==='loans'?(route.id?'Loan Details':'Your Loans'):route.page==='share'?'Your Shelf':route.page==='friends'?'Your Friends':route.page==='me'?'Your Profile':route.page==='chats'?(route.id?store.people.find(p=>p.id===route.id)?.name??'Chats':'Chats'):'Notifications';
  if(loading)return <div className="borrow-app"><main className="app-loading" role="status">Opening your community…</main></div>;
  return <div className="borrow-app"><div className="app-feature" hidden={route.page!=='borrow'}><BorrowHome key={`${me.id}-${homeEpoch}`} embedded catalog={catalog} onRequest={setRequestId} onChat={()=>navigate('chats')} onNotifications={()=>navigate('notifications')}/></div>
- {route.page!=='borrow'&&<><Header title={title} navigate={navigate} onBack={()=>navigate(route.id&&(route.page==='loans'||route.page==='chats')?route.page:'borrow')}/><RouteContent route={route} navigate={navigate} onItem={viewItem} onHandover={setHandoverId} onReview={setReviewId} onReset={()=>navigate('borrow')}/></>}
+ <div hidden={route.page!=='friends'}><FriendsPage onChat={id=>navigate('chats',id)} onItem={viewItem}/></div>
+ {route.page!=='borrow'&&<><Header title={title} navigate={navigate} onBack={()=>navigate(route.id&&(route.page==='loans'||route.page==='chats')?route.page:'borrow')}/>{route.page!=='friends'&&<RouteContent route={route} navigate={navigate} onItem={viewItem} onHandover={setHandoverId} onReview={setReviewId} onReset={()=>navigate('borrow')}/>}</>}
  <div className="preview-strip"><label>Preview account <select aria-label="Preview account" value={me.id} onChange={e=>{const result=perform({type:'switch-account',id:e.target.value});if(result.ok){setRequestId(null);navigate('borrow');}else toast(result.error);}}>{store.people.map(p=><option value={p.id} key={p.id}>{p.name}</option>)}</select></label><span>Local preview</span></div>
  {storageWarning&&<div className="storage-warning" role="status">{storageWarning}</div>}
  <BottomNavigation active={['chats','notifications'].includes(route.page)?'borrow':route.page} onNavigate={navigate}/>

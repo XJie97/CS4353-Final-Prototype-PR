@@ -58,6 +58,7 @@ export default function BorrowHome({ catalog = allItems, embedded = false, onReq
     dispatch({ type: 'open-item', id, knownItemIds: catalog.map(i => i.id) });
   }
   function backToResults() {
+    if(window.history.state?.fromFriend){window.history.back();return;}
     if (window.location.hash.startsWith('#borrow/item/')) {
       // A card click has a known results entry; direct links return locally.
       if (lastOpenedItem.current) { window.history.back(); return; }
