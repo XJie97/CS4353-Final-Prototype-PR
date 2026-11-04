@@ -1,3 +1,4 @@
+import { helpOutcome, visibleHelpRequests } from "../app/help-view";
 import { useState } from "react";
 import { useApp, uid } from "../app/context";
 import { LOCKERS, todayLocal } from "../app/domain";
@@ -10,6 +11,8 @@ export function HelpPage({
   onLoan: (id: string) => void;
 }) {
   const { store, perform } = useApp();
+  const [history, setHistory] = useState(false);
+  const requests = visibleHelpRequests(store, history);
   const [error, setError] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -86,14 +89,18 @@ export function HelpPage({
         </label>
         <button className="button primary">Post request</button>
       </form>
-      <h3>Community requests</h3>
-      {!(store.helpRequests ?? []).length && <p>No requests yet.</p>}
-      {(store.helpRequests ?? []).map((r) => (
+      <div className="button-row" aria-label="Request views">
+        <button className="button" aria-pressed={!history} onClick={() => setHistory(false)}>Community requests</button>
+        <button className="button" aria-pressed={history} onClick={() => setHistory(true)}>Your request history</button>
+      </div>
+      <h3>{history ? "Your request history" : "Community requests"}</h3>
+      {!requests.length && <p>{history ? "No historical requests yet." : "No open requests yet."}</p>}
+      {requests.map((r) => (
         <section className="plan-details" key={r.id}>
           <h3>{r.title}</h3>
           <p>{r.description}</p>
           <p>
-            {r.start} → {r.end} · {r.status}
+            {r.start} → {r.end} · {helpOutcome(store, r)}
           </p>
           {r.loanId && (
             <button className="button" onClick={() => onLoan(r.loanId!)}>
