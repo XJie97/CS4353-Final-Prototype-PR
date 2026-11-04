@@ -23,9 +23,9 @@ Upload). Install/authorize its GitHub integration for only
 | Preview branches | All non-production branches |
 | Access | Public production and preview URLs |
 
-Set `SKIP_DEPENDENCY_INSTALL=true` for both Production and Preview. The build
-command runs `npm ci` explicitly against the frontend lockfile, preventing the
-root app's pnpm settings from selecting a different installer.
+The build command runs `npm ci` explicitly against the frontend lockfile.
+Cloudflare may first auto-detect pnpm from the root application; the clean npm
+install replaces that dependency tree before testing and building.
 No Supabase variables or secrets are required. Cloudflare supplies
 `CF_PAGES_COMMIT_SHA`; Vite embeds its first seven characters in **Me → About this
 preview**. Local builds without that metadata show `local`.
