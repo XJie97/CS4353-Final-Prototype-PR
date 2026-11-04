@@ -18,12 +18,14 @@ Upload). Install/authorize its GitHub integration for only
 | Root directory | `frontend` |
 | Framework | Vite |
 | Node | 24, from `frontend/.node-version` |
-| Build command | `npm test && npm run test:rendered && npm run build` |
+| Build command | `npm ci && npm test && npm run test:rendered && npm run build` |
 | Build output | `dist` (relative to the root directory) |
 | Preview branches | All non-production branches |
 | Access | Public production and preview URLs |
 
-Use npm and the committed package-lock.json for automatic dependency installation.
+Set `SKIP_DEPENDENCY_INSTALL=true` for both Production and Preview. The build
+command runs `npm ci` explicitly against the frontend lockfile, preventing the
+root app's pnpm settings from selecting a different installer.
 No Supabase variables or secrets are required. Cloudflare supplies
 `CF_PAGES_COMMIT_SHA`; Vite embeds its first seven characters in **Me → About this
 preview**. Local builds without that metadata show `local`.
