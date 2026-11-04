@@ -1,8 +1,9 @@
 # Cloudflare Pages demo hosting
 
-Deployment status: repository prepared; Cloudflare login and Git integration setup
-must be completed before a public URL exists. The requested project name is
-`cs4353-demo`; record the actual URL here once Cloudflare assigns it.
+Public demo: **https://cs4353-demo.pages.dev/**.
+
+Cloudflare Pages project `cs4353-demo` is connected to the private GitHub repository.
+Production deploys from `main`; branch builds provide independent preview URLs.
 
 ## One-time setup
 

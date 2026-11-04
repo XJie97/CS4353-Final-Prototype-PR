@@ -164,7 +164,8 @@ show the current stage and the participant responsible for the next step.
 
 ## Testing a hosted version
 
-The [hosting guide](hosting.md) records the public demo address once deployed.
+Open the public demo at **https://cs4353-demo.pages.dev/**. The
+[hosting guide](hosting.md) describes deployments and previews.
 Use the stable demo for main, or a pull request preview link to test a proposed
 change. Each URL may have separate browser data; switching URLs can show different
 progress. Deployments do not automatically reset your saved activity.

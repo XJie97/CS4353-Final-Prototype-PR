@@ -117,5 +117,4 @@ browser binary and its remote browser could not reach the local dev server.
 ## Hosted group testing
 
 See [Cloudflare hosting and preview workflow](../docs/hosting.md) for deployment setup,
-pull-request testing and bug reports. The public URL will be recorded there after
-Cloudflare setup is completed.
+pull-request testing and bug reports. Try the public demo at **https://cs4353-demo.pages.dev/**.
