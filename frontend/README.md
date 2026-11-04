@@ -113,3 +113,9 @@ Rendered checks exercise the actual page router for eight views, ensure local
 assets exist, and generate a QR matrix. Browser visual verification and physical
 camera/device checks remain outstanding: this environment has no installed local
 browser binary and its remote browser could not reach the local dev server.
+
+## Hosted group testing
+
+See [Cloudflare hosting and preview workflow](../docs/hosting.md) for deployment setup,
+pull-request testing and bug reports. The public URL will be recorded there after
+Cloudflare setup is completed.

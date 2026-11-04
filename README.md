@@ -95,3 +95,9 @@ The locker interaction is simulated; real hardware and sprite rendering are futu
 
 Create a branch per feature, open a pull request to `main`, and keep changes within
 the relevant feature service and subview. Never put real credentials in source code.
+
+## Hosted group testing
+
+See [Cloudflare hosting and preview workflow](docs/hosting.md) for deployment setup,
+pull-request testing and bug reports. The public URL will be recorded there after
+Cloudflare setup is completed.

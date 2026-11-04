@@ -20,7 +20,7 @@ for(const [route,expected] of [
  [{page:'loans',id:'demo-active'},['Weighing scale','Show QR','Loan Start']],
  [{page:'share'},['Your items','Portable projector']],
  [{page:'friends'},['Friend requests','Your friends','Find people']],
- [{page:'me'},['About this preview','Edit profile','Reset preview data']],
+ [{page:'me'},['About this preview','Version:','Edit profile','Reset preview data']],
  [{page:'chats'},['Messages','New chat','Sarah']],
  [{page:'chats',id:'sarah'},['Type a message','Modify plan']],
  [{page:'notifications'},['Updates','Portable projector']],

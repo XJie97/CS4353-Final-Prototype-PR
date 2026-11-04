@@ -161,3 +161,14 @@ Try Eric borrowing Sarah's Cake stand:
 
 You can pause after any completed action and reopen the loan later. Its details
 show the current stage and the participant responsible for the next step.
+
+## Testing a hosted version
+
+The [hosting guide](hosting.md) records the public demo address once deployed.
+Use the stable demo for main, or a pull request preview link to test a proposed
+change. Each URL may have separate browser data; switching URLs can show different
+progress. Deployments do not automatically reset your saved activity.
+
+For a bug report, copy the URL and the version under **Me → About this preview**,
+then use the repository's **Demo bug report** template. Include your preview account,
+steps, expected and actual results, browser/device and a screenshot if possible.

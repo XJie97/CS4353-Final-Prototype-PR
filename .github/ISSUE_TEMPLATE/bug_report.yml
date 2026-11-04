@@ -1,0 +1,60 @@
+name: Demo bug report
+description: Report a problem while testing the community lending demo.
+title: "[Demo bug] "
+body:
+  - type: input
+    id: url
+    attributes:
+      label: Demo URL
+      description: Paste the production or pull-request preview URL.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Copy the version shown in Me → About this preview.
+    validations:
+      required: true
+  - type: dropdown
+    id: account
+    attributes:
+      label: Preview account
+      options:
+        - Eric
+        - Sarah
+        - Ben
+        - Maya
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include account switches and whether you started from reset data.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual result
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: e.g. Safari on iPhone, Chrome on Windows
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot or recording
+      description: Attach a screenshot here if possible. Include any visible error message.
