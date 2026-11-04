@@ -4,6 +4,9 @@ A complete local browser prototype of the borrowing and lending flows in
 [CS4353 PROJECT](https://www.figma.com/design/PNW1tzgY932Re3gpPiplcf/CS4353-PROJECT).
 The existing Supabase application in the repository root is independent.
 
+For a user-facing walkthrough of the screens and exchange journey, see
+[How to use the app](../docs/user-flow.md).
+
 ## Run
 
 Use Node.js 24 or newer:

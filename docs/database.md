@@ -1,5 +1,10 @@
 # Supabase database
 
+This schema serves the repository-root app only. The styled `frontend/` preview
+uses browser IndexedDB and does not read or write this database. Its loan states,
+locations and review rules differ; see [the project guide](project-guide.md).
+
+
 Project: **CS4353 Final Project**, reference `ejgvfgvrmcwrixxdvwwt`.
 The ignored `.env` contains the URL and browser-safe publishable key. Privileged
 keys and database passwords must never enter frontend code or Git. Do not expose

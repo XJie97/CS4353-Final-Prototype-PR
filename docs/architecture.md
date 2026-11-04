@@ -1,5 +1,11 @@
 # Feature frame architecture
 
+This document describes the Supabase application in root `src/`. The newer
+`frontend/` preview has a separate state model and persistence layer; see
+[the project guide](project-guide.md). Neither application currently calls the
+other's services.
+
+
 The five pages compose small feature services. Services accept the `DataGateway`
 interface; they do not own React state, query caches or page navigation. Supabase
 calls and authentication/storage details live in `src/core/gateway.ts`. The

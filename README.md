@@ -1,5 +1,24 @@
 # CS4353 - Final Prototype
 
+For a screen-by-screen explanation, read [How to use the app](docs/user-flow.md).
+
+## Choose an application
+
+The repository contains two independent React applications. Run commands from
+the directory of the application you want. Their accounts and data are separate.
+
+| Application | Directory | Local address | Data and identity |
+| --- | --- | --- | --- |
+| Styled community preview | `frontend/` | http://localhost:3001 | IndexedDB; switch between Eric, Sarah, Ben and Maya |
+| Supabase functionality frame | Repository root | http://localhost:3000 | Hosted database, private Storage and real email/password sessions |
+
+For the styled preview, run `cd frontend`, `npm ci`, then `npm run dev`. No
+environment variables are needed. See [preview setup and walkthrough](frontend/README.md).
+For the connected frame, follow the instructions below. The preview does not sync
+with Supabase. See [current project guide](docs/project-guide.md) for code locations,
+workflow differences and verification commands.
+
+
 A deliberately plain React + TypeScript frame connected to Supabase. The app has
 exactly five pages: **Borrow, Share, Loans, Friends, Me**. Item details, chats, QR
 handoffs, photos and reviews open within those pages.
