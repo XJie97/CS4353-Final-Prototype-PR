@@ -1,3 +1,4 @@
+import { validDate, AppError } from './validation.ts';
 import { applyHelp, type HelpCommand, type HelpRequest, type Offer } from './help.ts';
 import type { BorrowItem } from '../pages/borrow/items.ts';
 export type Person = { id: string; name: string; username: string; location: string; bio: string; avatar?: string; colour: string };
@@ -30,7 +31,7 @@ export function todayLocal() {
 }
 export function addDays(value: string, days: number) { const date=new Date(value+'T00:00:00Z');date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10); }
 export function dateLabel(value: string) { return new Intl.DateTimeFormat('en-SG',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T00:00:00Z')); }
-export function validDate(value: string) { return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value; }
+export { validDate, AppError } from './validation.ts';
 export function duration(start: string,end: string) { return Math.round((Date.parse(end)-Date.parse(start))/86400000)+1; }
 export function nextProof(loan: Loan) { return PROOF_STEPS.find(step=>!loan.proofs[step]); }
 export function proofActor(loan: Loan, step: ProofStep) { return step==='ownerDropoff'||step==='ownerPickup'?loan.ownerId:loan.borrowerId; }
@@ -38,7 +39,6 @@ export function handoverCode(loan: Loan,step: ProofStep) { return `CS4353:${loan
 export function loanGroup(loan: Loan): 'Pending'|'Active'|'Complete' { return ['requested','arranging'].includes(loan.status)?'Pending':['complete','declined','cancelled'].includes(loan.status)?'Complete':'Active'; }
 export function areFriends(s: Store,a: string,b: string) { return s.friends.some(f=>f.status==='accepted'&&((f.from===a&&f.to===b)||(f.to===a&&f.from===b))); }
 export function photoValid(photo: string) { return photo.length<=2_000_000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo); }
-export class AppError extends Error {}
 function requireValue(ok: unknown, message: string): asserts ok { if(!ok)throw new AppError(message); }
 export type PlanInput = { start: string; end: string; lockerId: string };
 export type Command = HelpCommand
@@ -61,7 +61,7 @@ export type Command = HelpCommand
  | {type:'update-profile';name:string;username:string;location:string;bio:string;avatar?:string};
 export type CommandEnv = { id: string; now: string; today: string };
 export function applyCommand(original: Store, command: Command, env: CommandEnv): Store {
- if(['post-help','close-help','offer-help','withdraw-offer','select-offer'].includes(command.type))return applyHelp(original,command as HelpCommand,env);
+ if(['post-help','close-help','offer-help','withdraw-offer','select-offer'].includes(command.type))return applyHelp(original,command as HelpCommand,env,applyCommand);
  const s=structuredClone(original), me=s.activeUserId;
  const person=(id:string)=>s.people.find(p=>p.id===id);
  const notify=(to:string,text:string,loanId?:string,peerId?:string)=>{s.notices.unshift({id:`${env.id}-${s.notices.length}`,to,text,...(loanId?{loanId}:{}),...(peerId?{peerId}:{}),at:env.now,read:false});};
