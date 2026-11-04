@@ -1,8 +1,9 @@
 # Cloudflare Pages demo hosting
 
-Deployment status: repository prepared; Cloudflare login and Git integration setup
-must be completed before a public URL exists. The requested project name is
-`cs4353-demo`; record the actual URL here once Cloudflare assigns it.
+Public demo: **https://cs4353-demo.pages.dev/**.
+
+Cloudflare Pages project `cs4353-demo` is connected to the private GitHub repository.
+Production deploys from `main`; branch builds provide independent preview URLs.
 
 ## One-time setup
 
@@ -17,12 +18,14 @@ Upload). Install/authorize its GitHub integration for only
 | Root directory | `frontend` |
 | Framework | Vite |
 | Node | 24, from `frontend/.node-version` |
-| Build command | `npm test && npm run test:rendered && npm run build` |
+| Build command | `npm ci && npm test && npm run test:rendered && npm run build` |
 | Build output | `dist` (relative to the root directory) |
 | Preview branches | All non-production branches |
 | Access | Public production and preview URLs |
 
-Use npm and the committed package-lock.json for automatic dependency installation.
+The build command runs `npm ci` explicitly against the frontend lockfile.
+Cloudflare may first auto-detect pnpm from the root application; the clean npm
+install replaces that dependency tree before testing and building.
 No Supabase variables or secrets are required. Cloudflare supplies
 `CF_PAGES_COMMIT_SHA`; Vite embeds its first seven characters in **Me → About this
 preview**. Local builds without that metadata show `local`.

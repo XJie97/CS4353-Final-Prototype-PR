@@ -99,5 +99,4 @@ the relevant feature service and subview. Never put real credentials in source c
 ## Hosted group testing
 
 See [Cloudflare hosting and preview workflow](docs/hosting.md) for deployment setup,
-pull-request testing and bug reports. The public URL will be recorded there after
-Cloudflare setup is completed.
+pull-request testing and bug reports. Try the public demo at **https://cs4353-demo.pages.dev/**.
