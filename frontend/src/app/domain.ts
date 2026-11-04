@@ -1,3 +1,4 @@
+import { applyHelp, type HelpCommand, type HelpRequest, type Offer } from './help.ts';
 import type { BorrowItem } from '../pages/borrow/items.ts';
 export type Person = { id: string; name: string; username: string; location: string; bio: string; avatar?: string; colour: string };
 export type Item = BorrowItem & { ownerId: string; listed: boolean; images: string[] };
@@ -14,7 +15,7 @@ export type Loan = {
 export type Message = { id: string; from: string; to: string; text: string; at: string; read: boolean; loanId?: string };
 export type Friendship = { id: string; from: string; to: string; status: 'pending' | 'accepted' };
 export type Notice = { id: string; to: string; text: string; at: string; read: boolean; loanId?: string; peerId?: string };
-export type Store = { version: 1; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
+export type Store = { version: 1; helpRequests?: HelpRequest[]; offers?: Offer[]; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
 export const LOCKERS = [
  { id: 'clementi', name: 'Clementi', label: 'Clementi Locker', number: '12' },
  { id: 'toa-payoh', name: 'Toa Payoh', label: 'Toa Payoh Locker', number: '08' },
@@ -40,7 +41,7 @@ export function photoValid(photo: string) { return photo.length<=2_000_000 && /^
 export class AppError extends Error {}
 function requireValue(ok: unknown, message: string): asserts ok { if(!ok)throw new AppError(message); }
 export type PlanInput = { start: string; end: string; lockerId: string };
-export type Command =
+export type Command = HelpCommand
  | {type:'switch-account';id:string}
  | ({type:'request-loan';id:string;itemId:string}&PlanInput)
  | ({type:'edit-plan';loanId:string}&PlanInput)
@@ -60,6 +61,7 @@ export type Command =
  | {type:'update-profile';name:string;username:string;location:string;bio:string;avatar?:string};
 export type CommandEnv = { id: string; now: string; today: string };
 export function applyCommand(original: Store, command: Command, env: CommandEnv): Store {
+ if(['post-help','close-help','offer-help','withdraw-offer','select-offer'].includes(command.type))return applyHelp(original,command as HelpCommand,env);
  const s=structuredClone(original), me=s.activeUserId;
  const person=(id:string)=>s.people.find(p=>p.id===id);
  const notify=(to:string,text:string,loanId?:string,peerId?:string)=>{s.notices.unshift({id:`${env.id}-${s.notices.length}`,to,text,...(loanId?{loanId}:{}),...(peerId?{peerId}:{}),at:env.now,read:false});};

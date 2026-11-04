@@ -19,6 +19,11 @@ export function decodeStore(raw:string):Store|null {
   if(!s.messages.every(m=>m&&text(m.text)&&timestamp(m.at)&&person(m.from)&&person(m.to)&&typeof m.read==='boolean'))return null;
   if(!s.friends.every(f=>f&&person(f.from)&&person(f.to)&&['pending','accepted'].includes(f.status)))return null;
   if(!s.notices.every(n=>n&&text(n.text)&&timestamp(n.at)&&person(n.to)&&typeof n.read==='boolean'))return null;
+  s.helpRequests??=[];s.offers??=[];
+  if(!Array.isArray(s.helpRequests)||!Array.isArray(s.offers)||!unique(s.helpRequests)||!unique(s.offers))return null;
+  if(!s.helpRequests.every(r=>person(r.borrowerId)&&text(r.title)&&text(r.description)&&validDate(r.start)&&validDate(r.end)&&r.end>=r.start&&['open','closed','selected'].includes(r.status)&&(r.loanId===undefined||s.loans.some(l=>l.id===r.loanId))))return null;
+  if(!s.offers.every(o=>person(o.ownerId)&&s.helpRequests!.some(r=>r.id===o.requestId)&&s.items.some(i=>i.id===o.itemId&&i.ownerId===o.ownerId)&&typeof o.withdrawn==='boolean'))return null;
+  if(!s.loans.every(l=>!l.previousPlan||(validDate(l.previousPlan.start)&&validDate(l.previousPlan.end)&&l.previousPlan.end>=l.previousPlan.start&&text(l.previousPlan.lockerId))))return null;
   return s;
  }catch{return null;}
 }
