@@ -44,3 +44,12 @@ test('legacy and extended snapshots retain messages, loans, reviews and offers',
  const next=decodeStore(JSON.stringify(old))!;assert.deepEqual(next.messages,old.messages);assert.deepEqual(next.loans,old.loans);
  const extended=fixture();const loaded=decodeStore(JSON.stringify(extended))!;assert.deepEqual(loaded,extended);assert.equal(decodeStore('{invalid'),null);
 });
+test('unreadable IndexedDB snapshot is retained and marked for recovery',async()=>{
+ const {loadStore}=await import('./storage.ts');
+ const descriptor=Object.getOwnPropertyDescriptor(globalThis,'indexedDB');let writes=0;
+ const database={objectStoreNames:{contains:()=>true},close:()=>{},transaction:()=>{
+  const tx:any={objectStore:()=>({get:()=>{const request:any={result:'{invalid'};queueMicrotask(()=>{request.onsuccess();queueMicrotask(()=>tx.oncomplete());});return request;},put:()=>{writes++;}})};return tx;
+ }};
+ Object.defineProperty(globalThis,'indexedDB',{configurable:true,value:{open:()=>{const request:any={result:database};queueMicrotask(()=>request.onsuccess());return request;}}});
+ try{const result=await loadStore();assert.equal(result.store,null);assert.equal(result.recoveryRequired,true);assert.match(result.warning!,/preserved/);assert.equal(writes,0);}finally{if(descriptor)Object.defineProperty(globalThis,'indexedDB',descriptor);else delete (globalThis as {indexedDB?:unknown}).indexedDB;}
+});
