@@ -163,6 +163,7 @@
 .shelf-card p { font-size:12px; color:var(--text-muted); margin:4px 0 8px; }
 .shelf-card .button { font-size:12px; min-height:28px; padding:4px 8px; }
 .friend-card { border:1px solid var(--line); padding:12px; border-radius:8px; background:#f6f9f2; margin:10px 0; }
+.friend-card>.button { margin-top:12px; }
 .friend-person { display:flex; gap:10px; align-items:center; background:transparent; border:0; padding:0; width:100%; text-align:left; }
 .friend-person>span:last-child { display:flex; flex-direction:column; gap:4px; }
 .friend-person small { color:var(--text-muted); font-size:12px; }
