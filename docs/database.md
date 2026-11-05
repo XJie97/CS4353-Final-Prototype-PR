@@ -34,11 +34,12 @@ Generated account passwords are in the ignored repository-root `.demo-accounts.t
 with private file permissions. Do not commit or paste them into reports. The
 temporary administrator key used for provisioning was removed.
 
-No Supabase dashboard changes are required for this setup. The next browser check
-is the two-user journey: run the styled frontend, use separate browser sessions
-for Eric and Sarah, and verify requests, approvals, photo handovers, messages and
-return verification. Hosted frontend environment variables and deployment are
-verified separately from this database setup.
+The connected hosted browser journey subsequently passed on 5 November 2026 at commit
+`4e7afab`: separate Eric/Sarah tabs, request and approval, four private photo uploads,
+return verification, review, realtime messages in both directions and reload
+persistence. See [hosting
+verification](hosting.md#hosted-browser-verification-5-november-2026) for the test
+record and limits. Production remains the older demo pending promotion.
 
 ## Current model
 

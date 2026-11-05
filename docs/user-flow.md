@@ -5,15 +5,22 @@ http://localhost:3001 when running locally. It explains the current preview's
 screens and actions. The separate Supabase functionality frame on port 3000 has
 a different handover process; its instructions are in the repository README.
 
+For the hosted link, account setup and reporting instructions, start with [Group
+testing](team-testing.md).
+
 ## Start with an account
 
-Choose Eric, Sarah, Ben or Maya using **Preview account** above the bottom
-navigation. Switching accounts lets you experience both sides of an exchange:
-the owner shares an item, and the borrower receives and returns it.
+Sign in with your assigned Eric, Sarah, Ben or Maya demo email and password. Credentials
+are distributed privately; do not put them in bug reports. For a two-person walkthrough,
+use separate browser profiles or devices and sign in as Eric in one and Sarah in the
+other. Avoid same-profile tabs for independent accounts until the auth event isolation
+issue in the [hosting guide](hosting.md) is fixed.
 
-Your changes are saved in this browser. Reloading normally restores your progress.
-Another device or browser will have its own preview. If a storage warning appears,
-keep the tab open because your latest changes may only last for that session.
+Changes are saved to Supabase and shared with other testers. Realtime updates refresh
+connected sessions. Reload to verify persistence. Login storage is tab-scoped; use
+separate browser profiles for different accounts because of the known auth-event issue.
+Use **Me → Sign out** when finished. Different deployment URLs can share the same
+backend and activity.
 
 ## Find your way around
 
@@ -131,44 +138,47 @@ In **Friends**, send a request to another person. The recipient can accept or
 decline it; the sender can cancel a pending request. You can also remove an
 accepted friendship, view another person's profile and listings, or open a chat.
 
-Chats show messages with the other person and cards for your shared loans.
-Those cards provide shortcuts to loan details and eligible plan changes.
-Unread indicators help you find new messages; opening a thread marks incoming
-messages as read. Notifications direct you to the related conversation, loan or
-friend requests. Messages and notices are local preview activity, so use account
-switching in this browser to see the recipient's view.
+Chats show messages with the other person and cards for your shared loans. Those cards
+provide shortcuts to loan details and eligible plan changes. Unread indicators help you
+find new messages; opening a thread marks incoming messages as read. Notifications
+direct you to the related conversation, loan or friend requests. Messages and notices
+are shared activity. Check the recipient’s separate signed-in session to verify
+delivery.
 
-## Update your profile or start again
+## Update your profile or sign out
 
 In **Me**, press **Edit profile** to change your display name, username, community,
 bio and optional profile photo. Save to update the profile. The page also shows
 your item, completed-loan and friend counts, with shortcuts to your loans and shelf.
 
-To restart the demonstration, choose **Reset preview data** in Me and confirm.
-This restores the sample accounts and removes the listings, photos, messages,
-reviews and loan changes saved in this browser's preview. This cannot be undone.
+Use **Me → Sign out** to end the current tab’s session. Shared listings, messages,
+photos and loans remain saved. There is no browser-only reset; coordinate new runs with
+teammates and select available dates.
 
 ## A suggested first walkthrough
 
 Try Eric borrowing Sarah's Cake stand:
 
 1. As Eric, find Cake stand in Borrow and request future dates and a locker.
-2. Switch to Sarah and accept the request in Loans → Pending → Sharing.
+2. In Sarah’s session, accept the request in Loans → Pending → Sharing.
 3. As Sarah, complete the owner dropoff using the preview code and a photo.
-4. Switch to Eric and complete pickup, then return, with a photo for each.
-5. Switch to Sarah, collect the return and verify its condition.
-6. Switch to Eric and leave an optional review under Loans → Complete.
+4. In Eric’s session, complete pickup, then return, with a photo for each.
+5. In Sarah’s session, collect the return and verify its condition.
+6. In Eric’s session, leave an optional review under Loans → Complete.
 
 You can pause after any completed action and reopen the loan later. Its details
 show the current stage and the participant responsible for the next step.
 
 ## Testing a hosted version
 
-Open the public demo at **https://cs4353-demo.pages.dev/**. The
-[hosting guide](hosting.md) describes deployments and previews.
-Use the stable demo for main, or a pull request preview link to test a proposed
-change. Each URL may have separate browser data; switching URLs can show different
-progress. Deployments do not automatically reset your saved activity.
+Use https://5d8e7fa9.cs4353-demo.pages.dev/ for the connected candidate at commit
+`4e7afab`. The branch alias is
+https://feature-database-integration.cs4353-demo.pages.dev/ and follows later successful
+branch builds. Production https://cs4353-demo.pages.dev/ remains the older demo until
+promotion. See the [hosting guide](hosting.md).
+
+All connected builds using the same Supabase project share activity. Deployments and URL
+changes do not reset it.
 
 For a bug report, copy the URL and the version under **Me → About this preview**,
 then use the repository's **Demo bug report** template. Include your preview account,

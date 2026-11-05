@@ -1,8 +1,11 @@
 # CS4353 community lending prototype
 
-A complete local browser prototype of the borrowing and lending flows in
-[CS4353 PROJECT](https://www.figma.com/design/PNW1tzgY932Re3gpPiplcf/CS4353-PROJECT).
-The existing Supabase application in the repository root is independent.
+A connected team-testing prototype of the borrowing and lending flows in [CS4353
+PROJECT](https://www.figma.com/design/PNW1tzgY932Re3gpPiplcf/CS4353-PROJECT). The
+existing Supabase application in the repository root is independent.
+
+For the hosted preview link, private-login setup and reporting instructions, start with
+[Group testing](../docs/team-testing.md).
 
 For a user-facing walkthrough of the screens and exchange journey, see
 [How to use the app](../docs/user-flow.md).
@@ -14,12 +17,17 @@ Use Node.js 24 or newer:
 ```sh
 cd frontend
 npm ci
+cp .env.example .env
+# Fill in the browser-safe publishable key in .env.
 npm run dev
 ```
 
-Open http://localhost:3001. No environment variables or accounts are required.
-The interface stays centered at the Figma mobile width on desktop and fits
-narrower phones. Content scrolls while navigation remains in place.
+Create an ignored `frontend/.env` with `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY` for the provisioned Supabase project. Use only the
+browser-safe publishable key. Open http://localhost:3001 and sign in with your assigned
+demo login; credentials are distributed privately. The interface stays centered at the
+Figma mobile width on desktop and fits narrower phones. Content scrolls while navigation
+remains in place.
 
 ## What works
 
@@ -28,7 +36,7 @@ narrower phones. Content scrolls while navigation remains in place.
 - **Loans:** Pending/Active/Complete lists for borrowing and sharing, owner
   acceptance/decline, cancellation before handover, counterproposals, and renewed
   approval when dates or location change. Date overlaps are rejected.
-- **Chat:** local conversations, unread/read state, loan cards and plan editing.
+- **Chat:** shared conversations, unread/read state, loan cards and plan editing.
   Notifications link to the correct conversation, loan or friend requests.
 - **Handover:** valid QR generation; optional camera scanning in supported
   browsers; manual-code fallback; locker number and item-photo confirmation.
@@ -41,7 +49,7 @@ narrower phones. Content scrolls while navigation remains in place.
 - **Friends:** requests, acceptance, decline, cancellation, removal, public
   profiles, shared listings and conversations.
 - **Me:** profile name, username, bio, location and avatar, activity summaries,
-  and a confirmed reset of the preview data.
+  and sign-out for the current tab.
 
 The left search control is a back arrow; the right control clears the draft.
 Suggestions and results use case-insensitive **starts with** matching on full
@@ -51,43 +59,49 @@ submitted query. Returning from item details preserves filters and scroll.
 
 ## Test the complete journey
 
-The **Preview account** selector above the bottom navigation switches between
-Eric, Sarah, Ben and Maya. Each account has its own loans, messages and notices,
-held together in this browser's preview state.
+Sign in as Eric and Sarah in separate browser profiles or devices. Changes are shared
+through Supabase. Avoid same-profile tabs for independent accounts until the auth event
+isolation issue documented in the hosting guide is fixed. Use the private
+repository-root `.demo-accounts.txt` for assigned credentials; never commit it or
+include passwords in reports.
 
 1. As **Eric**, search for `Cake stand`. Open Sarah's **Cake stand** in Clementi,
    press **Borrow**, select future dates and a locker, and send the request.
-2. Switch to **Sarah**, open **Loans → Pending**, and open Eric's request.
+2. In Sarah’s session, open **Loans → Pending**, and open Eric's request.
    Accept it, or edit the plan. An edit requires Eric's approval in his account.
 3. Once both approve, Sarah can use **Show QR** to drop off the item. Press
    **Use preview code**, then **Verify code**; record a locker number and photo.
-4. Switch to **Eric** and open **Loans → Active**. Complete pickup with the same
+4. In Eric’s session, open **Loans → Active**. Complete pickup with the same
    locker number and another photo. Repeat the flow to return the item.
 5. As **Sarah**, collect the returned item, add a photo, and verify its condition.
    If an issue is recorded, discuss it in chat and add a resolution note.
 6. As **Eric**, find the loan under **Complete** and leave a rating and review.
-7. Reload to check persistence. Use **Me → Reset preview data** to start again.
+7. Reload both sessions to check persistence. Sign out under **Me** when finished.
+   Test activity is shared; there is no browser-only reset. Coordinate another
+   run with teammates and choose dates that do not overlap existing reservations.
 
-Seed examples also include an incoming request for Eric's projector, an item
-ready for Eric to collect, a completed loan awaiting review, Sarah's welcome
-message, and Ben's friend request. These are illustrative records. Dates are
-relative to the day the preview is first created (Asia/Singapore).
+Seed examples also include an incoming request for Eric's projector, an item ready for
+Eric to collect, a completed loan awaiting review, Sarah's welcome message, and Ben's
+friend request. These are illustrative records. Dates are set when the shared dataset is
+provisioned (Asia/Singapore); existing records may have been advanced by other testers.
 
 ## Persistence and boundaries
 
-All new data, photos and messages stay in IndexedDB on **this browser and
-origin**. They are not shared with another device, synced across open tabs, or
-sent to Supabase. Storage errors are shown; in that case keep the tab open
-because changes may last only for the session. A reset replaces the saved
-preview after confirmation. There is no production authentication in this app.
+Data, photos and messages are saved to the shared Supabase project. Realtime
+subscriptions refresh other signed-in sessions. Production and preview builds configured
+with this project share the same backend; a different URL does not create an isolated
+test database. Sign-out clears the current tab’s session, without deleting shared
+activity. Closing the tab normally ends its stored session; browser session restore can
+restore tab storage. Sign out explicitly when finished.
 
 QRs encode the preview loan and handover step; the codes are **not secure access
-credentials**. No physical locker opens and no real message is sent. Preview
-handovers can advance without waiting for the scheduled day. Camera scanning
-requires browser support, permission, and a secure context (HTTPS or localhost);
-manual code entry always remains available. Uploads accept JPEG/PNG/WebP up to
-5 MB and are resized for local storage. The app does not include a production
-camera/locker backend, realtime delivery, or deployed account system.
+credentials**. No physical locker opens. In-app messages are saved and delivered to
+other testers; no external SMS or email is sent. Preview handovers can advance without
+waiting for the scheduled day. Camera scanning requires browser support, permission, and
+a secure context (HTTPS or localhost); manual code entry always remains available.
+Uploads accept JPEG/PNG/WebP up to 5 MB and are resized before upload to private
+Storage. The app uses provisioned Supabase accounts and private signed image URLs.
+Locker operations remain simulated; camera scanning depends on browser support.
 
 The map remains schematic; location filters do not calculate real distances.
 Share/Friends/Me and interactions absent from the design are inferred using the
@@ -106,15 +120,23 @@ npm run build
 npm run preview
 ```
 
-The tests cover permissions, approval changes, overlapping dates, all four
-handover steps, messages, friendship/listing/profile changes, review rules,
-corrupt saved state and a complete two-person flow serialized after every step.
-Rendered checks exercise the actual page router for eight views, ensure local
-assets exist, and generate a QR matrix. Browser visual verification and physical
-camera/device checks remain outstanding: this environment has no installed local
-browser binary and its remote browser could not reach the local dev server.
+The tests cover permissions, approval changes, overlapping dates, all four handover
+steps, messages, friendship/listing/profile changes, review rules, service failure
+handling and a complete two-person flow. Rendered checks exercise the actual page router
+for eight views, ensure local assets exist, and generate a QR matrix. Hosted browser
+journey verification is recorded separately from these local checks; physical
+camera/device checks remain separate.
 
 ## Hosted group testing
 
 See [Cloudflare hosting and preview workflow](../docs/hosting.md) for deployment setup,
-pull-request testing and bug reports. Try the public demo at **https://cs4353-demo.pages.dev/**.
+pull-request testing and bug reports. Production at **https://cs4353-demo.pages.dev/**
+remains the old demo until promotion. For connected team testing, use the verified
+feature-branch deployment link. The candidate deployment for commit `4e7afab` is
+https://5d8e7fa9.cs4353-demo.pages.dev/; Cloudflare deployment succeeded and the
+two-account hosted journey passed.
+
+
+The [hosting verification
+record](../docs/hosting.md#hosted-browser-verification-5-november-2026)
+contains the exact deployment, test data, results and remaining limitations.
