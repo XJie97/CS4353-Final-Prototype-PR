@@ -31,3 +31,47 @@ test('photo upload is reused when record finalization is retried',async()=>{
 test('loading uses shared repository state while static placeholder assets remain unchanged',async()=>{
  const f=fake();const store=await f.service.load();assert.equal(store.activeUserId,'eric');assert.equal(store.items[0].image.startsWith('/assets/'),true);assert.equal(f.calls[0].name,'demo_state');
 });
+
+test('photo signing is bounded and repeated paths and refreshes reuse valid URLs',async()=>{
+ let active=0;let peak=0;let signed=0;
+ const service=makeDemoServices({
+  rpc:async()=>{const store=createSeed('2026-11-05');store.items=store.items.slice(0,12).map((item,i)=>({...item,images:[`private/${i}.png`,`private/${i}.png`]}));return{data:store,error:null};},
+  storage:{from:()=>({createSignedUrl:async(path:string)=>{
+   signed++;active++;peak=Math.max(peak,active);
+   await new Promise(resolve=>setTimeout(resolve,2));active--;
+   return{data:{signedUrl:`https://images.example/${path}`},error:null};
+  }})},
+ } as unknown as SupabaseClient);
+ const [first,second]=await Promise.all([service.load(),service.load()]);
+ assert.equal(peak,4);assert.equal(signed,12);
+ assert.equal(first.items[0].images[0],second.items[0].images[1]);
+ await service.load();assert.equal(signed,12);
+});
+
+test('failed image signing can be retried on the next refresh',async()=>{
+ let attempts=0;
+ const service=makeDemoServices({
+  rpc:async()=>{const store=createSeed('2026-11-05');store.items=store.items.slice(0,1).map(item=>({...item,images:['private/image.png']}));return{data:store,error:null};},
+  storage:{from:()=>({createSignedUrl:async()=>++attempts===1?{error:new Error('too many connections')}:{data:{signedUrl:'https://images.example/retry'},error:null}})},
+ } as unknown as SupabaseClient);
+ await assert.rejects(service.load(),/too many connections/);
+ assert.equal((await service.load()).items[0].image,'https://images.example/retry');
+ assert.equal(attempts,2);
+});
+
+test('realtime bursts refresh once and unsubscribe cancels pending refreshes',async()=>{
+ const handlers:(()=>void)[]=[];let refreshes=0;let removed=0;
+ const channel={on(_event:unknown,_filter:unknown,handler:()=>void){handlers.push(handler);return channel;},subscribe(){return channel;}};
+ const service=makeDemoServices({
+  channel:()=>channel,
+  auth:{getSession:async()=>({data:{session:null}})},
+  removeChannel:async()=>{removed++;},
+ } as unknown as SupabaseClient);
+ const stop=service.subscribe(()=>{refreshes++;});
+ for(const handler of handlers){handler();handler();}
+ await new Promise(resolve=>setTimeout(resolve,180));
+ assert.equal(refreshes,1);
+ handlers[0]();stop();
+ await new Promise(resolve=>setTimeout(resolve,180));
+ assert.equal(refreshes,1);assert.equal(removed,1);
+});

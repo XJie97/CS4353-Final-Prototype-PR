@@ -1,14 +1,44 @@
 # Supabase database
 
-This schema serves the repository-root app only. The styled `frontend/` preview
-uses browser IndexedDB and does not read or write this database. Its loan states,
-locations and review rules differ; see [the project guide](project-guide.md).
+The repository-root app uses the original tables described below. The styled
+`frontend/` app now uses separate `demo_*` tables in the same Supabase project,
+with real sessions, private image Storage and Realtime. Its loan lifecycle remains
+separate from the root app's lifecycle.
 
 
 Project: **CS4353 Final Project**, reference `ejgvfgvrmcwrixxdvwwt`.
 The ignored `.env` contains the URL and browser-safe publishable key. Privileged
 keys and database passwords must never enter frontend code or Git. Do not expose
 the `private` or `supabase_migrations` schemas through the Data API.
+
+## Connected styled demo: verified 5 November 2026
+
+Migration `20261105000100_shared_demo.sql` is applied. Its exact source and version
+were recorded in migration history in the same transaction through the CLI SQL
+query endpoint; the CLI's direct database connection was unavailable.
+
+- `supabase/tests/shared_demo.sql` passed against the hosted database; all synthetic
+  fixtures rolled back. It covers loan transitions, overlapping reservations,
+  stale revisions, actor permissions, image attachment checks, private reads,
+  condition resolution, reviews and retry-safe messages.
+- Eric, Sarah, Ben and Maya are provisioned: four profiles, 39 listings and four
+  example loans, with the `styled-v1` seed completion marker present.
+- Each account passed live public-API sign-in, `demo_state`, signed seed-image
+  download and Realtime subscription checks. These checks do not establish
+  end-to-end event delivery or browser behavior.
+- The `demo-images` bucket is private, accepts JPEG/PNG/WebP up to 5 MB, and has
+  upload, read and unused-own-image deletion policies. All ten application tables
+  subscribed to by the frontend belong to `supabase_realtime`.
+
+Generated account passwords are in the ignored repository-root `.demo-accounts.txt`
+with private file permissions. Do not commit or paste them into reports. The
+temporary administrator key used for provisioning was removed.
+
+No Supabase dashboard changes are required for this setup. The next browser check
+is the two-user journey: run the styled frontend, use separate browser sessions
+for Eric and Sarah, and verify requests, approvals, photo handovers, messages and
+return verification. Hosted frontend environment variables and deployment are
+verified separately from this database setup.
 
 ## Current model
 

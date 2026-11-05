@@ -25,12 +25,31 @@ export function makeDemoServices(client:SupabaseClient):DemoServices {
  // Keep paths separate from expiring display URLs, including across edit retries.
  const paths=new Map<string,string>();
  const uploads=new Map<string,Promise<string>>();
+ const imageUrls=new Map<string,{expires:number;value:Promise<string>}>();
+ let signing=0;
+ const signingQueue:(()=>void)[]=[];
+ async function signImage(path:string):Promise<string>{
+  if(signing>=4)await new Promise<void>(resolve=>signingQueue.push(resolve));
+  else signing++;
+  try{
+   const result=await client.storage.from('demo-images').createSignedUrl(path,600);
+   if(result.error)throw result.error;
+   paths.set(result.data.signedUrl,path);return result.data.signedUrl;
+  }finally{
+   const next=signingQueue.shift();if(next)next();else signing--;
+  }
+ }
  const resolvePath=(value:string)=>paths.get(value)||value;
  async function display(path:string):Promise<string>{
   if(!path||path.startsWith('/assets/'))return path;
-  const result=await client.storage.from('demo-images').createSignedUrl(path,600);
-  if(result.error)throw result.error;
-  paths.set(result.data.signedUrl,path);return result.data.signedUrl;
+  let cached=imageUrls.get(path);
+  if(!cached||cached.expires<=Date.now()){
+   cached={expires:Date.now()+540_000,value:signImage(path)};
+   imageUrls.set(path,cached);
+   const entry=cached;
+   void entry.value.catch(()=>{if(imageUrls.get(path)===entry)imageUrls.delete(path);});
+  }
+  return cached.value;
  }
  async function upload(value:string,scope:string):Promise<string>{
   if(!value.startsWith('data:'))return resolvePath(value);
@@ -50,7 +69,7 @@ export function makeDemoServices(client:SupabaseClient):DemoServices {
   configured:true,
   observe(listener){const {data}=client.auth.onAuthStateChange((_event,session)=>listener(session?{id:session.user.id,email:session.user.email||''}:null));return()=>data.subscription.unsubscribe();},
   async signIn(email,password){const {error}=await client.auth.signInWithPassword({email,password});if(error)throw error;},
-  async signOut(){const {error}=await client.auth.signOut({scope:'local'});if(error)throw error;paths.clear();uploads.clear();},
+  async signOut(){const {error}=await client.auth.signOut({scope:'local'});if(error)throw error;paths.clear();uploads.clear();imageUrls.clear();},
   async load(){
    const {data,error}=await client.rpc('demo_state');if(error)throw error;
    const store=data as Store;
@@ -73,10 +92,12 @@ export function makeDemoServices(client:SupabaseClient):DemoServices {
   },
   subscribe(refresh){
    let active=true;
+   let timer:ReturnType<typeof setTimeout>|undefined;
+   const scheduleRefresh=()=>{if(!active||timer!==undefined)return;timer=setTimeout(()=>{timer=undefined;if(active)refresh();},150);};
    const channel=client.channel(`demo:${crypto.randomUUID()}`);
-   for(const table of tables)channel.on('postgres_changes',{event:'*',schema:'public',table:`demo_${table}`},refresh);
-   void client.auth.getSession().then(async({data})=>{if(!active||!data.session)return;await client.realtime.setAuth(data.session.access_token);if(active)channel.subscribe(status=>{if(status==='SUBSCRIBED')refresh();});}).catch(()=>{if(active)refresh();});
-   return()=>{active=false;void client.removeChannel(channel);};
+   for(const table of tables)channel.on('postgres_changes',{event:'*',schema:'public',table:`demo_${table}`},scheduleRefresh);
+   void client.auth.getSession().then(async({data})=>{if(!active||!data.session)return;await client.realtime.setAuth(data.session.access_token);if(active)channel.subscribe(status=>{if(status==='SUBSCRIBED')scheduleRefresh();});}).catch(()=>{if(active)refresh();});
+   return()=>{active=false;clearTimeout(timer);void client.removeChannel(channel);};
   },
  };
 }
