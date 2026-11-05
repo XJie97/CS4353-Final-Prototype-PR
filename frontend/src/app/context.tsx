@@ -1,17 +1,55 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { applyCommand, todayLocal, type Command, type Store } from './domain';
-import { createSeed } from './seed';
-import { loadStore, saveStore } from './storage';
-export const uid = () => crypto.randomUUID();
-type Result = {ok:true}|{ok:false;error:string};
-type AppContextValue={store:Store;loading:boolean;storageWarning:string;perform:(c:Command)=>Result;toast:(text:string)=>void;resetPreview:()=>void};
+import type { Command, Store } from './domain';
+import { configured, services, type DemoServices, type Identity } from '../services/demo';
+export const uid=()=>crypto.randomUUID();
+export type Result={ok:true}|{ok:false;error:string};
+const empty=():Store=>({version:1,activeUserId:'',people:[],items:[],loans:[],messages:[],friends:[],notices:[]});
+type AppContextValue={store:Store;loading:boolean;storageWarning:string;busy:boolean;identity:Identity|null;configured:boolean;perform:(c:Command)=>Promise<Result>;toast:(text:string)=>void;refresh:()=>Promise<void>;signIn:(email:string,password:string)=>Promise<void>;signOut:()=>Promise<void>};
 const Context=createContext<AppContextValue|null>(null);
-export function AppProvider({children}:{children:ReactNode}) {
- const [store,setStore]=useState(()=>createSeed(todayLocal()));const current=useRef(store);const [loading,setLoading]=useState(true);const [storageWarning,setStorageWarning]=useState('');const [message,setMessage]=useState('');const queue=useRef(Promise.resolve());
- useEffect(()=>{let live=true;loadStore().then(result=>{if(!live)return;const next=result.store??createSeed(todayLocal());current.current=next;setStore(next);setStorageWarning(result.warning??'');setLoading(false);}).catch(()=>{if(live){setStorageWarning('Browser storage is unavailable. Changes will last for this session only.');setLoading(false);}});return()=>{live=false;};},[]);
+export function AppProvider({children,initialStore,backend}:{children:ReactNode;initialStore?:Store;backend?:DemoServices}) {
+ const [store,setStore]=useState(initialStore??empty);const current=useRef(store);
+ const [identity,setIdentity]=useState<Identity|null>(initialStore?{id:initialStore.activeUserId,email:'test@example.test'}:null);
+ const [loading,setLoading]=useState(!initialStore&&configured);const [storageWarning,setWarning]=useState('');const [message,setMessage]=useState('');const [busy,setBusy]=useState(false);
+ const service=useRef<DemoServices|undefined>(backend);const generation=useRef(0);const refreshing=useRef<Promise<void>|null>(null);const pendingRefresh=useRef(false);const mounted=useRef(true);const acting=useRef(false);
+ const observedId=useRef<string|null|undefined>(undefined);
+ const requests=useRef(new Map<string,{id:string;revision:number|null}>());
+ const api=()=>service.current??(service.current=services());
+ async function refresh(){
+  if(refreshing.current){pendingRefresh.current=true;return refreshing.current;}
+  const epoch=generation.current;
+  const run=(async()=>{do{pendingRefresh.current=false;try{const next=await api().load();if(mounted.current&&epoch===generation.current){current.current=next;setStore(next);setWarning('');}}catch(error){if(mounted.current&&epoch===generation.current)setWarning(error instanceof Error?error.message:'Could not load shared data. Try again.');} }while(pendingRefresh.current&&mounted.current&&epoch===generation.current);})();
+  refreshing.current=run;try{await run;}finally{if(refreshing.current===run)refreshing.current=null;if(mounted.current&&epoch===generation.current)setLoading(false);}
+ }
+ useEffect(()=>{
+  mounted.current=true;if(initialStore)return()=>{mounted.current=false;};if(!configured&&!backend)return;
+  const stop=api().observe(next=>{const id=next?.id??null;if(observedId.current===id)return;observedId.current=id;generation.current++;requests.current.clear();current.current=empty();setStore(empty());setWarning('');setIdentity(next);setLoading(!!next);refreshing.current=null;});
+  return()=>{mounted.current=false;generation.current++;stop();};
+ },[]);
+ useEffect(()=>{
+  if(!identity||initialStore)return;
+  void refresh();const stop=api().subscribe(()=>void refresh());
+  const focus=()=>void refresh();window.addEventListener('focus',focus);
+  const timer=setInterval(focus,5*60*1000);
+  return()=>{stop();window.removeEventListener('focus',focus);clearInterval(timer);};
+ },[identity?.id]);
  useEffect(()=>{if(!message)return;const timer=setTimeout(()=>setMessage(''),5000);return()=>clearTimeout(timer);},[message]);
- function commit(next:Store){current.current=next;setStore(next);queue.current=queue.current.catch(()=>{}).then(()=>saveStore(next)).then(()=>setStorageWarning('')).catch(()=>setStorageWarning('Could not save to this browser. Keep this tab open; your changes are available for this session.'));}
- function perform(command:Command):Result {if(loading)return {ok:false,error:'Please wait while your saved preview loads.'};try{commit(applyCommand(current.current,command,{id:uid(),now:new Date().toISOString(),today:todayLocal()}));return {ok:true};}catch(error){return {ok:false,error:error instanceof Error?error.message:'Something went wrong. Please try again.'};}}
- return <Context.Provider value={{store,loading,storageWarning,perform,toast:setMessage,resetPreview:()=>{commit(createSeed(todayLocal()));setMessage('Preview reset.');}}}>{children}{message&&<div className="app-toast" role="status">{message}<button type="button" aria-label="Dismiss message" onClick={()=>setMessage('')}>×</button></div>}</Context.Provider>;
+ async function perform(command:Command):Promise<Result>{
+  if(acting.current||loading)return{ok:false,error:'Please wait for the current action to finish.'};
+  if(!identity)return{ok:false,error:'Sign in to continue.'};
+  if(command.type==='switch-account')return{ok:false,error:'Sign out and use your assigned account.'};
+  const key=JSON.stringify(command);let request=requests.current.get(key);
+  if(!request){const c=command as Command & {loanId?:string;id?:string};const target=c.loanId||c.id;
+   const record=c.loanId?current.current.loans.find(l=>l.id===c.loanId):command.type==='update-profile'?current.current.people.find(p=>p.id===identity.id):current.current.items.find(i=>i.id===target);
+   request={id:uid(),revision:record?.revision??null};requests.current.set(key,request);
+  }
+  acting.current=true;setBusy(true);const epoch=generation.current;
+  try{await api().execute(command,request.id,request.revision);requests.current.delete(key);await refresh();return epoch===generation.current?{ok:true}:{ok:false,error:'Session changed. Check the saved record after signing in.'};}
+  catch(error){await refresh();const text=error instanceof Error?error.message:'Could not save. Your changes have not been confirmed.';
+   // Keep the same key only for an uncertain transport failure; a server rejection needs a fresh revision.
+   if(!/fetch|network|timeout|connection/i.test(text))requests.current.delete(key);
+   return{ok:false,error:text};
+  }finally{acting.current=false;if(mounted.current)setBusy(false);}
+ }
+ return <Context.Provider value={{store,identity,loading,storageWarning,busy,configured:configured||!!backend||!!initialStore,perform,toast:setMessage,refresh,signIn:(email,password)=>api().signIn(email,password),signOut:()=>api().signOut()}}>{children}{message&&<div className="app-toast" role="status">{message}<button type="button" aria-label="Dismiss message" onClick={()=>setMessage('')}>×</button></div>}</Context.Provider>;
 }
 export function useApp(){const value=useContext(Context);if(!value)throw new Error('AppProvider is required.');return value;}

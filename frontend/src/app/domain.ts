@@ -1,11 +1,12 @@
 import type { BorrowItem } from '../pages/borrow/items.ts';
-export type Person = { id: string; name: string; username: string; location: string; bio: string; avatar?: string; colour: string };
-export type Item = BorrowItem & { ownerId: string; listed: boolean; images: string[] };
+export type Person = { revision?: number; id: string; name: string; username: string; location: string; bio: string; avatar?: string; colour: string };
+export type Item = BorrowItem & { revision?: number; ownerId: string; listed: boolean; images: string[] };
 export type ProofStep = 'ownerDropoff' | 'borrowerPickup' | 'borrowerDropoff' | 'ownerPickup';
 export type LoanStatus = 'requested' | 'arranging' | 'ready' | 'active' | 'returning' | 'verifying' | 'complete' | 'declined' | 'cancelled';
 export type Proof = { at: string; photo: string; actor: string; lockerNumber: string };
 export type Review = { rating: number; text: string; compliments: string[]; photo?: string; at: string };
 export type Loan = {
+ revision?: number;
  id: string; itemId: string; ownerId: string; borrowerId: string; start: string; end: string; lockerId: string;
  status: LoanStatus; approvals: string[]; proofs: Partial<Record<ProofStep, Proof>>; code: string; createdAt: string;
  condition?: { result: 'good' | 'issue'; note: string; at: string; resolution?: string }; review?: Review;
@@ -13,7 +14,7 @@ export type Loan = {
 export type Message = { id: string; from: string; to: string; text: string; at: string; read: boolean; loanId?: string };
 export type Friendship = { id: string; from: string; to: string; status: 'pending' | 'accepted' };
 export type Notice = { id: string; to: string; text: string; at: string; read: boolean; loanId?: string; peerId?: string };
-export type Store = { version: 1; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
+export type Store = { receivedReviews?: {id:string;ownerId:string;review:Review}[]; version: 1; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
 export const LOCKERS = [
  { id: 'clementi', name: 'Clementi', label: 'Clementi Locker', number: '12' },
  { id: 'toa-payoh', name: 'Toa Payoh', label: 'Toa Payoh Locker', number: '08' },
