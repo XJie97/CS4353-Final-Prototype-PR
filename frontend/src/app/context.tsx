@@ -15,3 +15,5 @@ export function AppProvider({children}:{children:ReactNode}) {
  return <Context.Provider value={{store,loading,storageWarning,perform,toast:setMessage,resetPreview:()=>{if(recoveryRequired.current){setMessage('Export and recover the saved snapshot before resetting. Existing data has been preserved.');return;}commit(createSeed(todayLocal()));setMessage('Preview reset.');}}}>{children}{message&&<div className="app-toast" role="status">{message}<button type="button" aria-label="Dismiss message" onClick={()=>setMessage('')}>×</button></div>}</Context.Provider>;
 }
 export function useApp(){const value=useContext(Context);if(!value)throw new Error('AppProvider is required.');return value;}
+// For components that also render outside AppProvider (e.g. standalone Borrow screens).
+export function useOptionalApp(){return useContext(Context);}

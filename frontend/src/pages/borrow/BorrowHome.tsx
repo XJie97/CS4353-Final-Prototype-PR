@@ -13,7 +13,7 @@ function itemFromHash(source: BorrowItem[] = allItems) {
   return source.find(item => window.location.hash === `#borrow/item/${item.id}`);
 }
 
-export default function BorrowHome({ catalog = allItems, embedded = false, onRequest, onChat, onNotifications }: { catalog?: BorrowItem[]; embedded?: boolean; onRequest?: (id: string) => void; onChat?: () => void; onNotifications?: () => void }) {
+export default function BorrowHome({ catalog = allItems, embedded = false, onRequest, onChat, onChatOwner, onViewLoan, onNotifications }: { catalog?: BorrowItem[]; embedded?: boolean; onRequest?: (id: string) => void; onChat?: () => void; onChatOwner?: (ownerId: string) => void; onViewLoan?: (loanId: string) => void; onNotifications?: () => void }) {
   const categories = [...new Set(catalog.map(item => item.category))];
   const locations = [...new Set(catalog.map(item => item.location))];
   const [state, dispatch] = useReducer(borrowReducer, initialBorrowState, initial => {
@@ -130,7 +130,7 @@ export default function BorrowHome({ catalog = allItems, embedded = false, onReq
           </div>}
         </section>
       </main>
-      {state.view === 'details' && detailsItem && <ItemDetails item={detailsItem} onBack={backToResults} onBorrow={onRequest ? () => onRequest(detailsItem.id) : undefined} />}
+      {state.view === 'details' && detailsItem && <ItemDetails item={detailsItem} onBack={backToResults} onBorrow={onRequest ? () => onRequest(detailsItem.id) : undefined} onChat={onChatOwner} onViewLoan={onViewLoan} />}
       {!embedded && <BottomNavigation onBorrow={resetFilters} />}
       {state.view === 'search' && <SearchOverlay catalog={catalog} value={state.draftQuery} recentSearches={state.recentSearches}
         onChange={value => dispatch({ type: 'edit-search', value })}
