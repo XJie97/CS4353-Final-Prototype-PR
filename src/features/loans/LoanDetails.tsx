@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
+import { CameraCapture } from "../../core/CameraCapture";
 import { services } from "../../core/services";
 import { useAuth } from "../auth/context";
 import { useItem, useLoan, useUser } from "../../core/hooks";
@@ -256,6 +257,7 @@ function PhotoCapture({
   step: PhotoStep;
   back: () => void;
 }) {
+  const [captured, setCaptured] = useState<File | null>(null);
   const saved = useRef<string | null>(null);
   const file = useRef<File | null>(null);
   const input = useRef<HTMLHeadingElement>(null);
@@ -263,9 +265,8 @@ function PhotoCapture({
     input.current?.focus();
   }, []);
   const save = useCommand("handoff", async (fd: FormData) => {
-    const chosen = fileValue(fd, "image");
-    // Require a selected evidence photo before attempting to upload.
-    if (!chosen) throw new Error("Choose an image.");
+    const chosen = captured;
+    if (!chosen) throw new Error("Capture an image first.");
     const answers = fd.getAll("answers").map(String);
     // Require every checklist answer before the owner's final pickup evidence.
     if (
@@ -294,8 +295,8 @@ function PhotoCapture({
         Photo: {STEP_LABELS[step]}
       </h3>
       <p>
-        The scan already advanced the status. Save this photo before the next
-        handoff.
+        The scan already advanced the status. Point your camera at the item in
+        the locker, take the photo, and save it before the next handoff.
       </p>
       {step === "owner_pickup" && (
         <p>
@@ -303,10 +304,7 @@ function PhotoCapture({
         </p>
       )}
       <form className="stack" onSubmit={formAction((fd) => save.mutate(fd))}>
-        <label>
-          Photo of item inside locker
-          <ImageInput required />
-        </label>
+        <CameraCapture onChange={setCaptured} />
         {step === "owner_pickup" && (
           <fieldset>
             <legend>Return checklist (version {loan.checklist.version})</legend>
@@ -319,7 +317,9 @@ function PhotoCapture({
             ))}
           </fieldset>
         )}
-        <button disabled={save.isPending}>Save handoff photo</button>
+        <button disabled={save.isPending || !captured}>
+          Save handoff photo
+        </button>
         <MutationState mutation={save} />
       </form>
     </section>
