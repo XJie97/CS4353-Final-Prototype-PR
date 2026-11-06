@@ -212,13 +212,3 @@ Live checks create temporary `[smoke]` rows; an administrator can remove these
 after reviewing the results. Uploaded test files are removed by the test workflow.
 Frontend unit/component tests and `pnpm build` provide local checks without hosted
 writes.
-On 6 November 2026, the locker handover change replaced user-entered locker
-numbers with a locker assigned by the simulated scan. The hosted project's
-recorded migration sources predate that wording, so `public.demo_command_base`
-was re-deployed through the dashboard SQL editor as a `create or replace`
-from the current `20261106000100` source (no new version was recorded).
-`shared_demo.sql` was re-run against the managed database and passed; the
-rollback-only transaction left no fixtures behind.
-
-The updated suites pass on a local `supabase db reset` stack; re-running
-`shared_demo.sql` against the managed database confirms the re-deployment.
