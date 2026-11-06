@@ -69,7 +69,7 @@ export function CameraCapture({
     setPhoto(image);
   }
   return (
-    <div>
+    <div className="camera-capture">
       <p>Photo of item inside locker</p>
       {photo ? (
         <img
@@ -97,26 +97,38 @@ export function CameraCapture({
         />
       )}
       {error && <p role="alert">{error}</p>}
-      {photo ? (
-        <button
-          type="button"
-          onClick={() => {
-            onChange(null);
-            setPhoto("");
-          }}
-        >
-          Retake image
-        </button>
-      ) : (
-        <button type="button" disabled={!ready} onClick={capture}>
-          Capture image
-        </button>
-      )}
-      {error && (
-        <button type="button" onClick={() => setAttempt((value) => value + 1)}>
-          Retry camera
-        </button>
-      )}
+      <div className="camera-actions">
+        {photo ? (
+          <button
+            className="camera-button"
+            type="button"
+            onClick={() => {
+              onChange(null);
+              setPhoto("");
+            }}
+          >
+            Retake image
+          </button>
+        ) : (
+          <button
+            className="camera-button camera-button-primary"
+            type="button"
+            disabled={!ready}
+            onClick={capture}
+          >
+            Capture image
+          </button>
+        )}
+        {error && (
+          <button
+            className="camera-button"
+            type="button"
+            onClick={() => setAttempt((value) => value + 1)}
+          >
+            Retry camera
+          </button>
+        )}
+      </div>
     </div>
   );
 }
