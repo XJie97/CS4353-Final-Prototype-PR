@@ -19,6 +19,7 @@ export function useRoute() {
   useEffect(() => {
     const fn = () => setRoute(parseRoute(location.pathname, location.search));
     addEventListener("popstate", fn);
+    // Normalize unknown URL paths to the borrow page.
     if (!PAGES.some((p) => location.pathname === `/${p}`))
       history.replaceState(
         null,

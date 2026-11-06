@@ -25,6 +25,7 @@ const fake = () =>
 
 describe("feature contracts", () => {
   it("normalizes category tags without UI-specific rules", () =>
+    // Verify that tag normalization trims, lowercases, drops blanks, and deduplicates.
     expect(normalizeTags([" Tools ", "tools", "", "BOOKS"])).toEqual([
       "tools",
       "books",
@@ -64,18 +65,21 @@ describe("feature contracts", () => {
       friendsOnly: true,
       friendIds: ["friend"],
     });
+    // Verify that item filtering returns only matching catalog IDs.
     expect(items.map((i) => i.id)).toEqual(["a"]);
+    // Verify that item loading performs one catalog query and one locker-link query.
     expect(api.list).toHaveBeenCalledTimes(2);
   });
   it("rejects malformed loan dates before calling the repository", async () => {
     const api = fake();
-    await expect(
+    await /* Verify that an end date before the start date rejects loan creation. */ expect(
       makeLoansService(api).createLoan("item", {
         startsOn: "2026-11-02",
         dueOn: "2026-11-01",
         lockerId: 1,
       }),
     ).rejects.toThrow("End date");
+    // Verify that invalid loan dates prevent any write RPC.
     expect(api.rpc).not.toHaveBeenCalled();
   });
   it("does not let a borrower supply another actor when creating a loan", async () => {
@@ -85,6 +89,7 @@ describe("feature contracts", () => {
       dueOn: "2026-11-02",
       lockerId: 2,
     });
+    // Verify that loan creation sends plan fields without a caller-supplied borrower identity.
     expect(api.rpc).toHaveBeenCalledWith("create_loan", {
       target_item: "item",
       start_date: "2026-11-01",
@@ -107,8 +112,11 @@ describe("feature contracts", () => {
       simulateScan: scan,
     });
     await service.simulateScan(qr);
+    // Verify that simulated scanning delegates the exact QR challenge to the scanner.
     expect(scan).toHaveBeenCalledWith(qr);
+    // Verify that scan confirmation alone does not upload a photo.
     expect(api.upload).not.toHaveBeenCalled();
+    // Verify that simulated scanning does not call the photo-recording RPC.
     expect(api.rpc).not.toHaveBeenCalled();
     await service.recordPhoto(
       "l",
@@ -116,6 +124,7 @@ describe("feature contracts", () => {
       "l/owner_dropoff/photo.jpg",
       [],
     );
+    // Verify that photo recording sends the expected loan, stage, storage path, and answers.
     expect(api.rpc).toHaveBeenCalledWith("record_handoff_photo", {
       target: "l",
       step: "owner_dropoff",
@@ -131,10 +140,13 @@ describe("feature contracts", () => {
     });
     await s.recordPhoto("l", "borrower_pickup", "existing.jpg", []);
     await s.recordPhoto("l", "borrower_pickup", "existing.jpg", []);
+    // Verify that retrying finalization with a saved path performs no new upload.
     expect(api.upload).not.toHaveBeenCalled();
+    // Verify that both finalization attempts reach the recording RPC.
     expect(api.rpc).toHaveBeenCalledTimes(2);
   });
   it("returns distinct friends while retaining duplicate relationships", () => {
+    // Verify that friend extraction deduplicates accepted links and excludes pending requests.
     expect(
       distinctFriends(
         [
@@ -161,6 +173,7 @@ describe("feature contracts", () => {
     const s = makeChatsService(api);
     await s.sendMessage("chat", "hello", null, "request");
     await s.sendMessage("chat", "hello", null, "request");
+    // Verify that sending a message uses its stable client request ID in the RPC.
     expect(api.rpc).toHaveBeenNthCalledWith(2, "send_message", {
       target_chat: "chat",
       text_body: "hello",
@@ -169,12 +182,15 @@ describe("feature contracts", () => {
     });
   });
   it("accepts images but rejects unsupported files and oversized uploads", () => {
+    // Verify that a JPEG MIME type maps to the jpg extension.
     expect(
       imageExtension(new File(["x"], "a.jpg", { type: "image/jpeg" })),
     ).toBe("jpg");
+    // Verify that a non-image PDF is rejected before upload.
     expect(() =>
       imageExtension(new File(["x"], "a.pdf", { type: "application/pdf" })),
     ).toThrow("JPEG");
+    // Verify that an image exceeding five megabytes is rejected before upload.
     expect(() =>
       imageExtension(
         new File([new Uint8Array(5242881)], "a.png", { type: "image/png" }),
