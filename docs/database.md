@@ -46,7 +46,7 @@ supabase db query --file supabase/tests/feature_frame.sql
 
 Use `--remote` only for an explicitly selected managed project. Both scripts create
 synthetic records inside a transaction and finish with rollback; do not remove that
-rollback. `lending.sql` targets a superseded lifecycle and is not the current suite.
+rollback.
 
 ## Connected styled demo: verified 5 November 2026
 
@@ -196,9 +196,6 @@ Run **`supabase/tests/feature_frame.sql`** as postgres in a development database
 It rolls back all synthetic users, rows and Storage metadata. It covers access
 policies, reservations, approval/revision checks, all four scan/photo transitions,
 final checklist/review gates, safe public reviews and chat retry/privacy rules.
-`supabase/tests/lending.sql` is retained as historical coverage for migration 002;
-it exercises the superseded automatic-upload workflow and is not the current suite.
-
 A separate live HTTP check verified real demo sign-ins, friend acceptance, item
 creation, reservations/overlap rejection, all four scans with real Storage uploads,
 review create/edit/delete, chat messages/image uploads, Realtime and outsider privacy.

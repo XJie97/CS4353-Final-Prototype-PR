@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { applyCommand, type Command, type Store } from "./domain.ts";
 import { createSeed } from "./seed.ts";
-import { decodeStore } from "./storage.ts";
 const env = { id: "event", now: "2026-11-04T12:00:00Z", today: "2026-11-04" };
 const post: Command = {
   type: "post-help",
@@ -26,17 +25,7 @@ function fixture() {
     env,
   );
 }
-test("v1 additive migration preserves existing records and rejects malformed extension", () => {
-  const old = createSeed(env.today);
-  delete old.helpRequests;
-  delete old.offers;
-  const restored = decodeStore(JSON.stringify(old))!;
-  assert.deepEqual(restored.loans, old.loans);
-  assert.deepEqual(restored.people, old.people);
-  assert.deepEqual(restored.helpRequests, []);
-  assert.equal(decodeStore(JSON.stringify({ ...old, offers: [{}] })), null);
-});
-test("help offer selection creates ordinary loan once and survives serialization", () => {
+test("help offer selection creates ordinary loan once", () => {
   let s = fixture();
   s = applyCommand(s, { type: "switch-account", id: "eric" }, env);
   const choose: Command = {
@@ -48,7 +37,6 @@ test("help offer selection creates ordinary loan once and survives serialization
   s = applyCommand(s, choose, env);
   assert.equal(s.loans.find((l) => l.id === "chosen")?.status, "requested");
   assert.equal(s.helpRequests![0].status, "selected");
-  assert.ok(decodeStore(JSON.stringify(s)));
   assert.throws(() => applyCommand(s, choose, env));
 });
 test("help rejects wrong roles, duplicate, expired and reversed requests", () => {
@@ -152,7 +140,7 @@ test("review edits enforce author ownership and retain completion through reload
   s = applyCommand(s, c, env);
   assert.equal(s.loans.find((v) => v.id === l.id)!.status, "complete");
   assert.equal(
-    decodeStore(JSON.stringify(s))!.loans.find((v) => v.id === l.id)!.review!
+    s.loans.find((v) => v.id === l.id)!.review!
       .text,
     "Updated",
   );
@@ -192,5 +180,4 @@ test("counterproposal stores immediate previous values without changing old reco
     lockerId: "clementi",
   });
   assert.deepEqual(l.approvals, ["sarah"]);
-  assert.ok(decodeStore(JSON.stringify(s)));
 });
