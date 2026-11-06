@@ -38,8 +38,8 @@ remains in place.
   approval when dates or location change. Date overlaps are rejected.
 - **Chat:** shared conversations, unread/read state, loan cards and plan editing.
   Notifications link to the correct conversation, loan or friend requests.
-- **Handover:** valid QR generation; optional camera scanning in supported
-  browsers; manual-code fallback; locker number and item-photo confirmation.
+- **Handover:** QR display for an external locker scanner; preview bypass for the
+  unimplemented device; locker number and item-photo confirmation.
   The sequence is owner drop-off → borrower pickup → borrower return → owner
   pickup. The next step is only available to its designated account.
 - **Returns and reviews:** owner condition checks, issue notes/resolution,
@@ -70,7 +70,7 @@ include passwords in reports.
 2. In Sarah’s session, open **Loans → Pending**, and open Eric's request.
    Accept it, or edit the plan. An edit requires Eric's approval in his account.
 3. Once both approve, Sarah can use **Show QR** to drop off the item. Press
-   **Use preview code**, then **Verify code**; record a locker number and photo.
+   **Simulate locker scan**; record a locker number and photo.
 4. In Eric’s session, open **Loans → Active**. Complete pickup with the same
    locker number and another photo. Repeat the flow to return the item.
 5. As **Sarah**, collect the returned item, add a photo, and verify its condition.
@@ -97,11 +97,12 @@ restore tab storage. Sign out explicitly when finished.
 QRs encode the preview loan and handover step; the codes are **not secure access
 credentials**. No physical locker opens. In-app messages are saved and delivered to
 other testers; no external SMS or email is sent. Preview handovers can advance without
-waiting for the scheduled day. Camera scanning requires browser support, permission, and
-a secure context (HTTPS or localhost); manual code entry always remains available.
+waiting for the scheduled day. The app displays a QR code for the external locker
+scanner; it does not request camera access to scan a QR code.
 Uploads accept JPEG/PNG/WebP up to 5 MB and are resized before upload to private
 Storage. The app uses provisioned Supabase accounts and private signed image URLs.
-Locker operations remain simulated; camera scanning depends on browser support.
+Locker operations remain simulated; the app displays the QR for an external locker
+scanner. Use **Simulate locker scan** to bypass the unimplemented device.
 
 The map remains schematic; location filters do not calculate real distances.
 Share/Friends/Me and interactions absent from the design are inferred using the

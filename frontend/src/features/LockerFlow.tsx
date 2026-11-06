@@ -1,84 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useApp } from '../app/context';
 import { handoverCode, LOCKERS, nextProof, proofActor, PROOF_LABELS } from '../app/domain';
 import { ErrorText, Glyph, Modal } from '../components/ui/shared';
 import { PhotoField } from '../components/ui/PhotoField';
 import { QrCode } from '../components/ui/QrCode';
 
-function Scanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void}) {
-    const {busy:saving}=useApp();const video=useRef<HTMLVideoElement>(null);const [error,setError]=useState('');
-
-    useEffect(
-        ()=>{let stream:MediaStream|undefined;let live=true;let timer:ReturnType<typeof setTimeout>;
-        const Constructor=(window as unknown as {
-            BarcodeDetector?:new(options:{formats:string[]})=>{
-                detect:(video:HTMLVideoElement)=>Promise<{rawValue:string}[]>}}).BarcodeDetector;
-
-        async function start(){
-            try {
-                if (!Constructor)
-                    throw new Error('QR scanning is not supported by this browser. Enter the code instead.');
-                stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
-
-                if (!live){
-                    stream.getTracks().forEach(track=>track.stop()); return;
-                }
-                if (!video.current) return;
-
-                video.current.srcObject=stream;
-                await video.current.play();
-                const detector=new Constructor({formats:['qr_code']});
-
-                async function scan(){
-                    if (!live||!video.current) return;
-                    try {
-                        const codes=await detector.detect(video.current);
-                        if (codes[0]) {
-                            onCode(codes[0].rawValue);return;
-                        }
-                    }
-                    catch{}
-                    if (live)
-                        timer=setTimeout(scan,250);
-                }
-
-                void scan();
-            }
-            catch(error) {
-                stream?.getTracks().forEach(track=>track.stop());
-                if(live)setError(error instanceof Error&&error.message.startsWith('QR scanning')?
-                error.message:'Camera unavailable. Allow camera access or enter the code instead.');
-            }
-        }
-
-        void start();
-        return()=>{
-            live=false;
-            clearTimeout(timer);
-            stream?.getTracks().forEach(track=>track.stop());
-        };
-        },[]
-    );
-
-    return (
-        <div className="scanner">
-            <video ref={video} playsInline muted/>
-            <ErrorText text={error}/>
-            <button disabled={saving} type="button" className="button" onClick={onClose}>Close camera</button>
-        </div>
-    );
-}
-
 export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>void;onDone:()=>void}) {
     const {store,perform,busy:saving}=useApp();
     const loan=store.loans.find(l=>l.id===loanId);
     const [step]=useState(()=>loan?nextProof(loan):undefined);
     const [phase,setPhase]=useState<'code'|'locker'|'photo'|'success'>('code');
-    const [code,setCode]=useState('');
     const [photo,setPhoto]=useState('');
     const [photoBusy,setPhotoBusy]=useState(false);
     const [error,setError]=useState('');
-    const [scanning,setScanning]=useState(false);
     const pickup=step==='borrowerPickup'||step==='ownerPickup';
     const previous=loan&&(step==='borrowerPickup'?loan.proofs.ownerDropoff:step==='ownerPickup'?loan.proofs.borrowerDropoff:undefined);
     const [lockerNumber,setLockerNumber]=useState(previous?.lockerNumber??LOCKERS.find(l=>l.id===loan?.lockerId)?.number??'12');
@@ -102,29 +36,10 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
             <p className="form-item-name">{item.title??item.name}</p>
             <QrCode value={expected}/>
             <p className="handover-token">{expected}</p>
-            <div className="button-row">
-                <button disabled={saving} className="button" type="button" onClick={()=>setScanning(true)}>
-                    <Glyph name="camera"/>Scan QR
-                </button>
-                <button disabled={saving} className="button" type="button" onClick={()=>setCode(expected)}>Use preview code</button>
-            </div>
-
-            {scanning&&
-                <Scanner onClose={()=>setScanning(false)} onCode={value=>{setCode(value);setScanning(false);}}/>}
-                <form onSubmit={async e=>{
-                    e.preventDefault();
-                    if(code.trim()!==expected){
-                        setError('This code does not match this loan and handover step.');
-                        return;
-                    }
-                    setError('');
-                    setPhase('locker');}}>
-                        <label>Handover code
-                            <input value={code} onChange={e=>setCode(e.target.value)} autoComplete="off" required/>
-                        </label>
-                        <ErrorText text={error}/>
-                        <button disabled={saving} className="button primary wide" type="submit">Verify code</button>
-                </form>
+            <p>Show this QR code to the locker scanner to open your locker.</p>
+            <p className="muted">For this preview, simulate the external locker scanning your code.</p>
+            <button disabled={saving} className="button primary wide" type="button"
+                onClick={()=>{setError('');setPhase('locker');}}>Simulate locker scan</button>
             </>}
 
             {phase==='locker'&&<>
@@ -161,7 +76,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
                 <button disabled={saving} className="button" type="button" onClick={()=>setPhase('locker')}>Back</button>
                 <button className="button primary" type="button" disabled={saving||!photo||photoBusy}
                     onClick={async()=>{
-                        const result=await perform({type:'record-proof',loanId,step,photo,code,lockerNumber});
+                        const result=await perform({type:'record-proof',loanId,step,photo,code:expected,lockerNumber});
                         if (!result.ok) setError(result.error);
                         else setPhase('success');
                 }}>Confirm {pickup?'pickup':'drop-off'}</button>

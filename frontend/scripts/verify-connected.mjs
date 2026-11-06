@@ -26,18 +26,18 @@ await writeFile(entry,[
  `export {createElement,act} from 'react';`,
  `export {createRoot} from 'react-dom/client';`,
  `export {createClient} from '@supabase/supabase-js';`,
- ...[['AppProvider','app/context.tsx'],['HelpPage','features/HelpPage.tsx'],['ReviewForm','features/ReviewForm.tsx'],['createSeed','app/seed.ts'],['makeDemoServices','services/demo.ts'],['tabAuthOptions','services/auth.ts']].map(([name,file])=>`export {${name}} from ${JSON.stringify(join(root,'src',file))};`),
+ ...[['AppProvider','app/context.tsx'],['HelpPage','features/HelpPage.tsx'],['ReviewForm','features/ReviewForm.tsx'],['LockerFlow','features/LockerFlow.tsx'],['createSeed','app/seed.ts'],['makeDemoServices','services/demo.ts'],['tabAuthOptions','services/auth.ts']].map(([name,file])=>`export {${name}} from ${JSON.stringify(join(root,'src',file))};`),
 ].join('\n'));
 await build({root,logLevel:'warn',build:{ssr:entry,outDir:out,emptyOutDir:true}});
 await writeFile(join(out,'package.json'),'{"type":"module"}\n');
 process.env.NODE_ENV='development';
-const {createElement:h,act,createRoot,createClient,AppProvider,HelpPage,ReviewForm,createSeed,makeDemoServices,tabAuthOptions}=await import(pathToFileURL(join(out,'cs4353-connected-entry.js')).href);
+const {createElement:h,act,createRoot,createClient,AppProvider,HelpPage,ReviewForm,LockerFlow,createSeed,makeDemoServices,tabAuthOptions}=await import(pathToFileURL(join(out,'cs4353-connected-entry.js')).href);
 const settle=()=>new Promise(resolve=>setTimeout(resolve,0));
 const noop=()=>{};
 let view;
-async function mount(component,backend){
+async function mount(component,backend,initialStore){
  view=createRoot(document.getElementById('root'));
- await act(async()=>{view.render(h(AppProvider,{backend},component));await settle();});
+ await act(async()=>{view.render(h(AppProvider,{backend,initialStore},component));await settle();});
 }
 async function unmount(){await act(async()=>view.unmount());}
 async function fill(node,value){
@@ -119,6 +119,24 @@ try{
  assert.notEqual(reoffered.id,offered.id,'a new offer after withdrawal must use a new record ID');
  await unmount();
 
+ // The app presents a QR for an external locker; no in-app scanner is needed.
+ const handover=snapshot.loans.find(l=>l.id==='demo-active');
+ const stages=['ownerDropoff','borrowerPickup','borrowerDropoff','ownerPickup'];
+ for(const [index,stage] of stages.entries()){
+  handover.proofs=Object.fromEntries(stages.slice(0,index).map(step=>[step,{at:'2026-11-05T02:00:00Z',photo:'/assets/item-placeholder.png',actor:step.startsWith('owner')?handover.ownerId:handover.borrowerId,lockerNumber:'12'}]));
+  handover.status=['ready','ready','active','returning'][index];
+  snapshot.activeUserId=stage.startsWith('owner')?handover.ownerId:handover.borrowerId;
+  await mount(h(LockerFlow,{loanId:handover.id,onClose:noop,onDone:noop}),backend,structuredClone(snapshot));
+  assert.ok(document.querySelector('[aria-label="Handover QR code"]'),`${stage} displays QR`);
+  assert.match(document.body.textContent,/Show this QR code to the locker scanner/);
+  assert.equal(document.querySelector('video'),null);
+  assert.equal(document.querySelector('input'),null,'QR presentation does not ask the user to enter or scan a code');
+  await act(async()=>{button('Simulate locker scan').click();await settle();});
+  assert.match(document.body.textContent,/Continue to item photo/);
+  assert.equal(document.querySelector('input').readOnly,index===1||index===3,'pickup uses the preceding drop-off locker');
+  await unmount();
+ }
+
  // Real Supabase Auth clients + separate tab stores: login, sign-out and reload.
  const secondDom=new JSDOM('',{url:'https://local.test/'});
  const authFetch=async(url,options)=>{
@@ -145,7 +163,7 @@ try{
   const reloaded=client(secondDom.window.sessionStorage);
   assert.equal((await reloaded.auth.getSession()).data.session.user.email,'sarah@example.test','reload retains the tab session');
  }finally{one();two();for(const c of clients){c.auth.stopAutoRefresh();await c.removeAllChannels();}secondDom.window.close();}
- console.log('Connected interaction checks passed: Help failure/pending/success, review editing/revisions, and real Supabase cross-tab auth isolation/reload.');
+ console.log('Connected interaction checks passed: Help failure/pending/success, review editing/revisions, all four external-scanner handovers, and real Supabase cross-tab auth isolation/reload.');
 }finally{
  if(view)await act(async()=>view.unmount());
  for(const channel of [...channels])channel.close();

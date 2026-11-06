@@ -85,9 +85,9 @@ There are four handovers, always in this order:
 
 For each handover:
 
-1. Press **Show QR**. In this preview, select **Use preview code**, then
-   **Verify code**. Alternatively, enter the matching handover code or use
-   **Scan QR** if your browser supports camera scanning.
+1. Press **Show QR** and present the displayed code to the external locker
+   scanner. The locker device is not implemented; select **Simulate locker scan**
+   to bypass it in this preview. The app does not scan the code with your camera.
 2. Check the locker location and number. For dropoff, record the locker number;
    for pickup, the number is taken from the preceding dropoff.
 3. Press **Continue to item photo** and add a photo showing the item's condition.
@@ -96,13 +96,13 @@ For each handover:
 
 The code must match this loan and this handover step. Each step needs its own
 photo, and the next participant cannot skip ahead. In this styled preview, the
-handover is recorded when you confirm the photo; verifying a code alone does
+handover is recorded when you confirm the photo; simulating the locker scan alone does
 not complete it. Closing an unfinished handover means you need to start that
 step again.
 
-Photos accept JPEG, PNG or WebP files up to 5 MB. Camera scanning depends on
-browser support and permission; the preview-code/manual-entry option is always
-available. These actions simulate the exchange: no physical locker opens.
+Photos accept JPEG, PNG or WebP files up to 5 MB. The displayed QR is intended
+for an external locker scanner. These actions simulate the exchange: no physical
+locker opens.
 
 ## Verify the return and leave a review
 

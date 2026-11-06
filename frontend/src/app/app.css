@@ -140,8 +140,6 @@
 .locker-location { text-align:center; color:var(--purple-primary); }
 .locker-number { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:18px; padding:20px; color:var(--purple-primary); }
 .locker-number strong { display:grid; place-items:center; width:160px; height:160px; border:2px solid var(--purple-primary); background:var(--green-panel); border-radius:16px; font-size:70px; }
-.scanner { padding:12px 0; }
-.scanner video { width:100%; max-height:220px; border-radius:8px; background:black; }
 .verification-success { text-align:center; padding:16px 0 4px; }
 .success-icon { display:inline-flex; padding:18px; border-radius:50%; background:var(--green-panel); color:var(--purple-primary); }
 .verification-success h3 { font-size:24px; }

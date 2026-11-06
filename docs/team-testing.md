@@ -41,8 +41,7 @@ future dates that do not conflict with another tester’s reservation.
    dates and a locker, then send the request.
 2. **Sarah:** open **Loans → Pending → Sharing** and accept Eric’s request.
    If either person edits the dates or locker, the other must approve again.
-3. **Sarah:** open the active loan, select **Show QR → Use preview code → Verify
-   code**, record a locker number, add an item photo and confirm drop-off.
+3. **Sarah:** open the active loan, select **Show QR → Simulate locker scan**, record a locker number, add an item photo and confirm drop-off.
 4. **Eric:** complete pickup, then return, through the same flow. Each handover
    needs its own photo; the pickup locker number comes from the prior drop-off.
 5. **Sarah:** collect the returned item, then verify its condition. If reporting
@@ -53,7 +52,8 @@ future dates that do not conflict with another tester’s reservation.
 
 Use a non-sensitive test photo (JPEG, PNG or WebP, up to 5 MB). Locker actions are
 simulated: no physical locker opens, and you can advance without waiting for the
-scheduled day. The manual preview code is sufficient; camera scanning is optional.
+scheduled day. The app displays the QR for an external locker scanner;
+**Simulate locker scan** bypasses that device in this preview.
 
 For other screens and actions, see the [full walkthrough](user-flow.md).
 
@@ -89,7 +89,7 @@ Follow-up checks passed for booking conflicts, plan reapproval, cancellation/dat
 release, issue resolution and photo upload at a 390 × 844 Chrome responsive viewport.
 
 Same-profile tab auth isolation failed on `4e7afab`; use the workaround above for that build. The current working candidate includes a fix verified with real Supabase Auth clients in local DOM tests. Your hosted acceptance test must still confirm it in a browser. Physical
-phone behavior and camera scanning are not established by the desktop responsive checks.
+phone behavior and integration with a physical locker scanner remain unverified.
 See the [hosting record](hosting.md#focused-preview-checks) for detailed evidence and
 remaining limitations.
 
