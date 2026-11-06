@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { appVersion } from '../app/version';
 import { useApp } from '../app/context';
 import { LOCKERS } from '../app/domain';
-import { Avatar, Confirm, ErrorText, Modal } from '../components/ui/shared';
+import { Avatar, ErrorText, Modal } from '../components/ui/shared';
 import { PhotoField } from '../components/ui/PhotoField';
 
 export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:()=>void;onReset:()=>void}) {
- 
-    const {store,perform,toast,resetPreview,storageWarning}=useApp();
+
+    const {store,perform,toast,signOut,storageWarning,busy:saving}=useApp();
     const me=store.people.find(p=>p.id===store.activeUserId)!;
     const [editing,setEditing]=useState(false);
-    const [reset,setReset]=useState(false);
+
     const [name,setName]=useState(me.name);
     const [username,setUsername]=useState(me.username);
     const [bio,setBio]=useState(me.bio);
@@ -27,7 +27,7 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
                 <Avatar person={me} size={88}/>
                 <h2>{me.name}</h2>
                 <p>@{me.username} · {me.location}</p><p>{me.bio}</p>
-                <button className="button" type="button" onClick={()=>{
+                <button disabled={saving} className="button" type="button" onClick={()=>{
                     setName(me.name);
                     setUsername(me.username);
                     setBio(me.bio);
@@ -44,32 +44,32 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
                 <span><strong>{friends}</strong>Friends</span>
             </div>
             <div className="profile-links">
-                <button type="button" onClick={onLoans}>Your loans 
+                <button disabled={saving} type="button" onClick={onLoans}>Your loans
                     <span>›</span>
                 </button>
-                <button type="button" onClick={onShare}>Manage your shelf 
+                <button disabled={saving} type="button" onClick={onShare}>Manage your shelf
                     <span>›</span>
                 </button>
             </div>
             <section className="preview-controls">
                 <h3>About this preview</h3>
                 <p>Version: <code>{appVersion}</code></p>
-                <p>This prototype saves changes on this browser. Use the account selector below to try borrower and lender actions. Messages and locker handovers stay in the preview.</p>
+                <p>This connected demo saves changes to the shared database. Sign in with your assigned account on each device. Locker handovers remain simulated.</p>
                 {storageWarning&&<ErrorText text={storageWarning}/>}
-                <button className="button danger" type="button" onClick={()=>setReset(true)}>Reset preview data</button>
+                <button disabled={saving} className="button danger" type="button" onClick={()=>void signOut().catch(e=>setError(e.message))}>Sign out</button>
             </section>
-            
+
             {editing&&<Modal title="Edit your profile" onClose={()=>setEditing(false)}>
-                <form onSubmit={e=>{
+                <form onSubmit={async e=>{
                     e.preventDefault();
-                    const result=perform({type:'update-profile',name,username,location,bio,...(avatar?{avatar}:{})});
-                    if(!result.ok) { 
+                    const result=await perform({type:'update-profile',name,username,location,bio,...(avatar?{avatar}:{})});
+                    if(!result.ok) {
                         setError(result.error);
                         return;
                     }
                     toast('Profile updated.');setEditing(false);
                 }}>
-                    
+
                     <label>Display name
                         <input value={name} onChange={e=>setName(e.target.value)} maxLength={80} required/>
                     </label>
@@ -86,21 +86,15 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
                     </label>
 
                     <PhotoField label="Profile photo (optional)" value={avatar} onChange={setAvatar} onBusyChange={setBusy}/>
-                    
+
                     <ErrorText text={error}/>
-                    
+
                     <div className="form-actions">
-                        <button className="button" type="button" onClick={()=>setEditing(false)}>Cancel</button>
-                        <button className="button primary" type="submit" disabled={busy}>Save profile</button>
+                        <button disabled={saving} className="button" type="button" onClick={()=>setEditing(false)}>Cancel</button>
+                        <button className="button primary" type="submit" disabled={saving||busy}>Save profile</button>
                     </div>
                 </form>
             </Modal>
         }
-        {reset&&<Confirm 
-            title="Reset this preview?" 
-            text="This removes the messages, photos, listings, reviews and loan changes saved in this preview and restores the sample accounts. This cannot be undone." 
-            onClose={()=>setReset(false)} 
-            onConfirm={()=>{resetPreview();setReset(false);onReset();
-        }}/>}
     </main>
 );}

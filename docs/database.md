@@ -1,14 +1,78 @@
 # Supabase database
 
-This schema serves the repository-root app only. The styled `frontend/` preview
-uses browser IndexedDB and does not read or write this database. Its loan states,
-locations and review rules differ; see [the project guide](project-guide.md).
+The repository-root app uses the original tables described below. The styled
+`frontend/` app now uses separate `demo_*` tables in the same Supabase project,
+with real sessions, private image Storage and Realtime. Its loan lifecycle remains
+separate from the root app's lifecycle.
 
 
 Project: **CS4353 Final Project**, reference `ejgvfgvrmcwrixxdvwwt`.
 The ignored `.env` contains the URL and browser-safe publishable key. Privileged
 keys and database passwords must never enter frontend code or Git. Do not expose
 the `private` or `supabase_migrations` schemas through the Data API.
+
+## Connected completion: verified 6 November 2026
+
+Migration `20261106000100_connected_completion.sql` adds `demo_help_requests` and
+`demo_offers`, member-only reads and Realtime publication. Existing `demo_state` and
+`demo_command` RPC names remain unchanged. Help commands enforce roles, request
+closure, listed-item ownership, dates and availability. Request-row locks serialize
+selection/closure/withdrawal; ordinary loan creation and request selection commit
+atomically. Cancellation never reopens selected Help history.
+
+The command dispatcher also supports borrower-only `edit-review` with the existing
+loan revision and request-key rules. An edit can keep, replace or remove its photo
+without reopening the completed loan. `demo_command_base` is an internal helper;
+`anon` and `authenticated` cannot execute it directly.
+
+The migration was rehearsed with all earlier migrations on disposable Supabase
+PostgreSQL 17.11, then tested in a rollback-only transaction against the managed
+project. It was applied with exact SQL stored in migration history in the same
+transaction. Both current suites (`shared_demo.sql`, `feature_frame.sql`) passed
+locally and against managed Supabase after deployment; synthetic fixtures rolled back.
+Local Storage uses a minimal SQL fixture; managed checks exercise the real policies.
+Physical files, cameras and hosted browser acceptance are separate checks.
+
+To repeat the current SQL suites on a disposable, migrated local Supabase stack:
+
+```sh
+supabase db query --file supabase/tests/shared_demo.sql
+supabase db query --file supabase/tests/feature_frame.sql
+```
+
+Use `--remote` only for an explicitly selected managed project. Both scripts create
+synthetic records inside a transaction and finish with rollback; do not remove that
+rollback. `lending.sql` targets a superseded lifecycle and is not the current suite.
+
+## Connected styled demo: verified 5 November 2026
+
+Migration `20261105000100_shared_demo.sql` is applied. Its exact source and version
+were recorded in migration history in the same transaction through the CLI SQL
+query endpoint; the CLI's direct database connection was unavailable.
+
+- `supabase/tests/shared_demo.sql` passed against the hosted database; all synthetic
+  fixtures rolled back. It covers loan transitions, overlapping reservations,
+  stale revisions, actor permissions, image attachment checks, private reads,
+  condition resolution, reviews and retry-safe messages.
+- Eric, Sarah, Ben and Maya are provisioned: four profiles, 39 listings and four
+  example loans, with the `styled-v1` seed completion marker present.
+- Each account passed live public-API sign-in, `demo_state`, signed seed-image
+  download and Realtime subscription checks. These checks do not establish
+  end-to-end event delivery or browser behavior.
+- The `demo-images` bucket is private, accepts JPEG/PNG/WebP up to 5 MB, and has
+  upload, read and unused-own-image deletion policies. All ten application tables
+  subscribed to by the frontend belong to `supabase_realtime`.
+
+Generated account passwords are in the ignored repository-root `.demo-accounts.txt`
+with private file permissions. Do not commit or paste them into reports. The
+temporary administrator key used for provisioning was removed.
+
+The connected hosted browser journey subsequently passed on 5 November 2026 at commit
+`4e7afab`: separate Eric/Sarah tabs, request and approval, four private photo uploads,
+return verification, review, realtime messages in both directions and reload
+persistence. See [hosting
+verification](hosting.md#hosted-browser-verification-5-november-2026) for the test
+record and limits. Production remains the older demo pending promotion.
 
 ## Current model
 

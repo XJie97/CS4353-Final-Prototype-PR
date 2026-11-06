@@ -9,7 +9,7 @@ function timeLabel(value:string){return new Intl.DateTimeFormat('en-SG',{hour:'n
 
 export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:string)=>void;onLoan:(id:string)=>void}) {
  
-    const {store,perform,toast}=useApp();
+    const {store,perform,toast,busy:saving}=useApp();
     const me=store.activeUserId;const [draft,setDraft]=useState('');
     const [error,setError]=useState('');
     const [compose,setCompose]=useState(false);
@@ -20,7 +20,7 @@ export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:stri
     const messages=peer?store.messages.filter(m=>(m.from===me&&m.to===peer.id)||(m.from===peer.id&&m.to===me)):[];
     const unread=peer?messages.some(m=>m.to===me&&!m.read)||store.notices.some(n=>n.to===me&&n.peerId===peer.id&&!n.read):false;
  
-    useEffect(()=>{if(peer&&unread)perform({type:'read-thread',peerId:peer.id});},[peerId,unread]);
+    useEffect(()=>{if(peer&&unread)void perform({type:'read-thread',peerId:peer.id}).then(r=>{if(!r.ok)setError(r.error);});},[peerId,unread]);
  
     useEffect(()=>{bottom.current?.scrollIntoView({block:'end'});},[peerId,messages.length]);
 
@@ -40,7 +40,7 @@ export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:stri
             <main className="app-scroll">
                 <div className="section-heading">
                 <h2>Messages</h2>
-                    <button className="button" type="button" onClick={()=>setCompose(true)}>
+                    <button disabled={saving} className="button" type="button" onClick={()=>setCompose(true)}>
                     <Glyph name="plus"/>New chat</button>
                 </div>
                 
@@ -48,7 +48,7 @@ export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:stri
                     const person=store.people.find(p=>p.id===id)!;const thread=store.messages.filter(m=>(m.from===me&&m.to===id)||(m.to===me&&m.from===id));
                     const last=thread.at(-1)!;const count=thread.filter(m=>m.to===me&&!m.read).length;
                     return (
-                        <button className="conversation-row" key={id} type="button" onClick={()=>onOpen(id)}>
+                        <button disabled={saving} className="conversation-row" key={id} type="button" onClick={()=>onOpen(id)}>
                             <Avatar person={person} size={46}/>
                             <span><strong>{person.name}</strong>
                                 <span className="conversation-preview">{last.from===me?'You: ':''}{last.text}</span>
@@ -64,7 +64,7 @@ export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:stri
                     <Modal title="New conversation" onClose={()=>setCompose(false)}>
                         <div className="person-list">
                         {store.people.filter(p=>p.id!==me).map(person=>
-                            <button className="person-row" type="button" key={person.id} onClick={()=>{setCompose(false);onOpen(person.id);}}>
+                            <button disabled={saving} className="person-row" type="button" key={person.id} onClick={()=>{setCompose(false);onOpen(person.id);}}>
                                 <Avatar person={person}/><strong>{person.name}</strong><Glyph name="chevron" size={16}/>
                             </button>)
                         }
@@ -82,14 +82,14 @@ export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:stri
         <p>{dateLabel(loan.start)} – {dateLabel(loan.end)}</p>
         <span className="status-label">{statusLabel[loan.status]}</span>
         <div className="button-row">
-            <button className="button" type="button" onClick={()=>onLoan(loan.id)}>View loan</button>
+            <button disabled={saving} className="button" type="button" onClick={()=>onLoan(loan.id)}>View loan</button>
             
             {['requested','arranging','ready'].includes(loan.status)&&!loan.proofs.ownerDropoff&&
-                <button className="button accent" type="button" onClick={()=>setEditing(loan)}>Modify plan</button>}
+                <button disabled={saving} className="button accent" type="button" onClick={()=>setEditing(loan)}>Modify plan</button>}
                 
                 {loan.status==='requested'&&loan.ownerId===me&&
-                    <button className="button primary" type="button" onClick={()=>{
-                        const result=perform({type:'approve-plan',loanId:loan.id});
+                    <button disabled={saving} className="button primary" type="button" onClick={async()=>{
+                        const result=await perform({type:'approve-plan',loanId:loan.id});
                         if(result.ok)toast('Request accepted.');
                         else setError(result.error);}}>
                             Accept request
@@ -131,8 +131,8 @@ export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:stri
         ref={form} 
         className="message-composer" 
         onSubmit={
-            e=>{e.preventDefault();
-            const result=perform({type:'send-message',to:peer.id,text:draft,...(related[0]?{loanId:related[0].id}:{})});
+            async e=>{e.preventDefault();
+            const result=await perform({type:'send-message',to:peer.id,text:draft,...(related[0]?{loanId:related[0].id}:{})});
             if(!result.ok){setError(result.error);
             return;}setDraft('');setError('');}}
     >
@@ -140,7 +140,7 @@ export function ChatsPage({peerId,onOpen,onLoan}:{peerId?:string;onOpen:(id:stri
             <div>
             <label className="sr-only" htmlFor="message-text">Message {peer.name}</label>
             <textarea id="message-text" value={draft} maxLength={2000} placeholder="Type a message…" rows={1} onChange={e=>setDraft(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();form.current?.requestSubmit();}}}/>
-                <button className="button primary" type="submit" aria-label="Send message" disabled={!draft.trim()}>
+                <button className="button primary" type="submit" aria-label="Send message" disabled={saving||!draft.trim()}>
                     <Glyph name="send"/>
                 </button>
             </div>

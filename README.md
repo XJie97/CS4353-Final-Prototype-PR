@@ -1,5 +1,7 @@
 # CS4353 - Final Prototype
 
+For the current hosted preview, start with [Group testing](docs/team-testing.md).
+
 For a screen-by-screen explanation, read [How to use the app](docs/user-flow.md).
 
 ## Choose an application
@@ -9,13 +11,14 @@ the directory of the application you want. Their accounts and data are separate.
 
 | Application | Directory | Local address | Data and identity |
 | --- | --- | --- | --- |
-| Styled community preview | `frontend/` | http://localhost:3001 | IndexedDB; switch between Eric, Sarah, Ben and Maya |
+| Styled community preview | `frontend/` | http://localhost:3001 | Shared Supabase demo tables, private Storage; Eric/Sarah/Ben/Maya sign-in |
 | Supabase functionality frame | Repository root | http://localhost:3000 | Hosted database, private Storage and real email/password sessions |
 
-For the styled preview, run `cd frontend`, `npm ci`, then `npm run dev`. No
-environment variables are needed. See [preview setup and walkthrough](frontend/README.md).
-For the connected frame, follow the instructions below. The preview does not sync
-with Supabase. See [current project guide](docs/project-guide.md) for code locations,
+For the styled preview, run `cd frontend`, `npm ci`, then `npm run dev`. Configure the
+ignored `frontend/.env` with the Supabase URL and browser-safe publishable key. See
+[preview setup and walkthrough](frontend/README.md). For the connected frame, follow the
+instructions below. The styled preview uses separate `demo_*` tables in the same
+Supabase project. See [current project guide](docs/project-guide.md) for code locations,
 workflow differences and verification commands.
 
 

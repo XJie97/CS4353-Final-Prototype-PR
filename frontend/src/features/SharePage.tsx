@@ -6,7 +6,7 @@ import { ListingForm } from './ListingForm';
 
 
 export function SharePage({onLoan}:{onLoan:(id:string)=>void}) {
-    const {store,perform,toast}=useApp();
+    const {store,perform,toast,busy:saving}=useApp();
     const [editing,setEditing]=useState<Item|'new'|null>(null);
     const mine=store.items.filter(i=>i.ownerId===store.activeUserId);
 
@@ -14,7 +14,7 @@ export function SharePage({onLoan}:{onLoan:(id:string)=>void}) {
     <main className="app-scroll">
         <div className="section-heading">
             <h2>Your items</h2>
-            <button className="button primary" type="button" onClick={()=>setEditing('new')}>
+            <button disabled={saving} className="button primary" type="button" onClick={()=>setEditing('new')}>
                 <Glyph name="plus"/>Share
             </button>
         </div>
@@ -30,21 +30,21 @@ export function SharePage({onLoan}:{onLoan:(id:string)=>void}) {
                         <p>{item.category} · {item.location}</p>
                         <span className="status-label">{!item.listed?'Hidden':loans.length?'Reserved':'Available'}</span>
                         <div className="button-row">
-                            <button className="button" type="button" onClick={()=>setEditing(item)}>Edit</button>
-                            <button className="button" type="button" onClick={()=>{
-                                const result=perform({type:'toggle-item',id:item.id});
+                            <button disabled={saving} className="button" type="button" onClick={()=>setEditing(item)}>Edit</button>
+                            <button disabled={saving} className="button" type="button" onClick={async()=>{
+                                const result=await perform({type:'toggle-item',id:item.id});
                                 if(result.ok)toast(item.listed?'Listing hidden from new borrowers.':'Listing is visible again.');
                                 else toast(result.error);}}>{item.listed?'Hide':'List again'
                                 }
                             </button>
-                            {loans[0]&&<button className="button" type="button" onClick={()=>onLoan(loans[0].id)}>View loan</button>}
+                            {loans[0]&&<button disabled={saving} className="button" type="button" onClick={()=>onLoan(loans[0].id)}>View loan</button>}
                         </div>
                     </div>
                 </article>
             );})}
 
         </div> : <EmptyState title="Your shelf is empty" text="Share something you rarely use and help a neighbour out.">
-            <button className="button" type="button" onClick={()=>setEditing('new')}>Share your first item</button>
+            <button disabled={saving} className="button" type="button" onClick={()=>setEditing('new')}>Share your first item</button>
         </EmptyState>}
         
         {editing&&<ListingForm key={editing==='new'?'new':editing.id} item={editing==='new'?undefined:editing} onClose={()=>setEditing(null)}/>}

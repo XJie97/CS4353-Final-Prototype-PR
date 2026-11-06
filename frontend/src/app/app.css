@@ -140,8 +140,6 @@
 .locker-location { text-align:center; color:var(--purple-primary); }
 .locker-number { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:18px; padding:20px; color:var(--purple-primary); }
 .locker-number strong { display:grid; place-items:center; width:160px; height:160px; border:2px solid var(--purple-primary); background:var(--green-panel); border-radius:16px; font-size:70px; }
-.scanner { padding:12px 0; }
-.scanner video { width:100%; max-height:220px; border-radius:8px; background:black; }
 .verification-success { text-align:center; padding:16px 0 4px; }
 .success-icon { display:inline-flex; padding:18px; border-radius:50%; background:var(--green-panel); color:var(--purple-primary); }
 .verification-success h3 { font-size:24px; }
@@ -163,6 +161,7 @@
 .shelf-card p { font-size:12px; color:var(--text-muted); margin:4px 0 8px; }
 .shelf-card .button { font-size:12px; min-height:28px; padding:4px 8px; }
 .friend-card { border:1px solid var(--line); padding:12px; border-radius:8px; background:#f6f9f2; margin:10px 0; }
+.friend-card>.button { margin-top:12px; }
 .friend-person { display:flex; gap:10px; align-items:center; background:transparent; border:0; padding:0; width:100%; text-align:left; }
 .friend-person>span:last-child { display:flex; flex-direction:column; gap:4px; }
 .friend-person small { color:var(--text-muted); font-size:12px; }

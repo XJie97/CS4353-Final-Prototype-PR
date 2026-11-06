@@ -10,7 +10,7 @@ const entry=join(root,'node_modules/.cache/cs4353-rendered-entry.ts');
 const out=join(root,'node_modules/.cache/cs4353-rendered');
 await mkdir(dirname(entry),{recursive:true});
 // One bundle keeps the production provider and consumers on the same context.
-await writeFile(entry,`export { AppProvider } from ${JSON.stringify(join(root,'src/app/context.tsx'))};\nexport { RouteContent } from ${JSON.stringify(join(root,'src/App.tsx'))};\nexport { QrCode } from ${JSON.stringify(join(root,'src/components/ui/QrCode.tsx'))};\n`);
+await writeFile(entry,`export { createSeed } from ${JSON.stringify(join(root,'src/app/seed.ts'))};\nexport { AppProvider } from ${JSON.stringify(join(root,'src/app/context.tsx'))};\nexport { RouteContent } from ${JSON.stringify(join(root,'src/App.tsx'))};\nexport { QrCode } from ${JSON.stringify(join(root,'src/components/ui/QrCode.tsx'))};\n`);
 await build({root,logLevel:'warn',build:{ssr:entry,outDir:out,emptyOutDir:true}});
 await writeFile(join(out,'package.json'),'{"type":"module"}\n');
 const module=await import(pathToFileURL(join(out,'cs4353-rendered-entry.js')).href);
@@ -20,12 +20,12 @@ for(const [route,expected] of [
  [{page:'loans',id:'demo-active'},['Weighing scale','Show QR','Loan Start']],
  [{page:'share'},['Your items','Portable projector']],
  [{page:'friends'},['Friend requests','Your friends','Find people']],
- [{page:'me'},['About this preview','Version:','Edit profile','Reset preview data']],
+ [{page:'me'},['About this preview','Version:','Edit profile','Sign out']],
  [{page:'chats'},['Messages','New chat','Sarah']],
  [{page:'chats',id:'sarah'},['Type a message','Modify plan']],
  [{page:'notifications'},['Updates','Portable projector']],
 ]){
- const html=renderToStaticMarkup(createElement(module.AppProvider,null,createElement(module.RouteContent,{route,navigate:noop,onItem:noop,onHandover:noop,onReview:noop,onReset:noop})));
+ const html=renderToStaticMarkup(createElement(module.AppProvider,{initialStore:module.createSeed('2026-11-05')},createElement(module.RouteContent,{route,navigate:noop,onItem:noop,onHandover:noop,onReview:noop,onReset:noop})));
  for(const text of expected)assert.ok(html.includes(text),`${JSON.stringify(route)} must render ${text}`);
  assert.ok(!html.includes('Your community is ready to share.'),'A real page must replace the staging placeholder');htmls.push(html);
 }

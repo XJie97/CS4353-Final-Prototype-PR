@@ -3,7 +3,7 @@ import type { Page } from '../app/routes';
 import { EmptyState } from '../components/ui/shared';
 
 export function NotificationsPage({navigate}:{navigate:(page:Page,id?:string)=>void}) {
- const {store,perform}=useApp();
+ const {store,perform,toast,busy:saving}=useApp();
  const notices=store.notices.filter(n=>n.to===store.activeUserId);
  return (
     <main className="app-scroll">
@@ -11,16 +11,18 @@ export function NotificationsPage({navigate}:{navigate:(page:Page,id?:string)=>v
             <h2>Updates</h2>
             
             {notices.some(n=>!n.read)&&
-                <button type="button" className="button" onClick={()=>perform({type:'read-notices'})}>Mark all read</button>}
+                <button disabled={saving} type="button" className="button" onClick={async()=>{const r=await perform({type:'read-notices'});if(!r.ok)toast(r.error);}}>Mark all read</button>}
         </div>
         
         {notices.length? <div className="notification-list">
             {notices.map(notice=>
                 <button 
+                    disabled={saving}
                     className={`notification-row ${notice.read?'':'unread'}`} 
                     key={notice.id}
                     type="button" 
-                    onClick={()=>{perform({type:'read-notices',id:notice.id});
+                    onClick={async()=>{const result=await perform({type:'read-notices',id:notice.id});
+                        if(!result.ok){toast(result.error);return;}
                         notice.loanId?navigate('loans',notice.loanId):
                         notice.peerId?navigate('chats',notice.peerId):
                         navigate('friends');}}

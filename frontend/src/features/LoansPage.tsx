@@ -21,7 +21,7 @@ export function LoansPage(
     {onOpen,onHandover}:
     {onOpen:(id:string)=>void;onHandover?:(id:string)=>void}) {
 
-    const {store}=useApp();
+    const {store,busy:saving}=useApp();
     const [tab,setTab]=useState<'Pending'|'Active'|'Complete'>('Pending');
     const group=(direction:'borrow'|'share')=>
         store.loans.filter(l=>loanGroup(l)===tab&&(
@@ -30,7 +30,7 @@ export function LoansPage(
     return <>
         <div className="section-tabs" role="tablist" aria-label="Loan status">
             {(['Pending','Active','Complete'] as const).map(t=>
-                <button role="tab" type="button" aria-selected={tab===t} key={t} onClick={()=>setTab(t)}>{t}</button>
+                <button disabled={saving} role="tab" type="button" aria-selected={tab===t} key={t} onClick={()=>setTab(t)}>{t}</button>
             )}</div>
             
             <main className="app-scroll loan-list">{(['borrow','share'] as const).map(direction=>
@@ -42,7 +42,7 @@ export function LoansPage(
                         return (
                             <article className="loan-card" key={loan.id}>
                                 <div className="loan-card-heading">
-                                    <button type="button" onClick={()=>onOpen(loan.id)}>
+                                    <button disabled={saving} type="button" onClick={()=>onOpen(loan.id)}>
                                         <strong>{item.title??item.name}</strong>
                                     </button>
                                     <span className="status-label">{statusLabel[loan.status]}</span>
@@ -64,10 +64,10 @@ export function LoansPage(
                                         </p>
                                         
                                         {onHandover&&step&&['ready','active','returning'].includes(loan.status)&&proofActor(loan,step)===store.activeUserId?
-                                            <button className="button" type="button" onClick={()=>onHandover(loan.id)}>
+                                            <button disabled={saving} className="button" type="button" onClick={()=>onHandover(loan.id)}>
                                                 <Glyph name="qr"/>Show QR
                                             </button> : 
-                                            <button className="button" type="button" onClick={()=>onOpen(loan.id)}>View details</button>
+                                            <button disabled={saving} className="button" type="button" onClick={()=>onOpen(loan.id)}>View details</button>
                                         }
                                     </div>
                                 </div>

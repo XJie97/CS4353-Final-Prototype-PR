@@ -6,7 +6,8 @@ import { PhotoField } from '../components/ui/PhotoField';
 const CATEGORIES=['Home','Electronics','Party Supplies','Outdoors','Clothing','Tools','Sports'];
 
 export function ListingForm({item,onClose}:{item?:Item;onClose:()=>void}) {
-    const {perform,toast}=useApp();
+    const {perform,toast,busy:saving}=useApp();
+    const [newId]=useState(uid);
     const [name,setName]=useState(item?.name??'');
     const [description,setDescription]=useState(item?.description??'');
     const [category,setCategory]=useState(item?.category??'Home');
@@ -16,9 +17,9 @@ export function ListingForm({item,onClose}:{item?:Item;onClose:()=>void}) {
     
     return (
         <Modal title={item?'Edit listing':'Share an item'} onClose={onClose}>
-            <form onSubmit={e=>{
+            <form onSubmit={async e=>{
                 e.preventDefault();
-                const result=perform({type:item?'edit-item':'create-item',id:item?.id??uid(),name,description,category,location,images:photo?[photo]:[]});
+                const result=await perform({type:item?'edit-item':'create-item',id:item?.id??newId,name,description,category,location,images:photo?[photo]:[]});
                 if(!result.ok) {
                     setError(result.error);
                     return;
@@ -61,8 +62,8 @@ export function ListingForm({item,onClose}:{item?:Item;onClose:()=>void}) {
                 onChange={setPhoto} 
                 onBusyChange={setBusy}/><ErrorText text={error}/>
                 <div className="form-actions">
-                    <button className="button" type="button" onClick={onClose}>Cancel</button>
-                    <button className="button primary" type="submit" disabled={busy}>Save listing</button>
+                    <button disabled={saving} className="button" type="button" onClick={onClose}>Cancel</button>
+                    <button disabled={saving||busy} className="button primary" type="submit">Save listing</button>
                 </div>
             </form>
         </Modal>
