@@ -9,15 +9,18 @@ export function QueryState({
   query: UseQueryResult<any>;
   children: ReactNode;
 }) {
-  if (query.isPending) return <p>Loading…</p>;
+  // Render the pending placeholder while the query is loading.
+  if (query.isPending) return /* Show a loading placeholder until query data becomes available. */ <p>Loading…</p>;
+  // Render the error state instead of trying to read failed query data.
   if (query.error)
     return (
+      // Display query failure with an explicit retry action.
       <p role="alert">
         {errorText(query.error)}{" "}
         <button onClick={() => void query.refetch()}>Retry</button>
       </p>
     );
-  return <>{children}</>;
+  return /* Render the feature content after its query has finished successfully. */ <>{children}</>;
 }
 export function MutationState({
   mutation,
@@ -60,13 +63,16 @@ export function FileLink({
     let active = true;
     setUrl("");
     setError("");
+    // Request a temporary URL only when an image path was supplied.
     if (path)
       void gateway
         .signedUrl(bucket, path)
         .then((u) => {
+          // Publish the resolved image URL only while this effect is active.
           if (active) setUrl(u);
         })
         .catch((e) => {
+          // Publish image-loading errors only while this effect is active.
           if (active) setError(errorText(e));
         });
     return () => {
@@ -93,6 +99,7 @@ export function ImageInput({
   capture?: boolean;
 }) {
   return (
+    // Restrict file selection to supported photo MIME types.
     <input
       aria-label="Image"
       name={name}
@@ -113,8 +120,10 @@ export function Choices({
   defaults?: number[];
 }) {
   return (
+    // Present a collection of checkbox choices sharing one form field name.
     <div>
       {options.map((x) => (
+        // Represent one selectable checkbox option and its label.
         <label className="inline" key={x.id}>
           <input
             type="checkbox"

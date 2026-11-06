@@ -13,6 +13,7 @@ export function SignIn() {
       services.auth.signIn(value(fd, "email"), value(fd, "password")),
   });
   return (
+    // Authenticate an assigned seeded account without offering public registration.
     <section>
       <h2>Sign in</h2>
       <p>
@@ -31,6 +32,7 @@ export function SignIn() {
         </label>
         <datalist id="demo-users">
           {DEMO_EMAILS.map((e) => (
+            // Represent one seeded account email in the account selector.
             <option key={e}>{e}</option>
           ))}
         </datalist>

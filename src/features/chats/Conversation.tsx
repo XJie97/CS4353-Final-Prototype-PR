@@ -39,7 +39,9 @@ export function Conversation({ id, close }: { id: string; close: () => void }) {
   const send = useCommand("chats", async (fd: FormData) => {
     const file = fileValue(fd, "image");
     let path: string | null = null;
+    // Upload an attachment only when the message includes a selected file.
     if (file) {
+      // Reuse the attachment upload until the user selects a different file.
       if (uploaded.current?.file !== file)
         uploaded.current = {
           file,
@@ -49,6 +51,7 @@ export function Conversation({ id, close }: { id: string; close: () => void }) {
     }
     const body = value(fd, "body");
     const payload = JSON.stringify([body, path]);
+    // Generate a new retry key only when the outgoing message payload changes.
     if (draft.current?.payload !== payload)
       draft.current = { payload, requestId: crypto.randomUUID() };
     await services.chats.sendMessage(id, body, path, draft.current.requestId);
@@ -57,6 +60,7 @@ export function Conversation({ id, close }: { id: string; close: () => void }) {
     form.current?.reset();
   });
   return (
+    // Present message history and a composer for the selected conversation.
     <section>
       <button onClick={close}>Back to conversations</button>
       <h3>Conversation</h3>
@@ -66,6 +70,7 @@ export function Conversation({ id, close }: { id: string; close: () => void }) {
             <QueryState query={messages}>
               {messages.data?.length ? (
                 messages.data.map((m) => (
+                  // Display one message with its sender, body, attachment, and timestamp.
                   <article key={m.id}>
                     <p>
                       <strong>

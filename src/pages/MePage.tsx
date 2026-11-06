@@ -30,11 +30,13 @@ export default function MePage() {
   );
   const avatar = useCommand("users", async (fd: FormData) => {
     const file = fileValue(fd, "image");
+    // Ignore a canceled avatar file selection.
     if (!file) throw new Error("Choose an image.");
     await services.users.updateAvatar(actor.id!, file);
   });
   const signOut = useCommand("users", async () => services.auth.signOut());
   return (
+    // Present the active account's editable profile, avatar, and owned-item sprite settings.
     <section>
       <h2>Me</h2>
       <p>{actor.email}</p>
@@ -85,6 +87,7 @@ export default function MePage() {
       <h3>Item sprites</h3>
       <QueryState query={items}>
         {items.data?.map((i) => (
+          // Expand one owned item's sprite editor without showing every editor at once.
           <details key={i.id}>
             <summary>{i.name}</summary>
             <SpriteEditor id={i.spriteId} />

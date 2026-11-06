@@ -18,9 +18,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(configured);
   useEffect(() => {
+    // Skip auth observation when Supabase has not been configured.
     if (!configured) return;
     let previous: string | undefined;
     return services.auth.observe((next) => {
+      // Clear cached queries when the authenticated account changes.
       if (previous !== next?.user.id) {
         void queryClient.cancelQueries();
         queryClient.clear();
@@ -31,6 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
   return (
+    // Share the observed auth identity and loading state with descendant features.
     <Context.Provider
       value={{
         id: session?.user.id || null,

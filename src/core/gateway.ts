@@ -26,6 +26,7 @@ export interface DataGateway {
   observeAuth(listener: (session: Session | null) => void): () => void;
 }
 function unwrap(result: { data: any; error: any }) {
+  // Throw a Supabase error before returning the response data.
   if (result.error) throw result.error;
   return result.data;
 }
@@ -34,6 +35,7 @@ export const gateway: DataGateway = {
     let q = db().from(table).select("*");
     for (const [k, v] of Object.entries(options.eq || {})) q = q.eq(k, v);
     for (const [k, v] of Object.entries(options.in || {})) q = q.in(k, v);
+    // Apply descending ordering only when the caller requests an order column.
     if (options.order) q = q.order(options.order, { ascending: false });
     q = q.limit(options.limit || 1000);
     return unwrap(await q);
@@ -79,14 +81,18 @@ export const gateway: DataGateway = {
     void client.auth
       .getSession()
       .then(async ({ data }) => {
+        // Skip realtime setup after cleanup or when there is no authenticated session.
         if (!active || !data.session) return;
         await client.realtime.setAuth(data.session.access_token);
+        // Avoid joining a realtime channel if cleanup ran while auth was being applied.
         if (!active) return;
         channel.subscribe((status) => {
+          // Refresh after joining only while the subscription is still active.
           if (status === "SUBSCRIBED" && active) onChange();
         });
       })
       .catch(() => {
+        // Report setup failure through a refresh only while subscribed.
         if (active) onChange();
       });
     return () => {
@@ -96,10 +102,12 @@ export const gateway: DataGateway = {
   },
   async signIn(email, password) {
     const { error } = await db().auth.signInWithPassword({ email, password });
+    // Propagate a failed password sign-in to its caller.
     if (error) throw error;
   },
   async signOut() {
     const { error } = await db().auth.signOut();
+    // Propagate a failed sign-out to its caller.
     if (error) throw error;
   },
   observeAuth(listener) {

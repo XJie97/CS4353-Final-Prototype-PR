@@ -40,6 +40,7 @@ export function makeChatsService(api: DataGateway) {
       imagePath: string | null,
       requestId: string,
     ) {
+      // Reject a message with neither nonblank text nor an image attachment.
       if (!body.trim() && !imagePath)
         throw new Error("Enter a message or choose an image.");
       return api.rpc("send_message", {

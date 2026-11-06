@@ -37,6 +37,15 @@ locally and against managed Supabase after deployment; synthetic fixtures rolled
 Local Storage uses a minimal SQL fixture; managed checks exercise the real policies.
 Physical files, cameras and hosted browser acceptance are separate checks.
 
+On 6 November 2026 the locker handover change replaced the user-entered
+locker number with a locker assigned by the simulated scan. The hosted
+project's recorded migration sources predate that wording, so
+`public.demo_command_base` was re-deployed through the dashboard SQL editor
+as a `create or replace` from the current `20261106000100` source (no new
+version was recorded). The updated suites pass on a `supabase db reset`
+local stack; re-running `shared_demo.sql` against the managed database
+confirms the re-deployment.
+
 To repeat the current SQL suites on a disposable, migrated local Supabase stack:
 
 ```sh

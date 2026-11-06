@@ -13,11 +13,13 @@ export function ReviewList({
     queryFn: () => services.reviews.getReviews(itemId, ownerId),
   });
   return (
+    // List received reviews with their authors, ratings, and optional image links.
     <section>
       <h3>Received reviews</h3>
       <QueryState query={query}>
         {query.data?.length ? (
           query.data.map((r) => (
+            // Represent one received review and its attached photo when present.
             <article key={r.id}>
               <p>
                 <strong>{r.authorName || "User"}</strong>: {r.body}

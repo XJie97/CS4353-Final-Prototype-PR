@@ -32,14 +32,18 @@ it("applies the signed-in session before joining a chat subscription", async () 
   const change = vi.fn();
   const stop = gateway.subscribe("messages", "chat_id=eq.chat", change);
   await vi.waitFor(() =>
+    // Verify that realtime receives the current session's access token.
     expect(fake.setAuth).toHaveBeenCalledWith("test-session"),
   );
+  // Verify that the channel waits for auth setup before subscribing.
   expect(fake.subscribe).not.toHaveBeenCalled();
   finishAuth();
-  await vi.waitFor(() => expect(fake.subscribe).toHaveBeenCalledTimes(1));
+  await vi.waitFor(() => /* Verify that the channel subscribes after auth setup completes. */ expect(fake.subscribe).toHaveBeenCalledTimes(1));
   fake.subscribe.mock.calls[0][0]("SUBSCRIBED");
+  // Verify that joining the channel triggers an initial refresh.
   expect(change).toHaveBeenCalledOnce();
   stop();
+  // Verify that subscription cleanup removes the channel.
   expect(fake.removeChannel).toHaveBeenCalledOnce();
 });
 it("does not join after the chat closes while authentication is loading", async () => {
@@ -50,6 +54,8 @@ it("does not join after the chat closes while authentication is loading", async 
   finish({ data: { session: { access_token: "test-session" } } });
   await Promise.resolve();
   await Promise.resolve();
+  // Verify that cleanup prevents joining the channel even if session loading later succeeds.
   expect(fake.subscribe).not.toHaveBeenCalled();
+  // Verify that cleanup prevents applying realtime auth after a delayed session response.
   expect(fake.setAuth).not.toHaveBeenCalled();
 });

@@ -13,6 +13,7 @@ const keyFile = process.argv.includes("--key-file") ? arg("--key-file") : null;
 const key =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
   (keyFile ? (await readFile(keyFile, "utf8")).trim() : "");
+// Require the service-role key before provisioning privileged demo accounts.
 if (!key)
   throw new Error(
     "Provide SUPABASE_SERVICE_ROLE_KEY or --key-file. Never use a privileged key in VITE_ settings.",
@@ -24,6 +25,7 @@ const { data, error } = await client.auth.admin.listUsers({
   page: 1,
   perPage: 1000,
 });
+// Stop when the existing-user lookup fails.
 if (error) throw error;
 const names = ["Alice", "Bob", "Charlie", "Dana"];
 const password = randomBytes(18).toString("base64url") + "aA9!";
@@ -36,6 +38,7 @@ const lines = [
 for (const name of names) {
   const email = `${name.toLowerCase()}@cs4353.example.test`;
   const existing = data.users.find((u) => u.email === email);
+  // Update an existing demo account rather than create a duplicate email.
   if (existing) {
     lines.push(`${name}: ${email} (existing account; password unchanged)`);
     continue;
@@ -46,11 +49,13 @@ for (const name of names) {
     email_confirm: true,
     user_metadata: { display_name: name },
   });
+  // Propagate account-creation errors instead of reporting a seeded user.
   if (result.error) throw result.error;
   const update = await client
     .from("profiles")
     .update({ username: name.toLowerCase() })
     .eq("id", result.data.user.id);
+  // Propagate account-update errors instead of reporting success.
   if (update.error) throw update.error;
   lines.push(`${name}: ${email}\nPassword: ${password}\n`);
 }

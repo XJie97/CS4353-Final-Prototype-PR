@@ -47,6 +47,7 @@ it("has exactly five pages and keeps login inside them", async () => {
   mount();
   const nav = within(screen.getByRole("navigation"));
   const buttons = nav.getAllByRole("button");
+  // Verify the exact set and order of primary navigation buttons.
   expect(buttons.map((b) => b.textContent)).toEqual([
     "Borrow",
     "Share",
@@ -56,7 +57,9 @@ it("has exactly five pages and keeps login inside them", async () => {
   ]);
   for (const name of ["Share", "Loans", "Friends", "Me", "Borrow"]) {
     await u.click(nav.getByRole("button", { name }));
+    // Verify that each primary navigation button updates its matching browser route.
     expect(location.pathname).toBe("/" + name.toLowerCase());
+    // Verify that unauthenticated navigation shows the sign-in heading.
     expect(screen.getByRole("heading", { name: "Sign in" })).toBeTruthy();
   }
 });
@@ -64,12 +67,14 @@ it("shows sign-in errors and never offers public signup", async () => {
   fake.signIn.mockRejectedValue(new Error("Invalid login credentials"));
   const u = userEvent.setup();
   mount();
+  // Verify that the assigned-account sign-in screen has no self-registration action.
   expect(
     screen.queryByRole("button", { name: /signup|create account/i }),
   ).toBeNull();
   await u.type(screen.getByLabelText("Email"), "alice@cs4353.example.test");
   await u.type(screen.getByLabelText("Password"), "wrong");
   await u.click(screen.getByRole("button", { name: "Sign in" }));
+  // Verify that failed authentication is displayed as an accessible alert.
   expect((await screen.findByRole("alert")).textContent).toContain(
     "Invalid login",
   );
@@ -77,11 +82,13 @@ it("shows sign-in errors and never offers public signup", async () => {
 it("isolates failed Borrow queries from the Share page", async () => {
   fake.actor = { id: "me", email: "demo@example.test", loading: false };
   fake.getItems.mockImplementation(async (f) => {
+    // Make the mock reject the general Borrow query while allowing owner-filtered Share queries.
     if (!f.ownerId) throw new Error("Borrow unavailable");
     return [];
   });
   const u = userEvent.setup();
   mount();
+  // Verify that a failed Borrow query displays its error before switching pages.
   expect((await screen.findByRole("alert")).textContent).toContain(
     "Borrow unavailable",
   );
@@ -90,6 +97,8 @@ it("isolates failed Borrow queries from the Share page", async () => {
       name: "Share",
     }),
   );
+  // Verify that a successful empty response shows the owned-items empty state.
   expect(await screen.findByText("No owned items.")).toBeTruthy();
+  // Verify that the empty owned-items state does not show an error alert.
   expect(screen.queryByRole("alert")).toBeNull();
 });
