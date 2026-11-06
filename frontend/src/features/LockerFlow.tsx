@@ -15,7 +15,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
     const [error,setError]=useState('');
     const pickup=step==='borrowerPickup'||step==='ownerPickup';
     const previous=loan&&(step==='borrowerPickup'?loan.proofs.ownerDropoff:step==='ownerPickup'?loan.proofs.borrowerDropoff:undefined);
-    const [lockerNumber,setLockerNumber]=useState(previous?.lockerNumber??LOCKERS.find(l=>l.id===loan?.lockerId)?.number??'12');
+    const lockerNumber=previous?.lockerNumber??LOCKERS.find(l=>l.id===loan?.lockerId)?.number??'12';
 
     if (!loan||
         !step||
@@ -43,28 +43,16 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
             </>}
 
             {phase==='locker'&&<>
+                <p>The locker scan assigned you an available locker.</p>
                 <p className="locker-location">{LOCKERS.find(l=>l.id===loan.lockerId)?.label}</p>
-                <div className="locker-number">Locker
+                <div className="locker-number">Your locker
                     <strong>{lockerNumber.padStart(2,'0')}</strong>
                 </div>
                 <p>{pickup?'Collect the item from the locker shown above.'
-                    :'Place the item in a locker, then record its number and condition.'}
+                    :'Place the item in the locker shown above, then record its condition.'}
                 </p>
-                <form onSubmit={async e=>{
-                    e.preventDefault();
-                    if(!/^\d{1,2}$/.test(lockerNumber)||Number(lockerNumber)<1){
-                        setError('Enter a locker number from 1 to 99.');
-                        return;
-                    }
-                    setError('');
-                    setPhase('photo');
-                }}>
-                    <label>Locker number
-                        <input type="text" inputMode="numeric" pattern="[0-9]{1,2}" maxLength={2}
-                        value={lockerNumber} readOnly={pickup} required onChange={e=>setLockerNumber(e.target.value)}/>
-                    </label><ErrorText text={error}/>
-                    <button disabled={saving} className="button primary wide" type="submit">Continue to item photo</button>
-                </form>
+                <ErrorText text={error}/>
+                <button disabled={saving} className="button primary wide" type="button" onClick={()=>setPhase('photo')}>Continue to item photo</button>
             </>}
 
         {phase==='photo'&&<>
@@ -76,7 +64,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
                 <button disabled={saving} className="button" type="button" onClick={()=>setPhase('locker')}>Back</button>
                 <button className="button primary" type="button" disabled={saving||!photo||photoBusy}
                     onClick={async()=>{
-                        const result=await perform({type:'record-proof',loanId,step,photo,code:expected,lockerNumber});
+                        const result=await perform({type:'record-proof',loanId,step,photo,code:expected,lockerNumber,assignmentVerified:true});
                         if (!result.ok) setError(result.error);
                         else setPhase('success');
                 }}>Confirm {pickup?'pickup':'drop-off'}</button>

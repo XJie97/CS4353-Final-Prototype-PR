@@ -47,7 +47,7 @@ export type Command = HelpCommand
  | ({type:'request-loan';id:string;itemId:string}&PlanInput)
  | ({type:'edit-plan';loanId:string}&PlanInput)
  | {type:'approve-plan'|'cancel-loan'|'decline-loan';loanId:string}
- | {type:'record-proof';loanId:string;step:ProofStep;photo:string;code:string;lockerNumber:string}
+ | {type:'record-proof';loanId:string;step:ProofStep;photo:string;code:string;lockerNumber:string;assignmentVerified?:boolean}
  | {type:'verify-condition';loanId:string;condition:'good'|'issue';note:string}
  | {type:'resolve-condition';loanId:string;note:string}
  | {type:'submit-review'|'edit-review';loanId:string;rating:number;text:string;compliments:string[];photo?:string}
@@ -95,8 +95,7 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   }
   case 'record-proof':{
    const l=loanFor(command.loanId);requireValue(['ready','active','returning'].includes(l.status),'This loan is not ready for a handover.');requireValue(nextProof(l)===command.step,'Complete the next handover step in order.');requireValue(proofActor(l,command.step)===me,'Only the designated participant can complete this step.');
-   requireValue(command.code.trim()===handoverCode(l,command.step),'That code does not match this loan and handover step.');requireValue(photoValid(command.photo),'Add a valid item photo before continuing.');requireValue(/^\d{1,2}$/.test(command.lockerNumber)&&Number(command.lockerNumber)>0,'Enter a valid locker number.');
-   if(command.step==='borrowerPickup'||command.step==='ownerPickup'){const previous=command.step==='borrowerPickup'?l.proofs.ownerDropoff:l.proofs.borrowerDropoff;requireValue(previous&&Number(previous.lockerNumber)===Number(command.lockerNumber),'Use the locker number from the drop-off confirmation.');}
+   requireValue(command.code.trim()===handoverCode(l,command.step),'That code does not match this loan and handover step.');requireValue(photoValid(command.photo),'Add a valid item photo before continuing.');requireValue(command.assignmentVerified,'The locker scan must be completed before recording a handover.');requireValue(/^\d{1,2}$/.test(command.lockerNumber)&&Number(command.lockerNumber)>0,'The locker scan did not assign a valid locker.');
    l.proofs[command.step]={at:env.now,photo:command.photo,actor:me,lockerNumber:command.lockerNumber};
    l.status=command.step==='ownerDropoff'?'ready':command.step==='borrowerPickup'?'active':command.step==='borrowerDropoff'?'returning':'verifying';notify(me===l.ownerId?l.borrowerId:l.ownerId,`${name} completed: ${PROOF_LABELS[command.step].toLowerCase()}.`,l.id);break;
   }

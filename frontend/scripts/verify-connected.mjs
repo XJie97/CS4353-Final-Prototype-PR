@@ -133,7 +133,10 @@ try{
   assert.equal(document.querySelector('input'),null,'QR presentation does not ask the user to enter or scan a code');
   await act(async()=>{button('Simulate locker scan').click();await settle();});
   assert.match(document.body.textContent,/Continue to item photo/);
-  assert.equal(document.querySelector('input').readOnly,index===1||index===3,'pickup uses the preceding drop-off locker');
+  assert.match(document.body.textContent,/assigned you an available locker/);
+  assert.equal(document.querySelector('input'),null,'the scan assigns the locker; the user does not key one in');
+  const assigned=document.querySelector('.locker-number strong');
+  assert.equal(assigned?.textContent,'12',`${stage} shows the assigned locker`);
   await unmount();
  }
 

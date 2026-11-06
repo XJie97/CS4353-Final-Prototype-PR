@@ -34,10 +34,11 @@ project share records, photos and messages.
 2. **Sarah:** accept it under **Loans → Pending → Sharing**. If either person
    edits the dates or locker, the other must approve the new plan.
 3. **Sarah:** select **Show QR**. The app displays the code for an external locker
-   scanner. Use **Simulate locker scan** to bypass the unimplemented device, record
-   the locker number, add an item-condition photo and confirm drop-off.
+   scanner. Use **Simulate locker scan** to bypass the unimplemented device. The
+   scan assigns an available locker, which the app displays; add an
+   item-condition photo and confirm drop-off.
 4. **Eric:** complete pickup and return through the same flow, with a photo for
-   each handover. Pickup uses the preceding drop-off's locker number.
+   each handover. Each scan assigns the locker to use.
 5. **Sarah:** collect the return and verify its condition. Resolve any reported
    issue before the review becomes available.
 6. **Eric:** leave an optional review under Complete. You can edit the review and

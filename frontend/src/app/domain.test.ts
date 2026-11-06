@@ -26,12 +26,12 @@ test('only the owner accepts a request; changing the plan requires renewed appro
 });
 test('four photo-backed handovers enforce actor, code and stage order', () => {
  let s=accepted();let loan=s.loans.find(l=>l.id==='new-loan')!;assert.equal(nextProof(loan),'ownerDropoff');
- assert.throws(()=>run(s,{type:'record-proof',loanId:loan.id,step:'borrowerPickup',photo,code:handoverCode(loan,'borrowerPickup'),lockerNumber:'12'}),/next|order/i);
- assert.throws(()=>run(s,{type:'record-proof',loanId:loan.id,step:'ownerDropoff',photo,code:'wrong',lockerNumber:'12'}),/code/i);
+ assert.throws(()=>run(s,{type:'record-proof',loanId:loan.id,step:'borrowerPickup',photo,code:handoverCode(loan,'borrowerPickup'),lockerNumber:'12',assignmentVerified:true}),/next|order/i);
+ assert.throws(()=>run(s,{type:'record-proof',loanId:loan.id,step:'ownerDropoff',photo,code:'wrong',lockerNumber:'12',assignmentVerified:true}),/code/i);
  for(const [step,actor,status] of [['ownerDropoff','sarah','ready'],['borrowerPickup','eric','active'],['borrowerDropoff','eric','returning'],['ownerPickup','sarah','verifying']] as const){
   s=run(s,{type:'switch-account',id:actor});loan=s.loans.find(l=>l.id==='new-loan')!;
-  assert.throws(()=>run(s,{type:'record-proof',loanId:loan.id,step,photo:'',code:handoverCode(loan,step),lockerNumber:'12'}),/photo/i);
-  s=run(s,{type:'record-proof',loanId:loan.id,step,photo,code:handoverCode(loan,step),lockerNumber:'12'});assert.equal(s.loans.find(l=>l.id===loan.id)?.status,status);
+  assert.throws(()=>run(s,{type:'record-proof',loanId:loan.id,step,photo:'',code:handoverCode(loan,step),lockerNumber:'12',assignmentVerified:true}),/photo/i);
+  s=run(s,{type:'record-proof',loanId:loan.id,step,photo,code:handoverCode(loan,step),lockerNumber:'12',assignmentVerified:true});assert.equal(s.loans.find(l=>l.id===loan.id)?.status,status);
  }
  assert.throws(()=>run(s,{type:'cancel-loan',loanId:'new-loan'}),/cancel/i);
  s=run(s,{type:'verify-condition',loanId:'new-loan',condition:'good',note:''});assert.equal(s.loans.find(l=>l.id==='new-loan')?.status,'complete');

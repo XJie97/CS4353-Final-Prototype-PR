@@ -23,7 +23,7 @@ test('failed remote saves reject rather than returning local success',async()=>{
  const f=fake();f.setFail(true);await assert.rejects(f.service.execute({type:'send-message',to:'sarah',text:'Hello'},'request',null),/connection interrupted/);
 });
 test('photo upload is reused when record finalization is retried',async()=>{
- const f=fake();const command={type:'record-proof' as const,loanId:'loan',step:'ownerDropoff' as const,code:'code',lockerNumber:'12',photo:'data:image/png;base64,eA=='};
+ const f=fake();const command={type:'record-proof' as const,loanId:'loan',step:'ownerDropoff' as const,code:'code',lockerNumber:'12',assignmentVerified:true,photo:'data:image/png;base64,eA=='};
  f.setFail(true);await assert.rejects(f.service.execute(command,'request',1));f.setFail(false);await f.service.execute(command,'request',1);
  assert.equal(f.uploads(),1);assert.deepEqual(f.calls[0].args,f.calls[1].args);
  assert.match((f.calls[1].args as {command:{photo:string}}).command.photo,/^eric\/proof\/loan\//);

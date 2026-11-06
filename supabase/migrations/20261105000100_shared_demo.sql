@@ -135,10 +135,8 @@ select x into next_step from unnest(array['ownerDropoff','borrowerPickup','borro
 step:=command->>'step'; assigned:=case when step in('ownerDropoff','ownerPickup') then l.owner_id else l.borrower_id end;
 if l.status not in('ready','active','returning') or next_step is distinct from step or assigned<>actor then raise exception 'Only the next participant can complete this handover.'; end if;
 if command->>'code' is distinct from 'CS4353:'||l.id||':'||step||':'||(l.data->>'code') then raise exception 'That code does not match this handover.'; end if;
-if coalesce(command->>'lockerNumber','') !~ '^[0-9]{1,2}$' or (command->>'lockerNumber')::int<1 then raise exception 'Enter a locker number from 1 to 99.'; end if;
-if step in('borrowerPickup','ownerPickup') then
-select data into prior from public.demo_proofs where loan_id=l.id and demo_proofs.step=case cmd.step when 'borrowerPickup' then 'ownerDropoff' else 'borrowerDropoff' end;
-if (prior->>'lockerNumber')::int is distinct from (command->>'lockerNumber')::int then raise exception 'Use the locker number from the dropoff.'; end if; end if;
+if coalesce(command->>'assignmentVerified','')<>'true' then raise exception 'The locker scan must be completed before recording a handover.'; end if;
+if coalesce(command->>'lockerNumber','') !~ '^[0-9]{1,2}$' or (command->>'lockerNumber')::int<1 then raise exception 'The locker scan did not assign a valid locker.'; end if;
 photo:=command->>'photo'; if photo is null or not public.demo_image_allowed(photo,l.id) or photo like '/assets/%' then raise exception 'Upload an item photo first.'; end if;
 insert into public.demo_proofs values(l.id,step,actor,jsonb_build_object('at',now_text,'photo',photo,'lockerNumber',command->>'lockerNumber'));
 update public.demo_loans set status=case step when 'ownerDropoff' then 'ready' when 'borrowerPickup' then 'active' when 'borrowerDropoff' then 'returning' else 'verifying' end,revision=revision+1 where id=l.id;

@@ -32,7 +32,12 @@ reset role;
 create function pg_temp.proof(stage text,rev integer) returns void language plpgsql as $$declare path text:=auth.uid()||'/proof/sql-test-loan/'||stage||'.jpg';code text;begin
 insert into storage.objects(bucket_id,name,owner_id,metadata) values('demo-images',path,auth.uid()::text,'{"mimetype":"image/jpeg","size":1}');
 select 'CS4353:sql-test-loan:'||stage||':'||(data->>'code') into code from public.demo_loans where id='sql-test-loan';
-perform pg_temp.act(jsonb_build_object('type','record-proof','loanId','sql-test-loan','step',stage,'code',code,'photo',path,'lockerNumber','12'),rev);
+begin
+execute 'select public.demo_command($1,$2,$3)' using jsonb_build_object('type','record-proof','loanId','sql-test-loan','step',stage,'code',code,'photo',path,'lockerNumber','12'),gen_random_uuid(),rev;
+exception when others then
+if position('locker scan' in sqlerrm)=0 then raise exception 'FAIL: expected the locker scan rejection, got %',sqlerrm; end if;
+end;
+perform pg_temp.act(jsonb_build_object('type','record-proof','loanId','sql-test-loan','step',stage,'code',code,'photo',path,'lockerNumber','12','assignmentVerified','true'),rev);
 end$$;
 set local role authenticated;
 select set_config('request.jwt.claim.sub','50000000-0000-0000-0000-000000000001',true);

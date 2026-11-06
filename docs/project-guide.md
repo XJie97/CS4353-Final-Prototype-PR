@@ -63,7 +63,7 @@ No browser-only reset exists.
 | Requests | Accepted friendship required | Listed items from another owner |
 | Plan changes | Borrower edits before pickup; owner reapproves | Either participant edits before owner dropoff; other participant reapproves |
 | Cancel | Before borrower pickup | Before owner dropoff |
-| Handover | Scan advances state, then a separate pending photo | Display QR for external scanner; preview bypass, locker number and photo |
+| Handover | Scan advances state, then a separate pending photo | Display QR for external scanner; preview bypass; the scan assigns an available locker, then a photo |
 | Final return | Owner scan immediately marks Returned/Past; evidence still required | Owner pickup enters verifying; good condition or issue resolution completes loan |
 | Review | Optional text/compliments/image; author edit/delete | Borrower create/edit with rating 1–5, text, compliments and optional photo |
 | Chat | Separate two-person chat records, images and Realtime | Shared person-to-person text threads with Realtime; optional loan references |

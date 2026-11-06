@@ -40,9 +40,10 @@ future dates that do not conflict with another tester’s reservation.
    dates and a locker, then send the request.
 2. **Sarah:** open **Loans → Pending → Sharing** and accept Eric’s request.
    If either person edits the dates or locker, the other must approve again.
-3. **Sarah:** open the active loan, select **Show QR → Simulate locker scan**, record a locker number, add an item photo and confirm drop-off.
+3. **Sarah:** open the active loan, select **Show QR → Simulate locker scan**.
+   The scan assigns an available locker; add an item photo and confirm drop-off.
 4. **Eric:** complete pickup, then return, through the same flow. Each handover
-   needs its own photo; the pickup locker number comes from the prior drop-off.
+   needs its own photo; each scan assigns the locker to use.
 5. **Sarah:** collect the returned item, then verify its condition. If reporting
    an issue, add notes; add a resolution note and select **Mark resolved** once
    it is settled.
