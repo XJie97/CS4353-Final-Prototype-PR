@@ -1,7 +1,8 @@
 # How to use the community lending app
 
 This guide follows the styled app in `frontend/`, available at
-http://localhost:3001 when running locally. It explains the current preview's
+https://cs4353-demo.pages.dev/ or http://localhost:3001 when running locally.
+It explains the current demo's
 screens and actions. The separate Supabase functionality frame on port 3000 has
 a different handover process; its instructions are in the repository README.
 
@@ -13,12 +14,11 @@ testing](team-testing.md).
 Sign in with your assigned Eric, Sarah, Ben or Maya demo email and password. Credentials
 are distributed privately; do not put them in bug reports. For a two-person walkthrough,
 use separate browser profiles or devices and sign in as Eric in one and Sarah in the
-other. Avoid same-profile tabs for independent accounts until the auth event isolation
-issue in the [hosting guide](hosting.md) is fixed.
+other. Each tab has its own stored session and isolated auth channel.
 
 Changes are saved to Supabase and shared with other testers. Realtime updates refresh
-connected sessions. Reload to verify persistence. Login storage is tab-scoped; use
-separate browser profiles for different accounts because of the known auth-event issue.
+connected sessions. Reload to verify persistence. Login storage is tab-scoped;
+separate profiles or devices are also useful for comparing two accounts side by side.
 Use **Me → Sign out** when finished. Different deployment URLs can share the same
 backend and activity.
 
@@ -161,7 +161,7 @@ Try Eric borrowing Sarah's Cake stand:
 
 1. As Eric, find Cake stand in Borrow and request future dates and a locker.
 2. In Sarah’s session, accept the request in Loans → Pending → Sharing.
-3. As Sarah, complete the owner dropoff using the preview code and a photo.
+3. As Sarah, complete the owner dropoff using **Show QR → Simulate locker scan** and a photo.
 4. In Eric’s session, complete pickup, then return, with a photo for each.
 5. In Sarah’s session, collect the return and verify its condition.
 6. In Eric’s session, leave an optional review under Loans → Complete.
@@ -171,11 +171,10 @@ show the current stage and the participant responsible for the next step.
 
 ## Testing a hosted version
 
-Use https://5d8e7fa9.cs4353-demo.pages.dev/ for the connected candidate at commit
-`4e7afab`. The branch alias is
-https://feature-database-integration.cs4353-demo.pages.dev/ and follows later successful
-branch builds. Production https://cs4353-demo.pages.dev/ remains the older demo until
-promotion. See the [hosting guide](hosting.md).
+Use **https://cs4353-demo.pages.dev/** for the current demo built from `main`.
+Future feature branches have separate Cloudflare preview URLs; copy the exact URL
+and displayed version when reporting a bug. The fixed `4e7afab` preview in the
+[hosting guide](hosting.md) is historical and does not include all current changes.
 
 All connected builds using the same Supabase project share activity. Deployments and URL
 changes do not reset it.

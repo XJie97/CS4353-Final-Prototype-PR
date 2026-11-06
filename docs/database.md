@@ -13,6 +13,10 @@ the `private` or `supabase_migrations` schemas through the Data API.
 
 ## Connected completion: verified 6 November 2026
 
+The current demo uses four provisioned characters: **Eric, Sarah, Ben and Maya**.
+Their shared state is stored in `demo_*` tables. The root-frame tables described
+later in this document belong to the legacy application.
+
 Migration `20261106000100_connected_completion.sql` adds `demo_help_requests` and
 `demo_offers`, member-only reads and Realtime publication. Existing `demo_state` and
 `demo_command` RPC names remain unchanged. Help commands enforce roles, request
@@ -72,7 +76,8 @@ The connected hosted browser journey subsequently passed on 5 November 2026 at c
 return verification, review, realtime messages in both directions and reload
 persistence. See [hosting
 verification](hosting.md#hosted-browser-verification-5-november-2026) for the test
-record and limits. Production remains the older demo pending promotion.
+record and limits. That verification predates the merge into `main`; the current
+public demo and release status are documented in [hosting](hosting.md).
 
 ## Current model
 

@@ -6,7 +6,7 @@ body:
     id: url
     attributes:
       label: Demo URL
-      description: Paste the exact connected test preview URL.
+      description: Paste the exact production or branch preview URL.
     validations:
       required: true
   - type: input

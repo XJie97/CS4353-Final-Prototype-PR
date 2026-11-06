@@ -4,7 +4,9 @@ A connected team-testing prototype of the borrowing and lending flows in [CS4353
 PROJECT](https://www.figma.com/design/PNW1tzgY932Re3gpPiplcf/CS4353-PROJECT). The
 existing Supabase application in the repository root is independent.
 
-For the hosted preview link, private-login setup and reporting instructions, start with
+The public demo is **https://cs4353-demo.pages.dev/**, built from `main`.
+The four seeded characters are **Eric, Sarah, Ben and Maya**.
+For private-login setup and reporting instructions, start with
 [Group testing](../docs/team-testing.md).
 
 For a user-facing walkthrough of the screens and exchange journey, see
@@ -165,5 +167,5 @@ asset and QR rendering checks. Neither command substitutes for hosted acceptance
 The retained IndexedDB adapters/local reducers test the historical offline model;
 they are not the persistence path of the connected app. Historical plan-comparison
 and navigation helpers remain in the frontend. See [database verification](../docs/database.md)
-for deployed RPC coverage and [team acceptance](../docs/team-testing.md#next-candidate-acceptance-checks-for-the-release-owner)
+for deployed RPC coverage and [team acceptance](../docs/team-testing.md#production-acceptance-checks-for-the-release-owner)
 for the manual checks reserved for the release owner.

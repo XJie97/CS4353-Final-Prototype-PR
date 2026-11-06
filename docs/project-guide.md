@@ -1,11 +1,13 @@
 # Current project guide
 
-Updated 5 November 2026 for connected styled candidate `4e7afab`.
+Updated 6 November 2026 after the connected demo was merged into `main`
+(merge commit `8f7b006`, including locker-flow change `1692347`).
 
 ## Application boundaries
 
 The root `src/` application is the plain Supabase functionality frame. The
-`frontend/src/` application is a styled, connected community lending preview. Starting
+`frontend/src/` application is the current public community lending demo at
+https://cs4353-demo.pages.dev/. Starting
 one does not start the other. They have separate package manifests, lockfiles, models,
 accounts, routes and persistence. The styled app uses separate `demo_*` tables in the
 same Supabase project.
@@ -40,15 +42,19 @@ committed `package-lock.json`. Never place a privileged key in browser configura
 
 Change pure domain behavior and its tests together. Connected authorization and
 lifecycle transitions are also enforced by `demo_command` in migration
-`20261105000100_shared_demo.sql`; a client-only change does not update server rules. The
+`20261105000100_shared_demo.sql` and
+`20261106000100_connected_completion.sql`; a client-only change does not update server rules. The
 adapter calls `demo_state` and `demo_command` and refreshes on Realtime changes. Photos
 upload to private `demo-images` Storage and display through signed URLs.
 
-Auth uses sessionStorage per tab, but Supabase auth events currently broadcast across
-same-profile tabs under the common storage key. Use separate browser profiles or devices
-for independent accounts until that isolation issue is fixed. All builds configured with
-the same backend share activity; sign-out ends a tab’s session and does not erase shared
-records. No browser-only reset exists.
+The seeded characters are Eric, Sarah, Ben and Maya. The current provisioning script
+is `frontend/scripts/provision-demo.ts`; the root seed script belongs to the legacy
+frame. Private account credentials are distributed separately.
+
+Auth uses sessionStorage per tab and a unique channel for each client, isolating
+other tabs' login/logout events. All builds configured with the same backend share
+activity; sign-out ends a tab's session and does not erase shared records.
+No browser-only reset exists.
 
 ## Workflow differences to preserve explicitly
 
@@ -58,9 +64,9 @@ records. No browser-only reset exists.
 | Requests | Accepted friendship required | Listed items from another owner |
 | Plan changes | Borrower edits before pickup; owner reapproves | Either participant edits before owner dropoff; other participant reapproves |
 | Cancel | Before borrower pickup | Before owner dropoff |
-| Handover | Scan advances state, then a separate pending photo | Matching preview code, locker number and photo recorded together |
+| Handover | Scan advances state, then a separate pending photo | Display QR for external scanner; preview bypass, locker number and photo |
 | Final return | Owner scan immediately marks Returned/Past; evidence still required | Owner pickup enters verifying; good condition or issue resolution completes loan |
-| Review | Optional text/compliments/image; author edit/delete | One borrower submission with rating 1–5, text, compliments and optional photo |
+| Review | Optional text/compliments/image; author edit/delete | Borrower create/edit with rating 1–5, text, compliments and optional photo |
 | Chat | Separate two-person chat records, images and Realtime | Shared person-to-person text threads with Realtime; optional loan references |
 | Date conflicts | Inclusive reservations retained except cancelled loans | Inclusive conflicts exclude complete, declined and cancelled loans |
 
@@ -72,7 +78,7 @@ commands. QR codes simulate handovers; physical locker hardware is not connected
 Run each application's commands in its own directory. Preview tests cover domain,
 community, communication, routing, handover and serialized complete journeys. Rendered
 checks render routes, check asset references and generate a QR matrix; they do not
-establish browser layout or physical camera compatibility. For a manual journey, follow
+establish browser layout or physical locker-device compatibility. For a manual journey, follow
 `frontend/README.md` using separate Eric and Sarah signed-in sessions.
 
 Root database coverage lives in `supabase/tests/feature_frame.sql` and rolls back
@@ -80,7 +86,7 @@ its fixtures. `docs/database.md` documents that schema and its existing deployme
 pulling frontend changes does not deploy a database migration. The historical
 `supabase/tests/lending.sql` targets the earlier workflow.
 
-The connected styled migration is applied and the hosted happy path at `4e7afab` passed
-in separate Eric/Sarah Chrome tabs. See [hosting](hosting.md) for deployment,
-verification evidence and remaining camera/mobile checks. Production remains the older
-demo until an explicitly approved promotion to main.
+The connected migrations are applied. The release owner checked the preview and
+merged the feature branch into `main`. Cloudflare publishes the current demo from
+`frontend/`; see [hosting](hosting.md) for configuration, historical test evidence
+and production verification. The earlier `4e7afab` preview is a historical test build.

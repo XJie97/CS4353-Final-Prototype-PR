@@ -1,9 +1,10 @@
 # Cloudflare Pages demo hosting
 
-**Connected team-testing preview:** https://5d8e7fa9.cs4353-demo.pages.dev/ (`4e7afab`).
+**Public demo:** https://cs4353-demo.pages.dev/
 
-Production https://cs4353-demo.pages.dev/ still serves the older demo. Groupmates should
-start with [Group testing](team-testing.md).
+The connected demo is merged into `main`; Cloudflare builds the app in `frontend/`
+for this address. Start with [Group testing](team-testing.md). Historical preview
+evidence below remains tied to its original commit and deployment.
 
 Cloudflare Pages project `cs4353-demo` is connected to the private GitHub repository.
 Production deploys from `main`; branch builds provide separate preview URLs that share
@@ -12,7 +13,7 @@ the configured backend.
 ## Existing Cloudflare configuration
 
 The Git-connected Pages project already exists. Keep its GitHub integration scoped to
-`colinhia/CS4353-Final-Prototype` and use these settings (last verified in Cloudflare on 5 November 2026):
+`colinhia/CS4353-Final-Prototype` and use these settings (Production reconfirmed by the release owner on 6 November 2026):
 
 | Setting | Value |
 | --- | --- |
@@ -78,17 +79,25 @@ browser-only reset. Coordinate test dates with teammates; existing reservations 
 overlapping dates. Passwords remain in the ignored repository-root `.demo-accounts.txt`
 and must be shared privately, never in bug reports or committed guides.
 
-## Current deployment status
+## Current release status
 
-On 5 November 2026, Cloudflare settings were verified: `main`, `frontend`, the build
-command above, `dist`, and previews for all non-production branches. All three variables
-were saved and verified in both environments.
+The feature branch was merged into `main` through pull request #6 as `8f7b006`,
+including `1692347` (external-scanner QR presentation and preview bypass).
+The release owner confirmed Production settings and reported that the feature
+preview looked good. The public demo is https://cs4353-demo.pages.dev/.
+Check Cloudflare's production build status and the displayed app version to confirm
+which commit is live; a Git merge alone is not a deployment-success check.
 
-The feature branch was pushed through `4e7afab`. Cloudflare reported successful build
-and deployment (39 seconds) at https://5d8e7fa9.cs4353-demo.pages.dev/. Branch alias:
-https://feature-database-integration.cs4353-demo.pages.dev/. Production remains on
-`6173917` and serves the older browser-only demo until an explicit promotion to main.
-Use the feature preview for connected team testing.
+Both connected migrations are applied, including shared Help requests/offers and
+review editing. The four provisioned characters are Eric, Sarah, Ben and Maya.
+A main deployment does not reset their shared activity.
+
+### Historical preview deployment: 5 November 2026
+
+Cloudflare settings for both environments were verified on 5 November. Candidate
+`4e7afab` deployed successfully at https://5d8e7fa9.cs4353-demo.pages.dev/ in 39 seconds.
+Production was then on `6173917`; this is historical context, not the current release
+status. The following browser verification records apply to that fixed preview.
 
 
 ## Hosted browser verification: 5 November 2026
@@ -142,7 +151,7 @@ isolates those events. Reloading the affected tab restores its own stored sessio
 screen. This follow-up does not change app code.
 
 
-## Pre-merge checklist: 6 November 2026 working candidate
+## Release checklist: 6 November 2026
 
 - [x] Implement shared Help post/close/offer/withdraw/select commands, state reads,
       row policies and Realtime publication in a new migration.
@@ -166,10 +175,11 @@ screen. This follow-up does not change app code.
 - [x] Release owner confirmed the Cloudflare Production settings and variables on
       6 November 2026. This confirmation was provided by the owner; no browser
       integration or authenticated Cloudflare API was used in this session.
-- [ ] Confirm Preview settings/variables through the successful branch deployment.
-- [ ] Release owner: deploy/test the final feature commit using the [acceptance
-      checklist](team-testing.md#next-candidate-acceptance-checks-for-the-release-owner).
-- [ ] Merge only after hosted acceptance passes and verify the resulting production version.
+- [x] Release owner reported that the feature preview looked good before merging.
+- [ ] Record detailed production results using the [acceptance
+      checklist](team-testing.md#production-acceptance-checks-for-the-release-owner).
+- [x] Feature branch merged into `main` as `8f7b006`.
+- [ ] Confirm the resulting production deployment succeeds and displays the expected version.
 
 `npm test` in `frontend/` now includes connected DOM interactions, so the existing
 Cloudflare build command also gates these regressions. These tests use jsdom and

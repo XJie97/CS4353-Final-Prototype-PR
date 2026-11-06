@@ -1,19 +1,18 @@
 # Group testing: connected community lending demo
 
-## Open this version
+## Open the current demo
 
-**Previous verified test link:** https://5d8e7fa9.cs4353-demo.pages.dev/
+**Public demo:** https://cs4353-demo.pages.dev/
 
-**Previous verified version:** `4e7afab` under **Me → About this preview**.
+Cloudflare builds the connected styled app in `frontend/` from `main`. The feature
+branch was merged as `8f7b006`, including the external-scanner QR flow in `1692347`.
+No installation, Cloudflare login or local environment file is needed. Record the
+actual version shown under **Me → About this preview** when testing; deployment
+completion is separate from the Git merge.
 
-This is the styled app in `frontend/`, connected to shared Supabase data. No
-installation, Cloudflare login or local environment file is needed to use the hosted
-preview. The production URL, https://cs4353-demo.pages.dev/, still serves the older
-demo; use the test link above for this round.
-
-The [branch preview](https://feature-database-integration.cs4353-demo.pages.dev/)
-follows later successful builds. Use the fixed test link above when reporting results so
-everyone is testing the same version.
+Use branch preview URLs when testing future unmerged changes. The fixed
+https://5d8e7fa9.cs4353-demo.pages.dev/ (`4e7afab`) is a historical verification build,
+not the current team-testing destination.
 
 ## Get your account
 
@@ -21,11 +20,11 @@ Ask Colin privately for your assigned Eric, Sarah, Ben or Maya email and passwor
 in with that login; there is no account selector or public signup. Do not paste
 passwords into issues, screenshots or shared documents.
 
-For the previously verified `4e7afab` build, use one account per browser profile or device. To test both sides yourself, use two
-separate browser profiles, two different browsers, or two devices. Avoid two tabs in the
-same browser profile: there is a known auth-event isolation issue that can show a load
-error after another tab signs in or out. If that happens, reload the affected tab and
-sign in again if needed. Sign out under **Me** when finished.
+Eric, Sarah, Ben and Maya are the four seeded characters. To test both sides,
+sign in to separate tabs, browser profiles or devices. Each current tab stores its
+own session and uses an isolated auth channel. Sign out under **Me** when finished.
+The older `4e7afab` build had a cross-tab auth issue; that warning applies to the
+historical build, not the implementation now merged into `main`.
 
 Coordinate account use and borrowing dates with the group. Everyone shares the same
 data, including listings, messages, photos and loans. Changing URLs, clearing browser
@@ -83,26 +82,30 @@ tools. Record successful checks too, so the group knows what was covered.
 
 ## What has already been checked
 
-On the fixed version above, the hosted happy path passed: request/approval, four photo
+On the historical `4e7afab` version, the hosted happy path passed: request/approval, four photo
 handovers, good-condition return, review, live messages and reload persistence.
 Follow-up checks passed for booking conflicts, plan reapproval, cancellation/date
 release, issue resolution and photo upload at a 390 × 844 Chrome responsive viewport.
 
-Same-profile tab auth isolation failed on `4e7afab`; use the workaround above for that build. The current working candidate includes a fix verified with real Supabase Auth clients in local DOM tests. Your hosted acceptance test must still confirm it in a browser. Physical
+Same-profile tab auth isolation failed on `4e7afab`; use separate profiles/devices for that historical build. The merged demo includes a fix verified with real Supabase Auth clients in local DOM tests. Your hosted acceptance test must still confirm it in a browser. Physical
 phone behavior and integration with a physical locker scanner remain unverified.
 See the [hosting record](hosting.md#focused-preview-checks) for detailed evidence and
 remaining limitations.
 
 
-## Next candidate: acceptance checks for the release owner
+## Production acceptance checks for the release owner
 
-The 6 November working candidate adds shared Help requests/offers, borrower review
+The release owner reported that the feature preview looked good and merged it to
+`main`. The checklist below remains useful for confirming the resulting production
+deployment and future releases; individual results have not been separately recorded.
+
+The 6 November release adds shared Help requests/offers, borrower review
 editing (including replacement/removal of photos), and isolated tab auth channels.
-The database migration is applied; the frontend changes require a new branch build.
-The fixed URL above does not contain these changes. Open the branch preview only
-after its deployment passes, and record its exact version before testing.
+The database migration is applied and the frontend changes are merged into `main`.
+Use the public demo after its production build passes, or a branch preview for
+future changes. Record the exact displayed version before testing.
 
-- [ ] Confirm the deployment version matches the feature branch commit.
+- [ ] Confirm the deployment version matches the deployed `main` commit.
 - [ ] Repeat the Eric/Sarah journey, chat, reload and phone layout checks above.
 - [ ] Post a Help request; offer a listed item from another account; select it.
       Confirm exactly one pending loan and selected request history after reload.
