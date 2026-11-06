@@ -6,7 +6,7 @@ import { parseRoute, type Page, type Route } from './app/routes';
 import BorrowHome from './pages/borrow/BorrowHome';
 import { BottomNavigation } from './components/BottomNavigation';
 import { EmptyState, Header } from './components/ui/shared';
-import { LoansPage, LoanDetails } from './features/LoansPage';
+import { LoansPage } from './features/LoansPage';
 import { LoanForm } from './features/LoanForm';
 import { LockerFlow } from './features/LockerFlow';
 import { ReviewForm } from './features/ReviewForm';
@@ -17,6 +17,7 @@ import { ChatsPage } from './features/ChatsPage';
 import { NotificationsPage } from './features/NotificationsPage';
 import './pages/borrow/borrow.css';
 import './app/app.css';
+import { LoanDetails } from './features/LoanDetails';
 export function RouteContent({route,navigate,onItem,onHandover,onReview,onReset}:{route:Route;navigate:(page:Page,id?:string)=>void;onItem:(id:string)=>void;onHandover:(id:string)=>void;onReview:(id:string)=>void;onReset:()=>void}) {
  const {store}=useApp();
  switch(route.page){
