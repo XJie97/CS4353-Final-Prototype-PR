@@ -1,3 +1,5 @@
+import { validDate, AppError } from './validation.ts';
+import { applyHelp, type HelpCommand, type HelpRequest, type Offer } from './help.ts';
 import type { BorrowItem } from '../pages/borrow/items.ts';
 export type Person = { revision?: number; id: string; name: string; username: string; location: string; bio: string; avatar?: string; colour: string };
 export type Item = BorrowItem & { revision?: number; ownerId: string; listed: boolean; images: string[] };
@@ -9,12 +11,13 @@ export type Loan = {
  revision?: number;
  id: string; itemId: string; ownerId: string; borrowerId: string; start: string; end: string; lockerId: string;
  status: LoanStatus; approvals: string[]; proofs: Partial<Record<ProofStep, Proof>>; code: string; createdAt: string;
+ previousPlan?: PlanInput;
  condition?: { result: 'good' | 'issue'; note: string; at: string; resolution?: string }; review?: Review;
 };
 export type Message = { id: string; from: string; to: string; text: string; at: string; read: boolean; loanId?: string };
 export type Friendship = { id: string; from: string; to: string; status: 'pending' | 'accepted' };
 export type Notice = { id: string; to: string; text: string; at: string; read: boolean; loanId?: string; peerId?: string };
-export type Store = { receivedReviews?: {id:string;ownerId:string;review:Review}[]; version: 1; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
+export type Store = { version: 1; helpRequests?: HelpRequest[]; offers?: Offer[]; receivedReviews?: {id:string;ownerId:string;review:Review}[]; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
 export const LOCKERS = [
  { id: 'clementi', name: 'Clementi', label: 'Clementi Locker', number: '12' },
  { id: 'toa-payoh', name: 'Toa Payoh', label: 'Toa Payoh Locker', number: '08' },
@@ -29,7 +32,7 @@ export function todayLocal() {
 }
 export function addDays(value: string, days: number) { const date=new Date(value+'T00:00:00Z');date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10); }
 export function dateLabel(value: string) { return new Intl.DateTimeFormat('en-SG',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T00:00:00Z')); }
-export function validDate(value: string) { return /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value; }
+export { validDate, AppError } from './validation.ts';
 export function duration(start: string,end: string) { return Math.round((Date.parse(end)-Date.parse(start))/86400000)+1; }
 export function nextProof(loan: Loan) { return PROOF_STEPS.find(step=>!loan.proofs[step]); }
 export function proofActor(loan: Loan, step: ProofStep) { return step==='ownerDropoff'||step==='ownerPickup'?loan.ownerId:loan.borrowerId; }
@@ -37,10 +40,9 @@ export function handoverCode(loan: Loan,step: ProofStep) { return `CS4353:${loan
 export function loanGroup(loan: Loan): 'Pending'|'Active'|'Complete' { return ['requested','arranging'].includes(loan.status)?'Pending':['complete','declined','cancelled'].includes(loan.status)?'Complete':'Active'; }
 export function areFriends(s: Store,a: string,b: string) { return s.friends.some(f=>f.status==='accepted'&&((f.from===a&&f.to===b)||(f.to===a&&f.from===b))); }
 export function photoValid(photo: string) { return photo.length<=2_000_000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo); }
-export class AppError extends Error {}
 function requireValue(ok: unknown, message: string): asserts ok { if(!ok)throw new AppError(message); }
 export type PlanInput = { start: string; end: string; lockerId: string };
-export type Command =
+export type Command = HelpCommand
  | {type:'switch-account';id:string}
  | ({type:'request-loan';id:string;itemId:string}&PlanInput)
  | ({type:'edit-plan';loanId:string}&PlanInput)
@@ -48,7 +50,7 @@ export type Command =
  | {type:'record-proof';loanId:string;step:ProofStep;photo:string;code:string;lockerNumber:string}
  | {type:'verify-condition';loanId:string;condition:'good'|'issue';note:string}
  | {type:'resolve-condition';loanId:string;note:string}
- | {type:'submit-review';loanId:string;rating:number;text:string;compliments:string[];photo?:string}
+ | {type:'submit-review'|'edit-review';loanId:string;rating:number;text:string;compliments:string[];photo?:string}
  | {type:'send-message';to:string;text:string;loanId?:string}
  | {type:'read-thread';peerId:string}
  | {type:'read-notices';id?:string}
@@ -60,6 +62,7 @@ export type Command =
  | {type:'update-profile';name:string;username:string;location:string;bio:string;avatar?:string};
 export type CommandEnv = { id: string; now: string; today: string };
 export function applyCommand(original: Store, command: Command, env: CommandEnv): Store {
+ if(['post-help','close-help','offer-help','withdraw-offer','select-offer'].includes(command.type))return applyHelp(original,command as HelpCommand,env,applyCommand);
  const s=structuredClone(original), me=s.activeUserId;
  const person=(id:string)=>s.people.find(p=>p.id===id);
  const notify=(to:string,text:string,loanId?:string,peerId?:string)=>{s.notices.unshift({id:`${env.id}-${s.notices.length}`,to,text,...(loanId?{loanId}:{}),...(peerId?{peerId}:{}),at:env.now,read:false});};
@@ -83,6 +86,7 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   case 'edit-plan':{
    const l=loanFor(command.loanId);requireValue(['requested','arranging','ready'].includes(l.status)&&!l.proofs.ownerDropoff,'The exchange plan can no longer be edited.');validatePlan(l.itemId,command,l.id);
    if(l.start===command.start&&l.end===command.end&&l.lockerId===command.lockerId)return original;
+   l.previousPlan={start:l.start,end:l.end,lockerId:l.lockerId};
    Object.assign(l,{start:command.start,end:command.end,lockerId:command.lockerId,approvals:[me],status:'arranging'});notify(me===l.ownerId?l.borrowerId:l.ownerId,`${name} proposed a new exchange plan.`,l.id);break;
   }
   case 'cancel-loan':case 'decline-loan':{
@@ -103,8 +107,8 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   case 'resolve-condition':{
    const l=loanFor(command.loanId);requireValue(me===l.ownerId&&l.status==='verifying'&&l.condition?.result==='issue','Only the owner can resolve this condition issue.');requireValue(command.note.trim().length>=5,'Add a short resolution note.');l.condition.resolution=command.note.trim().slice(0,2000);l.status='complete';notify(l.borrowerId,'The condition issue has been resolved. You can now leave a review.',l.id);break;
   }
-  case 'submit-review':{
-   const l=loanFor(command.loanId);requireValue(me===l.borrowerId&&l.status==='complete','Only the borrower can review a completed loan.');requireValue(!l.review,'You have already reviewed this loan.');requireValue(Number.isInteger(command.rating)&&command.rating>=1&&command.rating<=5,'Choose a rating from 1 to 5.');requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a review of up to 2000 characters.');requireValue(command.compliments.every(c=>COMPLIMENTS.includes(c)),'Choose one of the available compliments.');requireValue(!command.photo||photoValid(command.photo),'Choose a valid review photo.');l.review={rating:command.rating,text:command.text.trim(),compliments:[...new Set(command.compliments)],...(command.photo?{photo:command.photo}:{}),at:env.now};notify(l.ownerId,`${name} left a review.`,l.id);break;
+  case 'submit-review':case 'edit-review':{
+   const l=loanFor(command.loanId);requireValue(me===l.borrowerId&&l.status==='complete','Only the borrower can review a completed loan.');requireValue(command.type==='edit-review'?!!l.review:!l.review,command.type==='edit-review'?'No review exists to edit.':'You have already reviewed this loan.');requireValue(Number.isInteger(command.rating)&&command.rating>=1&&command.rating<=5,'Choose a rating from 1 to 5.');requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a review of up to 2000 characters.');requireValue(command.compliments.every(c=>COMPLIMENTS.includes(c)),'Choose one of the available compliments.');requireValue(!command.photo||photoValid(command.photo),'Choose a valid review photo.');l.review={rating:command.rating,text:command.text.trim(),compliments:[...new Set(command.compliments)],...(command.photo?{photo:command.photo}:{}),at:env.now};notify(l.ownerId,`${name} left a review.`,l.id);break;
   }
   case 'create-item':case 'edit-item':{
    const existing=s.items.find(i=>i.id===command.id);

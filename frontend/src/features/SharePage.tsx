@@ -1,14 +1,53 @@
 import { useState } from 'react';
-import { useApp, uid } from '../app/context';
-import { LOCKERS, type Item } from '../app/domain';
-import { EmptyState, ErrorText, Glyph, Modal } from '../components/ui/shared';
-import { PhotoField } from '../components/ui/PhotoField';
-const CATEGORIES=['Home','Electronics','Party Supplies','Outdoors','Clothing','Tools','Sports'];
-export function ListingForm({item,onClose}:{item?:Item;onClose:()=>void}) {
- const {perform,toast,busy:saving}=useApp();const [newId]=useState(uid);const [name,setName]=useState(item?.name??'');const [description,setDescription]=useState(item?.description??'');const [category,setCategory]=useState(item?.category??'Home');const [location,setLocation]=useState(item?.location??'Clementi');const [photo,setPhoto]=useState(item&&item.image!=='/assets/item-placeholder.png'?item.image:'');const [busy,setBusy]=useState(false);const [error,setError]=useState('');
- return <Modal title={item?'Edit listing':'Share an item'} onClose={onClose}><form onSubmit={async e=>{e.preventDefault();const result=await perform({type:item?'edit-item':'create-item',id:item?.id??newId,name,description,category,location,images:photo?[photo]:[]});if(!result.ok){setError(result.error);return;}toast(item?'Listing updated.':'Your item is now available to borrow.');onClose();}}><label>Item name<input value={name} onChange={e=>setName(e.target.value)} maxLength={100} required placeholder="e.g. Cordless drill"/></label><label>Description<textarea value={description} onChange={e=>setDescription(e.target.value)} required maxLength={2000} placeholder="Describe your item and anything borrowers should know."/></label><label>Category<select value={category} onChange={e=>setCategory(e.target.value)}>{CATEGORIES.map(c=><option key={c}>{c}</option>)}</select></label><label>Community location<select value={location} onChange={e=>setLocation(e.target.value)}>{LOCKERS.map(l=><option key={l.id}>{l.name}</option>)}</select></label><PhotoField label="Item photo (optional)" value={photo} onChange={setPhoto} onBusyChange={setBusy}/><ErrorText text={error}/><div className="form-actions"><button disabled={saving} className="button" type="button" onClick={onClose}>Cancel</button><button className="button primary" type="submit" disabled={saving||busy}>Save listing</button></div></form></Modal>;
-}
+import { useApp } from '../app/context';
+import { type Item } from '../app/domain';
+import { EmptyState, Glyph } from '../components/ui/shared';
+import { ListingForm } from './ListingForm';
+
+
 export function SharePage({onLoan}:{onLoan:(id:string)=>void}) {
- const {store,perform,toast,busy:saving}=useApp();const [editing,setEditing]=useState<Item|'new'|null>(null);const mine=store.items.filter(i=>i.ownerId===store.activeUserId);
- return <main className="app-scroll"><div className="section-heading"><h2>Your items</h2><button disabled={saving} className="button primary" type="button" onClick={()=>setEditing('new')}><Glyph name="plus"/>Share</button></div><p className="muted">Give your things a little more life.</p>{mine.length?<div className="shelf-list">{mine.map(item=>{const loans=store.loans.filter(l=>l.itemId===item.id&&!['complete','cancelled','declined'].includes(l.status));return <article className="shelf-card" key={item.id}><img src={item.image} alt={item.name} width={84} height={84}/><div><h3>{item.name}</h3><p>{item.category} · {item.location}</p><span className="status-label">{!item.listed?'Hidden':loans.length?'Reserved':'Available'}</span><div className="button-row"><button disabled={saving} className="button" type="button" onClick={()=>setEditing(item)}>Edit</button><button disabled={saving} className="button" type="button" onClick={async()=>{const result=await perform({type:'toggle-item',id:item.id});if(result.ok)toast(item.listed?'Listing hidden from new borrowers.':'Listing is visible again.');else toast(result.error);}}>{item.listed?'Hide':'List again'}</button>{loans[0]&&<button disabled={saving} className="button" type="button" onClick={()=>onLoan(loans[0].id)}>View loan</button>}</div></div></article>;})}</div>:<EmptyState title="Your shelf is empty" text="Share something you rarely use and help a neighbour out."><button disabled={saving} className="button" type="button" onClick={()=>setEditing('new')}>Share your first item</button></EmptyState>}{editing&&<ListingForm key={editing==='new'?'new':editing.id} item={editing==='new'?undefined:editing} onClose={()=>setEditing(null)}/>}</main>;
-}
+    const {store,perform,toast,busy:saving}=useApp();
+    const [editing,setEditing]=useState<Item|'new'|null>(null);
+    const mine=store.items.filter(i=>i.ownerId===store.activeUserId);
+
+ return (
+    <main className="app-scroll">
+        <div className="section-heading">
+            <h2>Your items</h2>
+            <button disabled={saving} className="button primary" type="button" onClick={()=>setEditing('new')}>
+                <Glyph name="plus"/>Share
+            </button>
+        </div>
+        <p className="muted">Give your things a little more life.</p>
+        
+        {mine.length? <div className="shelf-list">{mine.map(item=>{
+            const loans=store.loans.filter(l=>l.itemId===item.id&&!['complete','cancelled','declined'].includes(l.status));
+            return (
+                <article className="shelf-card" key={item.id}>
+                    <img src={item.image} alt={item.name} width={84} height={84}/>
+                    <div>
+                        <h3>{item.name}</h3>
+                        <p>{item.category} · {item.location}</p>
+                        <span className="status-label">{!item.listed?'Hidden':loans.length?'Reserved':'Available'}</span>
+                        <div className="button-row">
+                            <button disabled={saving} className="button" type="button" onClick={()=>setEditing(item)}>Edit</button>
+                            <button disabled={saving} className="button" type="button" onClick={async()=>{
+                                const result=await perform({type:'toggle-item',id:item.id});
+                                if(result.ok)toast(item.listed?'Listing hidden from new borrowers.':'Listing is visible again.');
+                                else toast(result.error);}}>{item.listed?'Hide':'List again'
+                                }
+                            </button>
+                            {loans[0]&&<button disabled={saving} className="button" type="button" onClick={()=>onLoan(loans[0].id)}>View loan</button>}
+                        </div>
+                    </div>
+                </article>
+            );})}
+
+        </div> : <EmptyState title="Your shelf is empty" text="Share something you rarely use and help a neighbour out.">
+            <button disabled={saving} className="button" type="button" onClick={()=>setEditing('new')}>Share your first item</button>
+        </EmptyState>}
+        
+        {editing&&<ListingForm key={editing==='new'?'new':editing.id} item={editing==='new'?undefined:editing} onClose={()=>setEditing(null)}/>}
+
+    </main>
+);}

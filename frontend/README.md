@@ -140,3 +140,23 @@ two-account hosted journey passed.
 The [hosting verification
 record](../docs/hosting.md#hosted-browser-verification-5-november-2026)
 contains the exact deployment, test data, results and remaining limitations.
+
+## Direction B completion branch
+
+CHG-015 keeps the Friends component mounted while opening an item and records the friend origin in browser history. Item Back uses history for that origin; marketplace Back is unchanged. Friend filters/profile state remain in memory. Reloading a directly opened item has no friend origin and returns to Borrow.
+
+CHG-009 adds borrower-only `edit-review`, sharing creation validation. Existing fields prepopulate, including the photo. An edit preserves completed loan status. Review deletion is deliberately absent.
+
+CHG-002 stores the immediate prior plan as optional `Loan.previousPlan`. The participant whose approval is needed sees receive/return/locker before and after, with changed fields marked. This is not full revision history. Chat does not change agreement terms.
+
+CHG-008 is provisional and browser-local. Borrow and Share expose Ask for help / offers. Requests have title, description, dates and open/closed/selected state. Any other preview owner may offer their listed item; suitability is manually assessed. Owners can withdraw active offers; requesters can close open requests. Selection atomically invokes the existing request-loan command, rechecking availability, dates, locker and overlap. It closes selection and links an ordinary pending loan; later approval, handover and review remain unchanged. Offer arrival notifies the requester; ordinary loan creation notifies the selected owner. Unchosen offers are retained for history but cannot be selected after closure. No reference images or matching algorithm are included.
+
+Persistence remains IndexedDB database version 1, with an additive snapshot mapping: legacy missing helpRequests/offers become empty arrays, and missing previousPlan remains absent. Existing people, items, messages, loans and reviews are preserved. New seed states initialize the arrays. The old application can read the version-1 extension, but must not be used to mutate new help data because it does not understand those records. Back up the current IndexedDB snapshot before reverting a deployed application. There is no automatic destructive data downgrade.
+
+Tests: completion.test.ts covers legacy mapping, malformed extensions, multiple offers, two-account selection, duplicate/role/date failures, withdrawal, closure, intervening bookings, review ownership/reload and plan comparison persistence. Existing 32 tests remain intact. Real mobile/camera, concurrent-tab saves and interactive navigation acceptance remain manual checks. The existing save queue warns on persistence failure; changes remain available in that session. This branch does not introduce multi-tab synchronization.
+
+Deferred: CHG-007 contextual inquiry, CHG-023 comments, CHG-003 pickup disputes, review Delete, attachments, gamification and connected Supabase business rules. No upstream, root app, SQL or deployment changes.
+
+> Note: the Direction B notes above predate this branch's connected Supabase
+> persistence; in this branch help requests and offers are stored through the
+> shared Supabase backend instead of IndexedDB.
