@@ -48,8 +48,8 @@ function Application() {
  if(!identity)return <SignIn/>;
  if(!me)return <div className="borrow-app"><main className="app-loading"><p role="alert">{storageWarning||'Unable to load your profile.'}</p><button className="button" onClick={()=>void refresh()}>Retry</button><button className="button" onClick={()=>void signOut()}>Sign out</button></main></div>;
  return <div className="borrow-app"><div className="app-feature" hidden={route.page!=='borrow'}><BorrowHome key={`${me.id}-${homeEpoch}`} embedded catalog={catalog} onRequest={setRequestId} onChat={()=>navigate('chats')} onNotifications={()=>navigate('notifications')}/></div>
- <div hidden={route.page!=='friends'}><FriendsPage active={route.page==='friends'} onChat={id=>navigate('chats',id)} onItem={viewItem}/></div>
  {route.page!=='borrow'&&<><Header title={title} navigate={navigate} onBack={()=>navigate(route.id&&(route.page==='loans'||route.page==='chats')?route.page:'borrow')}/>{route.page!=='friends'&&<RouteContent route={route} navigate={navigate} onItem={viewItem} onHandover={setHandoverId} onReview={setReviewId} onReset={()=>navigate('borrow')}/>}</>}
+ <div className="app-feature" hidden={route.page!=='friends'}><FriendsPage active={route.page==='friends'} onChat={id=>navigate('chats',id)} onItem={viewItem}/></div>
  <div className="preview-strip"><span>Signed in as {me.name}</span><span>Shared demo</span></div>
  {storageWarning&&<div className="storage-warning" role="status">{storageWarning} <button onClick={()=>void refresh()}>Retry</button></div>}
  {['borrow','share'].includes(route.page)&&<button className="button" onClick={()=>setHelp(true)}>Ask for help / offers</button>}
