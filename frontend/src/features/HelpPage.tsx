@@ -35,7 +35,7 @@ export function HelpPage({
         onSubmit={async (e) => {
           e.preventDefault();
           if (
-            act({
+            await act({
               type: "post-help",
               id: uid(),
               title,
