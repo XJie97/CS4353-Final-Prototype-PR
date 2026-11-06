@@ -33,6 +33,10 @@ new review reads and writes use `reviews`, including migrated earlier reviews.
 
 Profiles and item photos coexist with their sprites. User sprites have hex colour,
 head/torso asset IDs and integer level; item sprites have category and hex colour.
+A user sprite may also store an optional hand-drawn face in `face_strokes` (jsonb:
+1–40 strokes of `[x, y]` points within -0.5..1.5, validated by
+`private.valid_face_strokes`). It is shown when `head_asset_id = 'face-drawn'`;
+`face-default` shows the default face. Item sprites never have one.
 The database creates sprites automatically and enforces one matching sprite each.
 
 ## Loan rules
@@ -120,7 +124,15 @@ No chat-to-item or chat-to-loan relationship is introduced.
 
 Apply migrations in filename order on a new project. This hosted project already
 has versions `20261030000100`, `20261030000200`, `20261030000300` recorded; do not
-reapply them. `20261030000300_feature_frame.sql` was rehearsed with rollback tests,
+reapply them.
+
+`20261106000100_sprite_face_strokes.sql` is additive: one nullable column, its
+shape check and a column grant. Existing rows keep `face_strokes = null` and no
+client change is required. Apply only pending migrations with the Supabase CLI:
+`pnpm db:link` once (asks for the database password), then `pnpm db:migrate:dry`
+to list what will run, then `pnpm db:migrate`. `db push` skips versions already
+recorded in migration history. Its checks are in `supabase/tests/sprite_face.sql`
+(run as postgres; rolls back). `20261030000300_feature_frame.sql` was rehearsed with rollback tests,
 then deployed on 30 October 2026 with its exact source recorded in migration history.
 
 Run **`supabase/tests/feature_frame.sql`** as postgres in a development database.

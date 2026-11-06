@@ -2,10 +2,16 @@ import { useState } from 'react';
 import { appVersion } from '../app/version';
 import { useApp } from '../app/context';
 import { LOCKERS } from '../app/domain';
-import { Avatar, Confirm, ErrorText, Modal } from '../components/ui/shared';
+import { Confirm, ErrorText, Modal } from '../components/ui/shared';
 import { PhotoField } from '../components/ui/PhotoField';
+import { PlantSprite, PlantTopper } from '../components/sprites';
+import { spriteFor } from '../app/sprite';
+import { ShelfStrip, currentLoan } from './ShelfStrip';
+import { ListingForm } from './ListingForm';
+import type { Item } from '../app/domain';
+import { AvatarEditor } from './AvatarEditor';
 
-export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:()=>void;onReset:()=>void}) {
+export function ProfilePage({onLoans,onShare,onReset,onLoan}:{onLoans:()=>void;onShare:()=>void;onReset:()=>void;onLoan?:(id:string)=>void}) {
  
     const {store,perform,toast,resetPreview,storageWarning}=useApp();
     const me=store.people.find(p=>p.id===store.activeUserId)!;
@@ -18,38 +24,66 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
     const [avatar,setAvatar]=useState(me.avatar??'');
     const [busy,setBusy]=useState(false);
     const [error,setError]=useState('');
-    const completed=store.loans.filter(l=>l.status==='complete'&&(l.ownerId===me.id||l.borrowerId===me.id)).length;
-    const items=store.items.filter(i=>i.ownerId===me.id).length;const friends=store.friends.filter(f=>f.status==='accepted'&&(f.to===me.id||f.from===me.id)).length;
+    const [editingAvatar,setEditingAvatar]=useState(false);
+    const [editingItem,setEditingItem]=useState<Item|null>(null);
+    const sprite=spriteFor(store,me.id);
+    const completed=sprite.completed;
+    const myItems=store.items.filter(i=>i.ownerId===me.id);
+    const items=myItems.length;const friends=store.friends.filter(f=>f.status==='accepted'&&(f.to===me.id||f.from===me.id)).length;
+    const openEditor=()=>{
+        setName(me.name);
+        setUsername(me.username);
+        setBio(me.bio);
+        setLocation(me.location);
+        setAvatar(me.avatar??'');
+        setError('');
+        setEditing(true);
+    };
+
+    // A shelf thumbnail opens the item's current loan if it's out, otherwise its edit form.
+    const openShelfItem=(id:string)=>{const item=myItems.find(i=>i.id===id);if(!item)return;const loan=currentLoan(item,store.loans);if(loan&&onLoan)onLoan(loan.id);else setEditingItem(item);};
+
+    if(editingAvatar)return <AvatarEditor onBack={()=>setEditingAvatar(false)}/>;
 
     return (
         <main className="app-scroll">
             <section className="profile-hero">
-                <Avatar person={me} size={88}/>
-                <h2>{me.name}</h2>
-                <p>@{me.username} · {me.location}</p><p>{me.bio}</p>
-                <button className="button" type="button" onClick={()=>{
-                    setName(me.name);
-                    setUsername(me.username);
-                    setBio(me.bio);
-                    setLocation(me.location);
-                    setAvatar(me.avatar??'');
-                    setError('');
-                    setEditing(true);
-                }}>Edit profile</button>
-
+                <div className="profile-hero__sprite">
+                    <PlantSprite bodyColor={sprite.bodyColor} topper={sprite.topper} face={sprite.face} animation="squish" label={`${me.name}'s avatar`}/>
+                </div>
+                <div className="profile-hero__main">
+                    <div className="profile-hero__details">
+                        <h2>{me.name}</h2>
+                        <p className="profile-hero__meta">@{me.username} · {me.location}</p>
+                        {me.bio&&<p className="profile-hero__bio">{me.bio}</p>}
+                    </div>
+                    <div className="profile-hero__actions">
+                        <button className="button" type="button" onClick={()=>setEditingAvatar(true)}>Edit avatar</button>
+                        <button className="button" type="button" onClick={openEditor}>Edit profile</button>
+                    </div>
+                </div>
             </section>
-            <div className="profile-stats">
-                <span><strong>{items}</strong>Shared items</span>
-                <span><strong>{completed}</strong>Completed loans</span>
-                <span><strong>{friends}</strong>Friends</span>
-            </div>
+            <section className="profile-growth" aria-label="Your stats">
+                <div className="profile-growth__plant">
+                    <PlantTopper bodyColor={sprite.bodyColor} topper={sprite.topper==='flower'?'flower':'sprout'} size={72}/>
+                    <span>{sprite.topper==='flower'?'In bloom':sprite.toBloom===1?'1 more loan to bloom':`${sprite.toBloom} more loans to bloom`}</span>
+                </div>
+                <div className="profile-stats">
+                    <span><strong>{items}</strong>Shared items</span>
+                    <span><strong>{completed}</strong>Completed loans</span>
+                    <span><strong>{friends}</strong>Friends</span>
+                </div>
+            </section>
             <div className="profile-links">
                 <button type="button" onClick={onLoans}>Your loans 
                     <span>›</span>
                 </button>
-                <button type="button" onClick={onShare}>Manage your shelf 
-                    <span>›</span>
-                </button>
+                <div className="profile-shelf">
+                    <button type="button" onClick={onShare}>Your shelf 
+                        <span>›</span>
+                    </button>
+                    <ShelfStrip items={myItems} loans={store.loans} onOpen={openShelfItem}/>
+                </div>
             </div>
             <section className="preview-controls">
                 <h3>About this preview</h3>
@@ -96,6 +130,7 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
                 </form>
             </Modal>
         }
+        {editingItem&&<ListingForm key={editingItem.id} item={editingItem} onClose={()=>setEditingItem(null)}/>}
         {reset&&<Confirm 
             title="Reset this preview?" 
             text="This removes the messages, photos, listings, reviews and loan changes saved in this preview and restores the sample accounts. This cannot be undone." 

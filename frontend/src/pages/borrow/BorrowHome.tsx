@@ -4,6 +4,8 @@ import { Icon } from '../../components/Icon';
 import { NeighborhoodMap } from './NeighborhoodMap';
 import { SearchOverlay } from './SearchOverlay';
 import { ItemDetails } from './ItemDetails';
+import { CategorySelect } from './CategorySelect';
+import { CATEGORIES } from '../../app/categories';
 import { allItems, categories, locations, filterItems, getBrowseItems, type BorrowItem } from './items';
 import { borrowReducer, initialBorrowState } from './flow';
 import './borrow.css';
@@ -14,7 +16,9 @@ function itemFromHash(source: BorrowItem[] = allItems) {
 }
 
 export default function BorrowHome({ catalog = allItems, embedded = false, onRequest, onChat, onChatOwner, onViewLoan, onNotifications }: { catalog?: BorrowItem[]; embedded?: boolean; onRequest?: (id: string) => void; onChat?: () => void; onChatOwner?: (ownerId: string) => void; onViewLoan?: (loanId: string) => void; onNotifications?: () => void }) {
-  const categories = [...new Set(catalog.map(item => item.category))];
+  // Known categories in their standard order, then any others present in the catalog.
+  const present = new Set(catalog.map(item => item.category));
+  const categories = [...CATEGORIES.filter(c => present.has(c)), ...[...present].filter(c => !(CATEGORIES as string[]).includes(c))];
   const locations = [...new Set(catalog.map(item => item.location))];
   const [state, dispatch] = useReducer(borrowReducer, initialBorrowState, initial => {
     const item = itemFromHash(catalog);
@@ -90,14 +94,7 @@ export default function BorrowHome({ catalog = allItems, embedded = false, onReq
       <main className="borrow-scroll" id="borrow-content" ref={scrollArea} tabIndex={-1} hidden={state.view === 'details'}>
         <h1 className="sr-only">{filters.query ? `Results for ${filters.query}` : 'Borrow from your community'}</h1>
         <div className="filter-bar" role="group" aria-label="Filter items">
-          <label className="select-field">
-            <span className="sr-only">Category</span>
-            <select value={filters.category} onChange={event => dispatch({ type: 'set-category', value: event.target.value })}>
-              <option value="all">All Categories</option>
-              {categories.map(value => <option key={value}>{value}</option>)}
-            </select>
-            <Icon name="chevron-down" width={16} />
-          </label>
+          <CategorySelect value={filters.category} categories={categories} onChange={value => dispatch({ type: 'set-category', value })} />
           <label className="select-field select-field--location">
             <span className="sr-only">Location</span>
             <Icon name="map-pin" width={18} />

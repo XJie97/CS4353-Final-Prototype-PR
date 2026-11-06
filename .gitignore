@@ -9,3 +9,4 @@ dist/
 coverage/
 .pnpm-store/
 .demo-accounts.txt
+supabase/.temp/

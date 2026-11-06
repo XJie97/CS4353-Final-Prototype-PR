@@ -14,17 +14,21 @@ export type PlantSpriteProps = {
   bodyColor?: string;
   topper?: SpriteTopper;
   face?: SpriteFace;
-  /** Rendered width in px (height follows the artwork's ratio). */
+  /** Rendered width in px. Leave out to fill the parent's width. */
   size?: number;
   animation?: SpriteAnimation;
   /** Read by screen readers. Pass "" to hide a purely decorative sprite. */
   label?: string;
   className?: string;
+  /** "head" frames just the head as a square (used by the face drawing pad). */
+  crop?: "full" | "head";
 };
 
 // Artwork coordinates (from Figma, in the body's 579 × 874 export space).
 // The viewBox extends 100 units above the head so the flower fits.
 const VIEW_BOX = "0 -100 579 974";
+/** Square around the head, shared with the drawing pad so coordinates line up. */
+export const HEAD_VIEW_BOX = "74 -12 430 430";
 const ASPECT = 974 / 579;
 
 const FACE_OFFSET = { x: 214, y: 149 };
@@ -46,10 +50,11 @@ export function PlantSprite({
   bodyColor = "#F7C8FF",
   topper = "sprout",
   face = { kind: "default" },
-  size = 160,
+  size,
   animation = "none",
   label = "Plant character",
   className,
+  crop = "full",
 }: PlantSpriteProps) {
   const clipId = useId();
   const palette = useMemo(() => deriveSpritePalette(bodyColor), [bodyColor]);
@@ -58,20 +63,19 @@ export function PlantSprite({
     "--sprite-body": palette.body,
     "--sprite-mid": palette.mid,
     "--sprite-outline": palette.outline,
-    width: size,
-    height: size * ASPECT,
-  } as CSSProperties;
+    ...(size ? { width: size, height: crop === "head" ? size : size * ASPECT } : { width: "100%", aspectRatio: crop === "head" ? "1" : "579 / 974" }),
+  } as unknown as CSSProperties;
 
   return (
     <span
-      className={["sprite", `sprite--${animation}`, className].filter(Boolean).join(" ")}
+      className={["sprite", `sprite--${animation}`, crop === "head" && "sprite--head", className].filter(Boolean).join(" ")}
       style={style}
     >
       {/* The shadow stays on the ground while the figure above it moves */}
       <span className="sprite__shadow" aria-hidden="true" />
       <span className="sprite__figure">
       <svg
-        viewBox={VIEW_BOX}
+        viewBox={crop === "head" ? HEAD_VIEW_BOX : VIEW_BOX}
         width="100%"
         height="100%"
         role={label ? "img" : undefined}
@@ -231,4 +235,22 @@ export function strokeToPath(stroke: DrawnStroke): string {
   }
   const [lx, ly] = pts[pts.length - 1];
   return d + `L${r(lx)} ${r(ly)}`;
+}
+
+/**
+ * Just the sprout or flower, framed for a close-up (e.g. a growth badge).
+ * Uses the same colours as the full sprite.
+ */
+export function PlantTopper({ bodyColor = "#F7C8FF", topper, size = 64, className }: { bodyColor?: string; topper: "sprout" | "flower"; size?: number; className?: string }) {
+  const palette = useMemo(() => deriveSpritePalette(bodyColor), [bodyColor]);
+  const style = { "--sprite-body": palette.body, "--sprite-mid": palette.mid, "--sprite-outline": palette.outline, width: size, height: size } as CSSProperties;
+  // Square frames around each part's artwork, with a little breathing room.
+  const viewBox = topper === "sprout" ? "-17 -44 160 160" : "-23 -19 160 160";
+  return (
+    <span className={["sprite-topper", className].filter(Boolean).join(" ")} style={style}>
+      <svg viewBox={viewBox} width="100%" height="100%" aria-hidden="true">
+        {topper === "sprout" ? <Sprout /> : <Flower />}
+      </svg>
+    </span>
+  );
 }

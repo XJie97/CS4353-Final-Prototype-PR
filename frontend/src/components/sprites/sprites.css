@@ -36,6 +36,10 @@
   pointer-events: none;
 }
 
+/* Head close-ups have no ground to cast a shadow on */
+.sprite--head .sprite__shadow { display: none; }
+.sprite--head svg { overflow: hidden; }
+
 /* TV colours from Figma. Override on a parent to restyle. */
 .sprite--tv {
   --tv-outline: #507631;

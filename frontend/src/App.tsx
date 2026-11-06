@@ -24,7 +24,7 @@ export function RouteContent({route,navigate,onItem,onHandover,onReview,onReset}
   case 'loans':return route.id?<LoanDetails key={route.id} id={route.id} onBack={()=>navigate('loans')} onChat={peer=>navigate('chats',peer)} onHandover={onHandover} onReview={onReview}/>:<LoansPage onOpen={id=>navigate('loans',id)} onHandover={onHandover}/>;
   case 'share':return <SharePage onLoan={id=>navigate('loans',id)}/>;
   case 'friends':return <FriendsPage onChat={id=>navigate('chats',id)} onItem={onItem}/>;
-  case 'me':return <ProfilePage key={store.activeUserId} onLoans={()=>navigate('loans')} onShare={()=>navigate('share')} onReset={onReset}/>;
+  case 'me':return <ProfilePage key={store.activeUserId} onLoans={()=>navigate('loans')} onShare={()=>navigate('share')} onReset={onReset} onLoan={id=>navigate('loans',id)}/>;
   case 'chats':return <ChatsPage key={route.id??'chats'} peerId={route.id} onOpen={id=>navigate('chats',id)} onLoan={id=>navigate('loans',id)}/>;
   case 'notifications':return <NotificationsPage navigate={navigate}/>;
   case 'borrow':return null;

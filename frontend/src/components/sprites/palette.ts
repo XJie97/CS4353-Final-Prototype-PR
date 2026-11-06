@@ -99,3 +99,12 @@ function oklchToHex(L: number, C: number, H: number): string {
       .toUpperCase()
   );
 }
+
+/**
+ * A soft pastel body colour from any accent colour (e.g. a person's profile
+ * colour), so every user gets a sensible default sprite before customising it.
+ */
+export function pastelFrom(hex: string): string {
+  const [, C, H] = hexToOklch(hex);
+  return oklchToHex(0.9, Math.min(Math.max(C * 0.45, 0.04), 0.09), H);
+}
