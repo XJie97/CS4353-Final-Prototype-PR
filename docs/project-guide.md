@@ -31,7 +31,6 @@ committed `package-lock.json`. Never place a privileged key in browser configura
 | `App.tsx`, `app/routes.ts` | Hash routing, five primary tabs, chats/notifications and modal flows |
 | `app/domain.ts` | Types, commands, permission checks, booking and handover rules |
 | `app/context.tsx` | Loads shared state, submits commands, observes sessions and Realtime |
-| `app/storage.ts` | Legacy local snapshot utilities; not connected runtime persistence |
 | `services/demo.ts` | Supabase session, command RPC, signed images, uploads and Realtime adapter |
 | `app/seed.ts` | Eric, Sarah, Ben, Maya and initial examples |
 | `app/images.ts` | Local photo validation/resizing |
@@ -82,9 +81,8 @@ establish browser layout or physical locker-device compatibility. For a manual j
 `frontend/README.md` using separate Eric and Sarah signed-in sessions.
 
 Root database coverage lives in `supabase/tests/feature_frame.sql` and rolls back
-its fixtures. `docs/database.md` documents that schema and its existing deployment;
-pulling frontend changes does not deploy a database migration. The historical
-`supabase/tests/lending.sql` targets the earlier workflow.
+its fixtures. `docs/database.md` documents that schema and its existing
+deployment; pulling frontend changes does not deploy a database migration.
 
 The connected migrations are applied. The release owner checked the preview and
 merged the feature branch into `main`. Cloudflare publishes the current demo from
