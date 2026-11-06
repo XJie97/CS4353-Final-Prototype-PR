@@ -88,8 +88,8 @@ For each handover:
 1. Press **Show QR** and present the displayed code to the external locker
    scanner. The locker device is not implemented; select **Simulate locker scan**
    to bypass it in this preview. The app does not scan the code with your camera.
-2. Check the locker location and number. For dropoff, record the locker number;
-   for pickup, the number is taken from the preceding dropoff.
+2. The scan assigns an available locker. Check the locker location and the
+   assigned number.
 3. Press **Continue to item photo** and add a photo showing the item's condition.
 4. Press **Confirm drop-off** or **Confirm pickup**. The success screen confirms
    the recorded handover. Press **Back to loan** to follow its progress.

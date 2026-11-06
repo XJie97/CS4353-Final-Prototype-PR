@@ -400,11 +400,20 @@ try {
     });
     // Verify that locker confirmation leads toward the photo-evidence step.
     assert.match(document.body.textContent, /Continue to item photo/);
-    // Verify that pickup locker numbers are fixed to the preceding drop-off locker.
+    // Verify that the completed scan explains how the locker was assigned.
+    assert.match(document.body.textContent, /assigned you an available locker/);
+    // Verify that the locker phase offers no manual number-entry field.
     assert.equal(
-      document.querySelector("input").readOnly,
-      index === 1 || index === 3,
-      "pickup uses the preceding drop-off locker",
+      document.querySelector("input"),
+      null,
+      "the scan assigns the locker; the user does not key one in",
+    );
+    const assigned = document.querySelector(".locker-number strong");
+    // Verify that each handover stage displays its assigned locker number.
+    assert.equal(
+      assigned?.textContent,
+      "12",
+      `${stage} shows the assigned locker`,
     );
     await unmount();
   }

@@ -110,6 +110,7 @@ test("four photo-backed handovers enforce actor, code and stage order", () => {
         photo,
         code: handoverCode(loan, "borrowerPickup"),
         lockerNumber: "12",
+        assignmentVerified: true,
       }),
     /next|order/i,
   );
@@ -123,6 +124,7 @@ test("four photo-backed handovers enforce actor, code and stage order", () => {
         photo,
         code: "wrong",
         lockerNumber: "12",
+        assignmentVerified: true,
       }),
     /code/i,
   );
@@ -144,6 +146,7 @@ test("four photo-backed handovers enforce actor, code and stage order", () => {
           photo: "",
           code: handoverCode(loan, step),
           lockerNumber: "12",
+          assignmentVerified: true,
         }),
       /photo/i,
     );
@@ -154,6 +157,7 @@ test("four photo-backed handovers enforce actor, code and stage order", () => {
       photo,
       code: handoverCode(loan, step),
       lockerNumber: "12",
+      assignmentVerified: true,
     });
     // Verify that each recorded proof advances to its expected loan status.
     assert.equal(s.loans.find((l) => l.id === loan.id)?.status, status);

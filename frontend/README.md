@@ -41,7 +41,8 @@ remains in place.
 - **Chat:** shared conversations, unread/read state, loan cards and plan editing.
   Notifications link to the correct conversation, loan or friend requests.
 - **Handover:** QR display for an external locker scanner; preview bypass for the
-  unimplemented device; locker number and item-photo confirmation.
+  unimplemented device; the scan assigns an available locker, then item-photo
+  confirmation.
   The sequence is owner drop-off → borrower pickup → borrower return → owner
   pickup. The next step is only available to its designated account.
 - **Returns and reviews:** owner condition checks, issue notes/resolution,
@@ -72,9 +73,9 @@ include passwords in reports.
 2. In Sarah’s session, open **Loans → Pending**, and open Eric's request.
    Accept it, or edit the plan. An edit requires Eric's approval in his account.
 3. Once both approve, Sarah can use **Show QR** to drop off the item. Press
-   **Simulate locker scan**; record a locker number and photo.
-4. In Eric’s session, open **Loans → Active**. Complete pickup with the same
-   locker number and another photo. Repeat the flow to return the item.
+   **Simulate locker scan**; the scan assigns an available locker, then add a photo.
+4. In Eric’s session, open **Loans → Active**. Complete pickup with another photo;
+   each scan assigns the locker to use. Repeat the flow to return the item.
 5. As **Sarah**, collect the returned item, add a photo, and verify its condition.
    If an issue is recorded, discuss it in chat and add a resolution note.
 6. As **Eric**, find the loan under **Complete** and leave a rating and review.

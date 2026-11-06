@@ -60,6 +60,7 @@ test("the complete two-person flow survives serialization after every step", () 
       step,
       photo,
       lockerNumber: "12",
+      assignmentVerified: true,
       code: handoverCode(
         state.loans.find((l) => l.id === "journey")!,
         step,

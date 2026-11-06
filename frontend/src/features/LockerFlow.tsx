@@ -37,11 +37,10 @@ export function LockerFlow({
       : step === "ownerPickup"
         ? loan.proofs.borrowerDropoff
         : undefined);
-  const [lockerNumber, setLockerNumber] = useState(
+  const lockerNumber =
     previous?.lockerNumber ??
-      LOCKERS.find((l) => l.id === loan?.lockerId)?.number ??
-      "12",
-  );
+    LOCKERS.find((l) => l.id === loan?.lockerId)?.number ??
+    "12";
 
   // Block unavailable handovers, invalid stages, and the wrong actor; retain the success screen after completion.
   if (
@@ -100,52 +99,28 @@ export function LockerFlow({
 
       {phase === "locker" && (
         <>
+          <p>The locker scan assigned you an available locker.</p>
           <p className="locker-location">
             {LOCKERS.find((l) => l.id === loan.lockerId)?.label}
           </p>
           <div className="locker-number">
-            Locker
+            Your locker
             <strong>{lockerNumber.padStart(2, "0")}</strong>
           </div>
           <p>
             {pickup
               ? "Collect the item from the locker shown above."
-              : "Place the item in a locker, then record its number and condition."}
+              : "Place the item in the locker shown above, then record its condition."}
           </p>
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              // Require a positive one- or two-digit locker number before continuing.
-              if (!/^\d{1,2}$/.test(lockerNumber) || Number(lockerNumber) < 1) {
-                setError("Enter a locker number from 1 to 99.");
-                return;
-              }
-              setError("");
-              setPhase("photo");
-            }}
+          <ErrorText text={error} />
+          <button
+            disabled={saving}
+            className="button primary wide"
+            type="button"
+            onClick={() => setPhase("photo")}
           >
-            <label>
-              Locker number
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]{1,2}"
-                maxLength={2}
-                value={lockerNumber}
-                readOnly={pickup}
-                required
-                onChange={(e) => setLockerNumber(e.target.value)}
-              />
-            </label>
-            <ErrorText text={error} />
-            <button
-              disabled={saving}
-              className="button primary wide"
-              type="submit"
-            >
-              Continue to item photo
-            </button>
-          </form>
+            Continue to item photo
+          </button>
         </>
       )}
 
@@ -184,6 +159,7 @@ export function LockerFlow({
                   photo,
                   code: expected,
                   lockerNumber,
+                  assignmentVerified: true,
                 });
                 // Keep the handover form open when recording the proof fails.
                 if (!result.ok) setError(result.error);

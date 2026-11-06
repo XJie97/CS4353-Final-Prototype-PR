@@ -77,6 +77,7 @@ test("photo upload is reused when record finalization is retried", async () => {
     step: "ownerDropoff" as const,
     code: "code",
     lockerNumber: "12",
+    assignmentVerified: true,
     photo: "data:image/png;base64,eA==",
   };
   f.setFail(true);

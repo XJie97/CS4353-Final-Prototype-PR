@@ -217,6 +217,7 @@ export type Command =
       photo: string;
       code: string;
       lockerNumber: string;
+      assignmentVerified?: boolean;
     }
   | {
       type: "verify-condition";
@@ -494,25 +495,17 @@ export function applyCommand(
         photoValid(command.photo),
         "Add a valid item photo before continuing.",
       );
-      // Require a positive locker number containing one or two digits.
+      // Require confirmation that the locker scan assigned the handover locker.
+      requireValue(
+        command.assignmentVerified,
+        "The locker scan must be completed before recording a handover.",
+      );
+      // Require the assigned locker number to be positive and contain one or two digits.
       requireValue(
         /^\d{1,2}$/.test(command.lockerNumber) &&
           Number(command.lockerNumber) > 0,
-        "Enter a valid locker number.",
+        "The locker scan did not assign a valid locker.",
       );
-      // For pickups, verify the locker against the preceding drop-off proof.
-      if (command.step === "borrowerPickup" || command.step === "ownerPickup") {
-        const previous =
-          command.step === "borrowerPickup"
-            ? l.proofs.ownerDropoff
-            : l.proofs.borrowerDropoff;
-        // Require pickup to use the same numeric locker as the preceding drop-off.
-        requireValue(
-          previous &&
-            Number(previous.lockerNumber) === Number(command.lockerNumber),
-          "Use the locker number from the drop-off confirmation.",
-        );
-      }
       l.proofs[command.step] = {
         at: env.now,
         photo: command.photo,

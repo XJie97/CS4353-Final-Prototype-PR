@@ -29,10 +29,10 @@ test("photos reject unsupported file formats, empty files and oversized uploads"
     validateImageFile({ type: "image/jpeg", size: 2000 }),
   );
 });
-test("pickup must use the exact locker left by the owner", () => {
+test("a handover requires the completed locker scan assignment", () => {
   const s = createSeed(env.today),
     loan = s.loans.find((l) => l.id === "demo-active")!;
-  // Verify that pickup from a different locker is rejected.
+  // Verify that handover evidence is rejected until the locker scan is confirmed.
   assert.throws(
     () =>
       applyCommand(
@@ -42,12 +42,30 @@ test("pickup must use the exact locker left by the owner", () => {
           loanId: loan.id,
           step: "borrowerPickup",
           code: handoverCode(loan, "borrowerPickup"),
-          lockerNumber: "13",
+          lockerNumber: "12",
           photo: "data:image/jpeg;base64,dGVzdA==",
         },
         env,
       ),
-    /locker number/i,
+    /locker scan/i,
+  );
+  // Verify that even a confirmed scan must provide a valid assigned locker number.
+  assert.throws(
+    () =>
+      applyCommand(
+        s,
+        {
+          type: "record-proof",
+          loanId: loan.id,
+          step: "borrowerPickup",
+          code: handoverCode(loan, "borrowerPickup"),
+          lockerNumber: "0",
+          assignmentVerified: true,
+          photo: "data:image/jpeg;base64,dGVzdA==",
+        },
+        env,
+      ),
+    /valid locker/i,
   );
 });
 test("borrowers cannot review an unfinished loan or claim an owner handover", () => {
@@ -81,6 +99,7 @@ test("borrowers cannot review an unfinished loan or claim an owner handover", ()
           code: handoverCode(l, "ownerDropoff"),
           photo: "data:image/jpeg;base64,dGVzdA==",
           lockerNumber: "12",
+          assignmentVerified: true,
         },
         env,
       ),
