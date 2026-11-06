@@ -86,9 +86,11 @@ export function FileLink({
 export function ImageInput({
   name = "image",
   required = false,
+  capture = false,
 }: {
   name?: string;
   required?: boolean;
+  capture?: boolean;
 }) {
   return (
     <input
@@ -97,6 +99,7 @@ export function ImageInput({
       type="file"
       accept="image/jpeg,image/png,image/webp"
       required={required}
+      {...(capture ? { capture: "environment" } : {})}
     />
   );
 }

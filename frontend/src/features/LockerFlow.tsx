@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useApp } from '../app/context';
 import { handoverCode, LOCKERS, nextProof, proofActor, PROOF_LABELS } from '../app/domain';
 import { ErrorText, Glyph, Modal } from '../components/ui/shared';
-import { PhotoField } from '../components/ui/PhotoField';
+import { CameraCapture } from '../components/ui/CameraCapture';
 import { QrCode } from '../components/ui/QrCode';
 
 export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>void;onDone:()=>void}) {
@@ -11,7 +11,6 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
     const [step]=useState(()=>loan?nextProof(loan):undefined);
     const [phase,setPhase]=useState<'code'|'locker'|'photo'|'success'>('code');
     const [photo,setPhoto]=useState('');
-    const [photoBusy,setPhotoBusy]=useState(false);
     const [error,setError]=useState('');
     const pickup=step==='borrowerPickup'||step==='ownerPickup';
     const previous=loan&&(step==='borrowerPickup'?loan.proofs.ownerDropoff:step==='ownerPickup'?loan.proofs.borrowerDropoff:undefined);
@@ -69,12 +68,16 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
 
         {phase==='photo'&&<>
             <p>Record the item condition {pickup?'when collecting it':'before closing the locker'}.</p>
-            <PhotoField label="Item condition photo" value={photo} onChange={setPhoto}
-            onBusyChange={setPhotoBusy} required/>
+            <CameraCapture onChange={file => {
+                if (!file) { setPhoto(''); return; }
+                const reader = new FileReader();
+                reader.onload = () => setPhoto(String(reader.result));
+                reader.readAsDataURL(file);
+            }}/>
             <ErrorText text={error}/>
             <div className="form-actions">
                 <button disabled={saving} className="button" type="button" onClick={()=>setPhase('locker')}>Back</button>
-                <button className="button primary" type="button" disabled={saving||!photo||photoBusy}
+                <button className="button primary" type="button" disabled={saving||!photo}
                     onClick={async()=>{
                         const result=await perform({type:'record-proof',loanId,step,photo,code:expected,lockerNumber});
                         if (!result.ok) setError(result.error);
