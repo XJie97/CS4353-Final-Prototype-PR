@@ -246,6 +246,7 @@ export function getSearchSuggestions(
   return [...recent, ...candidates]
     .filter((value) => {
       const normalized = value.trim().toLocaleLowerCase();
+      // Exclude non-prefix suggestions and names already emitted, ignoring case.
       if (!normalized.startsWith(prefix) || seen.has(normalized)) return false;
       seen.add(normalized);
       return true;

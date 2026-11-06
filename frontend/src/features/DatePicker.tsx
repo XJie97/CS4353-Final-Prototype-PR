@@ -26,6 +26,7 @@ export function DatePicker({
   };
 
   return (
+    // Let the user choose an inclusive receive-to-return date range.
     <Modal title="Choose loan dates" onClose={onClose}>
       <p className="muted">Choose a receive date, then a return date.</p>
       <div className="calendar-title">
@@ -58,9 +59,11 @@ export function DatePicker({
 
       <div className="calendar-grid">
         {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((day) => (
+          // Label one weekday column in the Monday-first calendar.
           <span key={day}>{day}</span>
         ))}
         {calendarDays(month).map((day) => (
+          // Represent a calendar date, disabling past days and highlighting the chosen range.
           <button
             type="button"
             key={day}

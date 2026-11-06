@@ -49,8 +49,10 @@ export function ChatsPage({
     : false;
 
   useEffect(() => {
+    // Mark a thread read only when it has a valid peer and unread messages.
     if (peer && unread)
       void perform({ type: "read-thread", peerId: peer.id }).then((r) => {
+        // Surface a failure to mark the conversation as read.
         if (!r.ok) setError(r.error);
       });
   }, [peerId, unread]);
@@ -67,8 +69,10 @@ export function ChatsPage({
       )
     : [];
 
+  // Show an unavailable-person state for an invalid conversation deep link.
   if (peerId && !peer)
     return (
+      // Explain an unavailable conversation without rendering a broken thread.
       <main className="app-scroll">
         <EmptyState
           title="Conversation unavailable"
@@ -77,6 +81,7 @@ export function ChatsPage({
       </main>
     );
 
+  // Show the conversation list when no peer is selected.
   if (!peer) {
     const ids = [
       ...new Set(
@@ -86,6 +91,7 @@ export function ChatsPage({
       ),
     ];
     return (
+      // Show existing conversations and people available to start a new conversation.
       <main className="app-scroll">
         <div className="section-heading">
           <h2>Messages</h2>
@@ -111,6 +117,7 @@ export function ChatsPage({
             const last = thread.at(-1)!;
             const count = thread.filter((m) => m.to === me && !m.read).length;
             return (
+              // Represent one conversation with its peer, latest message, and unread state.
               <button
                 disabled={saving}
                 className="conversation-row"
@@ -145,6 +152,7 @@ export function ChatsPage({
               {store.people
                 .filter((p) => p.id !== me)
                 .map((person) => (
+                  // Offer a person as the recipient of a new conversation.
                   <button
                     disabled={saving}
                     className="person-row"
@@ -168,6 +176,7 @@ export function ChatsPage({
   }
 
   const loanCard = (loan: Loan) => (
+    // Summarize a related loan with the actions available at its current stage.
     <article className="chat-loan-card" key={loan.id}>
       <strong>
         {store.items.find((i) => i.id === loan.itemId)?.title ??
@@ -209,6 +218,7 @@ export function ChatsPage({
                 type: "approve-plan",
                 loanId: loan.id,
               });
+              // Show the request-accepted toast only after the approval command succeeds.
               if (result.ok) toast("Request accepted.");
               else setError(result.error);
             }}
@@ -221,6 +231,7 @@ export function ChatsPage({
   );
 
   return (
+    // Combine the selected conversation, related loans, and message composer.
     <>
       <main className="app-scroll chat-thread">
         <div className="chat-person">
@@ -248,6 +259,7 @@ export function ChatsPage({
           className="message-list"
         >
           {messages.map((message) => (
+            // Represent one sent or received message, including its timestamp and read state.
             <article
               className={`message ${message.from === me ? "sent" : "received"}`}
               key={message.id}
@@ -282,6 +294,7 @@ export function ChatsPage({
             text: draft,
             ...(related[0] ? { loanId: related[0].id } : {}),
           });
+          // Keep the message draft and show the error when sending fails.
           if (!result.ok) {
             setError(result.error);
             return;
@@ -303,6 +316,7 @@ export function ChatsPage({
             rows={1}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
+              // Send on Enter only; preserve Shift+Enter and input-method composition.
               if (
                 e.key === "Enter" &&
                 !e.shiftKey &&

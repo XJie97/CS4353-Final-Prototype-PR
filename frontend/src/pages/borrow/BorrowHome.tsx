@@ -16,6 +16,7 @@ import { borrowReducer, initialBorrowState } from "./flow";
 import "./borrow.css";
 
 function itemFromHash(source: BorrowItem[] = allItems) {
+  // Skip hash lookup when rendering without a browser window.
   if (typeof window === "undefined") return undefined;
   return source.find(
     (item) => window.location.hash === `#borrow/item/${item.id}`,
@@ -63,6 +64,7 @@ export default function BorrowHome({
   useEffect(() => {
     function handleBack() {
       const item = itemFromHash(catalog);
+      // Remember the item reached through browser history so focus can be restored later.
       if (item) lastOpenedItem.current = item.id;
       dispatch(
         item
@@ -78,10 +80,13 @@ export default function BorrowHome({
     return () => window.removeEventListener("popstate", handleBack);
   }, [catalog]);
   useEffect(() => {
+    // Move keyboard focus to the item-detail container when its view opens.
     if (state.view === "details")
       document.getElementById("item-details")?.focus({ preventScroll: true });
+    // Restore scrolling only after the browse scroll container exists.
     if (state.view === "browse" && scrollArea.current) {
       scrollArea.current.scrollTop = savedScroll.current;
+      // Restore keyboard focus to the most recently opened item card.
       if (lastOpenedItem.current) {
         document
           .getElementById(`item-${lastOpenedItem.current}`)
@@ -92,6 +97,7 @@ export default function BorrowHome({
   }, [state.view]);
   useEffect(() => {
     savedScroll.current = 0;
+    // Reset catalog scrolling when the browse filters change.
     if (scrollArea.current) scrollArea.current.scrollTop = 0;
   }, [filters]);
 
@@ -102,12 +108,15 @@ export default function BorrowHome({
     dispatch({ type: "open-item", id, knownItemIds: catalog.map((i) => i.id) });
   }
   function backToResults() {
+    // Return to the originating friend page when details were opened from that profile.
     if (window.history.state?.fromFriend) {
       window.history.back();
       return;
     }
+    // Check whether the current browser entry is an item-detail route.
     if (window.location.hash.startsWith("#borrow/item/")) {
       // A card click has a known results entry; direct links return locally.
+      // Use browser back only when a prior card click established a results entry.
       if (lastOpenedItem.current) {
         window.history.back();
         return;
@@ -123,6 +132,7 @@ export default function BorrowHome({
   }
 
   return (
+    // Coordinate the borrow catalog, filters, map, search overlay, and item-detail view.
     <div className={embedded ? "borrow-feature" : "borrow-app"} id="borrow">
       <a
         className="skip-link"
@@ -193,6 +203,7 @@ export default function BorrowHome({
             >
               <option value="all">All Categories</option>
               {categories.map((value) => (
+                // Represent one category present in the current catalog.
                 <option key={value}>{value}</option>
               ))}
             </select>
@@ -209,6 +220,7 @@ export default function BorrowHome({
             >
               <option value="all">Nearby</option>
               {locations.map((value) => (
+                // Represent one community location present in the current catalog.
                 <option key={value}>{value}</option>
               ))}
             </select>
@@ -244,6 +256,7 @@ export default function BorrowHome({
           {visibleItems.length > 0 ? (
             <div className="item-grid">
               {visibleItems.map((item) => (
+                // Represent a borrowable item card and open its detail view when selected.
                 <button
                   className="item-card"
                   id={`item-${item.id}`}

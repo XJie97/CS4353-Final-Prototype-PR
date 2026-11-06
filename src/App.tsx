@@ -13,6 +13,7 @@ export default function App() {
   const auth = useAuth();
   const cache = useQueryClient();
   return (
+    // Provide the prototype shell with account identity and its five top-level pages.
     <>
       <header>
         <h1>CS4353 prototype</h1>
@@ -25,6 +26,7 @@ export default function App() {
       </header>
       <nav aria-label="Main navigation">
         {PAGES.map((page) => (
+          // Represent a top-level page and mark the active route for assistive technology.
           <button
             key={page}
             aria-current={route.page === page ? "page" : undefined}

@@ -11,6 +11,7 @@ export function ItemDetails({
   onBorrow?: () => void;
 }) {
   return (
+    // Present an item's photos, owner, description, and borrowing action.
     <>
       <header className="details-banner">
         <button

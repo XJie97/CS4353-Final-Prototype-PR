@@ -27,8 +27,10 @@ export function ReviewForm({
     (l) => l.id === loanId && l.borrowerId === store.activeUserId,
   );
 
+  // Show a missing-loan state before trying to render its review form.
   if (!loan)
     return (
+      // Explain why the requested loan cannot be reviewed from this account.
       <Modal title="Review unavailable" onClose={onClose}>
         <p>Only the borrower can review this loan.</p>
       </Modal>
@@ -36,6 +38,7 @@ export function ReviewForm({
 
   const item = store.items.find((i) => i.id === loan.itemId)!;
   return (
+    // Collect the borrower's rating, review text, compliments, and optional photo.
     <Modal title="Review your loan" onClose={onClose}>
       <div className="review-item">
         <img src={item.image} alt="" width={64} height={64} />
@@ -53,6 +56,7 @@ export function ReviewForm({
             compliments,
             ...(photo ? { photo } : {}),
           });
+          // Keep the review draft and display a rejected save.
           if (!result.ok) {
             setError(result.error);
             return;
@@ -65,6 +69,7 @@ export function ReviewForm({
           <legend>How was your experience?</legend>
           <div>
             {[1, 2, 3, 4, 5].map((value) => (
+              // Represent one star rating using an accessible radio input.
               <label className="star-choice" key={value}>
                 <input
                   className="sr-only"
@@ -100,6 +105,7 @@ export function ReviewForm({
         <p>Give a compliment</p>
         <div className="chip-row">
           {COMPLIMENTS.map((c) => (
+            // Toggle one predefined compliment on the review draft.
             <button
               disabled={saving}
               className="chip"

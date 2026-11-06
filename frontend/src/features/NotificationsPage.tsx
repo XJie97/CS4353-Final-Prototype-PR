@@ -10,6 +10,7 @@ export function NotificationsPage({
   const { store, perform, toast, busy: saving } = useApp();
   const notices = store.notices.filter((n) => n.to === store.activeUserId);
   return (
+    // Present read and unread updates with links to their related loan or conversation.
     <main className="app-scroll">
       <div className="section-heading">
         <h2>Updates</h2>
@@ -21,6 +22,7 @@ export function NotificationsPage({
             className="button"
             onClick={async () => {
               const r = await perform({ type: "read-notices" });
+              // Report a failure to mark the notification list as read.
               if (!r.ok) toast(r.error);
             }}
           >
@@ -32,6 +34,7 @@ export function NotificationsPage({
       {notices.length ? (
         <div className="notification-list">
           {notices.map((notice) => (
+            // Represent one notification and visually distinguish unread updates.
             <button
               disabled={saving}
               className={`notification-row ${notice.read ? "" : "unread"}`}
@@ -42,6 +45,7 @@ export function NotificationsPage({
                   type: "read-notices",
                   id: notice.id,
                 });
+                // Navigate from a notice only after its read status is saved.
                 if (!result.ok) {
                   toast(result.error);
                   return;

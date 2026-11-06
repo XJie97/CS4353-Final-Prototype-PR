@@ -32,6 +32,7 @@ export function LoanForm({
   const [picker, setPicker] = useState<"dates" | "locker" | null>(null);
 
   return (
+    // Reuse one exchange-plan form for an initial request or a counterproposal.
     <Modal
       title={loan ? "Modify exchange plan" : "Borrow item"}
       onClose={onClose}
@@ -54,6 +55,7 @@ export function LoanForm({
                 },
           );
 
+          // Preserve the loan form and display the error when saving fails.
           if (!result.ok) {
             setError(result.error);
             return;
@@ -148,6 +150,7 @@ export function LoanForm({
           </p>
           <div className="location-list">
             {LOCKERS.map((locker) => (
+              // Represent one locker choice and indicate which locker is selected.
               <button
                 disabled={saving}
                 className={`location-option ${lockerId === locker.id ? "chosen" : ""}`}

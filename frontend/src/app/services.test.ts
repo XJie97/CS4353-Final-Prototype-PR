@@ -47,6 +47,7 @@ test("commands use the repository request ID/revision and never send a whole Sto
     "request",
     4,
   );
+  // Verify that commands carry their request ID and expected revision to the RPC.
   assert.deepEqual(f.calls[0], {
     name: "demo_command",
     args: {
@@ -59,7 +60,7 @@ test("commands use the repository request ID/revision and never send a whole Sto
 test("failed remote saves reject rather than returning local success", async () => {
   const f = fake();
   f.setFail(true);
-  await assert.rejects(
+  await /* Verify that a transport failure rejects the service call rather than imply success. */ assert.rejects(
     f.service.execute(
       { type: "send-message", to: "sarah", text: "Hello" },
       "request",
@@ -79,11 +80,14 @@ test("photo upload is reused when record finalization is retried", async () => {
     photo: "data:image/png;base64,eA==",
   };
   f.setFail(true);
-  await assert.rejects(f.service.execute(command, "request", 1));
+  await /* Verify that the first simulated handover save fails for the retry scenario. */ assert.rejects(f.service.execute(command, "request", 1));
   f.setFail(false);
   await f.service.execute(command, "request", 1);
+  // Verify that retrying a proof save uploads its photo only once.
   assert.equal(f.uploads(), 1);
+  // Verify that retrying sends exactly the same command arguments.
   assert.deepEqual(f.calls[0].args, f.calls[1].args);
+  // Verify that proof commands send private storage paths instead of image data.
   assert.match(
     (f.calls[1].args as { command: { photo: string } }).command.photo,
     /^eric\/proof\/loan\//,
@@ -92,8 +96,11 @@ test("photo upload is reused when record finalization is retried", async () => {
 test("loading uses shared repository state while static placeholder assets remain unchanged", async () => {
   const f = fake();
   const store = await f.service.load();
+  // Verify that loading shared state retains its active user ID.
   assert.equal(store.activeUserId, "eric");
+  // Verify that bundled item placeholders remain public asset paths.
   assert.equal(store.items[0].image.startsWith("/assets/"), true);
+  // Verify that loading shared state calls the state RPC.
   assert.equal(f.calls[0].name, "demo_state");
 });
 
@@ -127,10 +134,14 @@ test("photo signing is bounded and repeated paths and refreshes reuse valid URLs
     },
   } as unknown as SupabaseClient);
   const [first, second] = await Promise.all([service.load(), service.load()]);
+  // Verify that at most four image-signing requests run simultaneously.
   assert.equal(peak, 4);
+  // Verify that each of the twelve distinct image paths is signed once.
   assert.equal(signed, 12);
+  // Verify that repeated image paths reuse the same signed URL.
   assert.equal(first.items[0].images[0], second.items[0].images[1]);
   await service.load();
+  // Verify that a second refresh reuses still-valid cached URLs.
   assert.equal(signed, 12);
 });
 
@@ -156,11 +167,13 @@ test("failed image signing can be retried on the next refresh", async () => {
       }),
     },
   } as unknown as SupabaseClient);
-  await assert.rejects(service.load(), /too many connections/);
+  await /* Verify that a signing failure rejects the initial state load. */ assert.rejects(service.load(), /too many connections/);
+  // Verify that the next load can recover by signing the image again.
   assert.equal(
     (await service.load()).items[0].image,
     "https://images.example/retry",
   );
+  // Verify that recovery makes exactly one additional signing attempt.
   assert.equal(attempts, 2);
 });
 
@@ -192,11 +205,14 @@ test("realtime bursts refresh once and unsubscribe cancels pending refreshes", a
     handler();
   }
   await new Promise((resolve) => setTimeout(resolve, 180));
+  // Verify that a burst of realtime events causes just one refresh.
   assert.equal(refreshes, 1);
   handlers[0]();
   stop();
   await new Promise((resolve) => setTimeout(resolve, 180));
+  // Verify that unsubscribe cancels a pending refresh.
   assert.equal(refreshes, 1);
+  // Verify that cleanup removes the realtime channel exactly once.
   assert.equal(removed, 1);
 });
 
@@ -211,15 +227,19 @@ test("review edits upload replacement photos and reuse uploads on retries", asyn
     photo: "data:image/png;base64,eA==",
   };
   f.setFail(true);
-  await assert.rejects(f.service.execute(command, "edit-request", 12));
+  await /* Verify that the first simulated review-edit save fails before retry. */ assert.rejects(f.service.execute(command, "edit-request", 12));
   f.setFail(false);
   await f.service.execute(command, "edit-request", 12);
+  // Verify that retrying a review edit reuses the uploaded replacement image.
   assert.equal(f.uploads(), 1);
+  // Verify that review-edit retries send identical command arguments.
   assert.deepEqual(f.calls[0].args, f.calls[1].args);
+  // Verify that review photos use the owner's public storage scope.
   assert.match(
     (f.calls[1].args as { command: { photo: string } }).command.photo,
     /^eric\/public\//,
   );
+  // Verify that retrying a review edit preserves its expected revision.
   assert.equal(
     (f.calls[1].args as { expected_revision: number }).expected_revision,
     12,
@@ -264,6 +284,7 @@ test("review edits retain stored photo paths rather than sending expiring signed
     "request",
     3,
   );
+  // Verify that keeping a review photo sends its stored path, not its expiring display URL.
   assert.equal(
     (sent as { command: { photo: string } }).command.photo,
     "eric/public/original.jpg",

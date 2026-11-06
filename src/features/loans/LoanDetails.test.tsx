@@ -107,19 +107,24 @@ it("opens the required photo after bypass and resumes it when revisiting the loa
   await u.click(
     await screen.findByRole("button", { name: "Bypass: simulate locker scan" }),
   );
+  // Verify that a pending owner-dropoff proof opens the matching photo form.
   expect(
     await screen.findByRole("heading", { name: "Photo: Owner dropoff" }),
   ).toBeTruthy();
+  // Verify that merely opening a pending photo form does not upload a file.
   expect(fake.upload).not.toHaveBeenCalled();
   await u.click(
     screen.getByRole("button", {
       name: "Back to loan (photo remains pending)",
     }),
   );
+  // Verify that pending photo evidence remains visible on the loan detail screen.
   expect(await screen.findByText(/Pending photo: Owner dropoff/)).toBeTruthy();
+  // Verify that a pending photo prevents requesting a fresh QR handover.
   expect(screen.queryByRole("button", { name: "Get QR" })).toBeNull();
   view.unmount();
   mount();
+  // Verify that the pending photo form can be reopened without scanning again.
   expect(
     await screen.findByRole("heading", { name: "Photo: Owner dropoff" }),
   ).toBeTruthy();
@@ -138,6 +143,7 @@ it("requires the final checklist and retries photo finalization without uploadin
     .mockRejectedValueOnce(new Error("Temporary connection failure"))
     .mockResolvedValueOnce(undefined);
   mount();
+  // Verify that returned loans still explain any required final photo evidence.
   expect(
     await screen.findByText(
       "The loan is already Returned/Past. Final evidence is still required.",
@@ -154,6 +160,7 @@ it("requires the final checklist and retries photo finalization without uploadin
     data.set("image", chosen);
     return data;
   });
+  // Verify that a failed proof save preserves the selected photo for retry.
   expect(
     (screen.getByLabelText("Photo of item inside locker") as HTMLInputElement)
       .files?.length,
@@ -170,6 +177,7 @@ it("requires the final checklist and retries photo finalization without uploadin
       }) as HTMLButtonElement
     ).form!,
   );
+  // Verify that failed evidence recording is displayed as an alert.
   expect((await screen.findByRole("alert")).textContent).toContain(
     "Temporary connection failure",
   );
@@ -181,7 +189,9 @@ it("requires the final checklist and retries photo finalization without uploadin
     ).form!,
   );
   await screen.findByRole("button", { name: "Resume photo" });
+  // Verify that retrying evidence recording does not upload the same file again.
   expect(fake.upload).toHaveBeenCalledTimes(1);
+  // Verify that the retry actually calls evidence recording again.
   expect(fake.record).toHaveBeenNthCalledWith(
     2,
     "loan",

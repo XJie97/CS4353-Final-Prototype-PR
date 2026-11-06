@@ -10,6 +10,7 @@ export function SharePage({ onLoan }: { onLoan: (id: string) => void }) {
   const mine = store.items.filter((i) => i.ownerId === store.activeUserId);
 
   return (
+    // Present the active user's listings with create, edit, and visibility controls.
     <main className="app-scroll">
       <div className="section-heading">
         <h2>Your items</h2>
@@ -34,6 +35,7 @@ export function SharePage({ onLoan }: { onLoan: (id: string) => void }) {
                 !["complete", "cancelled", "declined"].includes(l.status),
             );
             return (
+              // Represent one owned item and whether it is currently listed to borrowers.
               <article className="shelf-card" key={item.id}>
                 <img src={item.image} alt={item.name} width={84} height={84} />
                 <div>
@@ -66,6 +68,7 @@ export function SharePage({ onLoan }: { onLoan: (id: string) => void }) {
                           type: "toggle-item",
                           id: item.id,
                         });
+                        // Clear listing errors and show a toast only after changing visibility succeeds.
                         if (result.ok)
                           toast(
                             item.listed

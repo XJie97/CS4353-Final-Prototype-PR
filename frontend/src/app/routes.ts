@@ -7,6 +7,7 @@ export function parseRoute(hash: string): Route {
       .replace(/^#/, "")
       .split("/")
       .map(decodeURIComponent);
+    // Fall back to the borrow page for unrecognized route names.
     if (
       ![
         "borrow",

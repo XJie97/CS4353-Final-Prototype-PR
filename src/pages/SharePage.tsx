@@ -32,9 +32,11 @@ export default function SharePage() {
     setCreating(false);
     setSelected(item.id);
   });
+  // Render the selected owned listing's editor instead of the share list.
   if (selected)
-    return <ItemDetails id={selected} close={() => setSelected(null)} />;
+    return /* Open the selected owned listing's details from the sharing page. */ <ItemDetails id={selected} close={() => setSelected(null)} />;
   return (
+    // Present item creation and the active user's owned listings.
     <section>
       <h2>Share</h2>
       <button onClick={() => setCreating(!creating)}>Create item</button>
@@ -68,6 +70,7 @@ export default function SharePage() {
       <QueryState query={items}>
         {items.data?.length ? (
           items.data.map((i) => (
+            // Represent one owned listing with its availability and a link to manage it.
             <article key={i.id}>
               <strong>{i.name}</strong>
               <p>{i.status.replaceAll("_", " ")}</p>

@@ -6,10 +6,12 @@ export function QrCode({ value }: { value: string }) {
     const commands = [];
     for (let y = 0; y < qr.size; y++)
       for (let x = 0; x < qr.size; x++)
+        // Add a path square only for a dark QR-code module.
         if (qr.getModule(x, y)) commands.push(`M${x + 4},${y + 4}h1v1h-1z`);
     return { size: qr.size + 8, path: commands.join("") };
   }, [value]);
   return (
+    // Draw the handover payload as vector QR modules with a surrounding quiet zone.
     <svg
       className="handover-qr"
       width={220}

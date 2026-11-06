@@ -7,6 +7,7 @@ export function SignIn({ setup = false }: { setup?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   return (
+    // Provide assigned-account sign-in or backend-setup guidance in the same app shell.
     <div className="borrow-app">
       <header className="app-header">
         <h1>Community lending</h1>
@@ -24,6 +25,7 @@ export function SignIn({ setup = false }: { setup?: boolean }) {
               className="editor-form"
               onSubmit={async (e) => {
                 e.preventDefault();
+                // Ignore duplicate sign-in submissions while authentication is running.
                 if (busy) return;
                 setBusy(true);
                 setError("");

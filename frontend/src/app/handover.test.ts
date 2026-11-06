@@ -9,18 +9,22 @@ const env = {
   today: "2026-10-31",
 };
 test("photos reject unsupported file formats, empty files and oversized uploads", () => {
+  // Verify that SVG files are rejected as photo uploads.
   assert.throws(
     () => validateImageFile({ type: "image/svg+xml", size: 100 }),
     /JPEG|PNG|WebP/,
   );
+  // Verify that an empty image file is rejected.
   assert.throws(
     () => validateImageFile({ type: "image/png", size: 0 }),
     /empty/i,
   );
+  // Verify that images larger than five megabytes are rejected.
   assert.throws(
     () => validateImageFile({ type: "image/png", size: 6 * 1024 * 1024 }),
     /5 MB/,
   );
+  // Verify that a small JPEG passes file validation.
   assert.doesNotThrow(() =>
     validateImageFile({ type: "image/jpeg", size: 2000 }),
   );
@@ -28,6 +32,7 @@ test("photos reject unsupported file formats, empty files and oversized uploads"
 test("pickup must use the exact locker left by the owner", () => {
   const s = createSeed(env.today),
     loan = s.loans.find((l) => l.id === "demo-active")!;
+  // Verify that pickup from a different locker is rejected.
   assert.throws(
     () =>
       applyCommand(
@@ -47,6 +52,7 @@ test("pickup must use the exact locker left by the owner", () => {
 });
 test("borrowers cannot review an unfinished loan or claim an owner handover", () => {
   const s = createSeed(env.today);
+  // Verify that borrowers cannot review a loan before it is complete.
   assert.throws(
     () =>
       applyCommand(
@@ -63,6 +69,7 @@ test("borrowers cannot review an unfinished loan or claim an owner handover", ()
     /completed/i,
   );
   const l = s.loans.find((l) => l.id === "demo-incoming")!;
+  // Verify that a handover cannot proceed before the loan is ready.
   assert.throws(
     () =>
       applyCommand(

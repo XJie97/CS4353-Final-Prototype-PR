@@ -33,6 +33,7 @@ export function ListingForm({
   const [error, setError] = useState("");
 
   return (
+    // Reuse one modal form for creating a listing or editing an existing listing.
     <Modal title={item ? "Edit listing" : "Share an item"} onClose={onClose}>
       <form
         onSubmit={async (e) => {
@@ -46,6 +47,7 @@ export function ListingForm({
             location,
             images: photo ? [photo] : [],
           });
+          // Keep the listing form open and display the save error on failure.
           if (!result.ok) {
             setError(result.error);
             return;
@@ -83,6 +85,7 @@ export function ListingForm({
             onChange={(e) => setCategory(e.target.value)}
           >
             {CATEGORIES.map((c) => (
+              // Represent one supported listing category in the category selector.
               <option key={c}>{c}</option>
             ))}
           </select>
@@ -94,6 +97,7 @@ export function ListingForm({
             onChange={(e) => setLocation(e.target.value)}
           >
             {LOCKERS.map((l) => (
+              // Represent one supported community location in the listing form.
               <option key={l.id}>{l.name}</option>
             ))}
           </select>

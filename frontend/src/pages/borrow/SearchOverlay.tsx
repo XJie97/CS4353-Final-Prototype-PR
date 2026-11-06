@@ -31,6 +31,7 @@ export function SearchOverlay({
   const prefix = value.trim();
 
   return (
+    // Present search as a native dialog with draft text and selectable suggestions.
     <dialog
       ref={dialog}
       className="search-overlay"
@@ -96,6 +97,7 @@ export function SearchOverlay({
               ? suggestion.slice(0, prefix.length)
               : "";
           return (
+            // Represent one matching search suggestion with selection and draft-fill controls.
             <li key={suggestion}>
               <button
                 className="suggestion-select"

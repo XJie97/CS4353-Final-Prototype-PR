@@ -16,12 +16,14 @@ export function NeighborhoodMap({
   onOpenItem,
 }: Props) {
   return (
+    // Present the prototype neighborhood map with selectable item markers and a detail preview.
     <section
       className="neighborhood-map"
       aria-label="Browse items in the neighborhood"
     >
       <div className="map-blocks" aria-hidden="true">
         {Array.from({ length: 9 }, (_, i) => (
+          // Draw one decorative street block in the prototype map.
           <span key={i} />
         ))}
       </div>
@@ -33,6 +35,7 @@ export function NeighborhoodMap({
         <span />
       </span>
       {items.slice(0, 3).map((item, index) => (
+        // Select one of the first three filtered items for the schematic map preview.
         <button
           key={item.id}
           type="button"

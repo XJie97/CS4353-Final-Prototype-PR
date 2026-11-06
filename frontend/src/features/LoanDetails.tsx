@@ -21,8 +21,10 @@ function ConditionForm({ loan }: { loan: Loan }) {
   const [error, setError] = useState("");
   const isOwner = store.activeUserId === loan.ownerId;
 
+  // Show borrowers a read-only condition update; only the owner receives the verification form.
   if (!isOwner)
     return (
+      // Show the borrower the owner's condition note or pending-verification explanation.
       <div className="plan-details">
         <p>
           {loan.condition?.result === "issue"
@@ -33,6 +35,7 @@ function ConditionForm({ loan }: { loan: Loan }) {
     );
 
   return (
+    // Let the owner report the returned item's condition or resolve an existing issue.
     <form
       className="plan-details"
       onSubmit={async (e) => {
@@ -42,6 +45,7 @@ function ConditionForm({ loan }: { loan: Loan }) {
             ? { type: "resolve-condition", loanId: loan.id, note }
             : { type: "verify-condition", loanId: loan.id, condition, note },
         );
+        // Display a condition-save error instead of the success toast.
         if (!result.ok) setError(result.error);
         else toast("Item condition updated.");
       }}
@@ -113,8 +117,10 @@ export function LoanDetails({
       (l.ownerId === store.activeUserId || l.borrowerId === store.activeUserId),
   );
 
+  // Show a missing-loan state when the ID is absent or belongs to another account.
   if (!loan)
     return (
+      // Explain that this account cannot access the requested loan.
       <main className="app-scroll">
         <EmptyState
           title="Loan not found"
@@ -139,6 +145,7 @@ export function LoanDetails({
   const step = nextProof(loan);
   const act = async (type: "approve-plan" | "decline-loan" | "cancel-loan") => {
     const result = await perform({ type, loanId: id });
+    // Show failed loan actions without closing the confirmation dialog.
     if (!result.ok) setError(result.error);
     else {
       setError("");
@@ -183,6 +190,7 @@ export function LoanDetails({
                 ? (LOCKERS.find((l) => l.id === v)?.label ?? v)
                 : dateLabel(v);
             return (
+              // Compare a proposed plan field with its immediately preceding value.
               <p key={field}>
                 {label}
                 {before !== after ? " (changed)" : ""}: {format(before)} →{" "}
@@ -241,6 +249,7 @@ export function LoanDetails({
   );
 
   return (
+    // Present the loan summary, lifecycle progress, current actions, and evidence history.
     <main className="app-scroll loan-details">
       <LoanSummary loan={loan} />
       <ErrorText text={error} />
@@ -259,6 +268,7 @@ export function LoanDetails({
             "Item Condition Verification",
             "Loan Review",
           ].map((label, index) => (
+            // Represent a lifecycle stage as completed, current, or still upcoming.
             <li
               key={label}
               className={`${index < current ? "done" : index === current ? "current" : "upcoming"}`}
@@ -348,6 +358,7 @@ export function LoanDetails({
                         <p>{loan.review.text}</p>
                         <div className="chip-row">
                           {loan.review.compliments.map((c) => (
+                            // Display one compliment attached to the borrower's review.
                             <span className="chip" key={c}>
                               {c}
                             </span>
@@ -417,6 +428,7 @@ export function LoanDetails({
         <details className="proof-history">
           <summary>Handover photos</summary>
           {Object.entries(loan.proofs).map(([key, proof]) => (
+            // Display the evidence photo with its handover-stage label and recorded locker number.
             <figure key={key}>
               <img
                 src={proof.photo}

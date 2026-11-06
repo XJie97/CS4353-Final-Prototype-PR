@@ -18,6 +18,7 @@ test("the complete two-person flow survives serialization after every step", () 
       today: "2026-10-31",
     });
     const restored = JSON.parse(JSON.stringify(next));
+    // Verify that accepted command state can be serialized and restored.
     assert.ok(restored, "Every accepted command must remain reloadable");
     state = restored;
   };
@@ -81,8 +82,12 @@ test("the complete two-person flow survives serialization after every step", () 
     photo,
   });
   const loan = state.loans.find((l) => l.id === "journey")!;
+  // Verify that the full two-person lending flow ends with a completed loan.
   assert.equal(loan.status, "complete");
+  // Verify that all four handover proofs survive the complete flow.
   assert.equal(Object.keys(loan.proofs).length, 4);
+  // Verify that the completed flow retains its review rating.
   assert.equal(loan.review?.rating, 5);
+  // Verify that opening the conversation records the incoming message as read.
   assert.equal(state.messages.at(-1)?.read, true);
 });

@@ -36,8 +36,10 @@ export function BottomNavigation({
     { page: "me" as const, label: "Me", icon: "user", width: 24 },
   ];
   return (
+    // Provide the persistent primary navigation across the main application sections.
     <nav className="bottom-navigation" aria-label="Main navigation">
       {tabs.map((tab) => (
+        // Represent one navigation tab and mark the currently selected page.
         <button
           type="button"
           key={tab.page}

@@ -28,6 +28,7 @@ export function PhotoField({
     [],
   );
   return (
+    // Collect and process a photo while exposing preview, removal, and validation feedback.
     <div className="photo-field">
       <label>
         {label}
@@ -39,6 +40,7 @@ export function PhotoField({
           capture="environment"
           onChange={async (e) => {
             const file = e.target.files?.[0];
+            // Leave the current photo alone when the file picker is canceled.
             if (!file) return;
             const turn = ++generation.current;
             setBusy(true);
@@ -46,8 +48,10 @@ export function PhotoField({
             setError("");
             try {
               const image = await prepareImage(file);
+              // Publish a processed photo only if no newer selection has superseded it.
               if (turn === generation.current) onChange(image);
             } catch (error) {
+              // Show a processing error only for the most recent photo selection.
               if (turn === generation.current)
                 setError(
                   error instanceof Error
@@ -55,10 +59,12 @@ export function PhotoField({
                     : "Could not load this image.",
                 );
             } finally {
+              // Clear the processing indicator only for the most recent selection.
               if (turn === generation.current) {
                 setBusy(false);
                 onBusyChange?.(false);
               }
+              // Reset the file input only while its DOM element still exists.
               if (input.current) input.current.value = "";
             }
           }}

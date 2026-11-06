@@ -26,6 +26,7 @@ export default function FriendsPage() {
     enabled: section === "chats",
   });
   useEffect(() => {
+    // Clear the selected chat when switching to a non-chat friends section.
     if (section !== "chats") return;
     return services.chats.subscribe(undefined, () => {
       void cache.invalidateQueries({ queryKey: ["chats"] });
@@ -47,13 +48,17 @@ export default function FriendsPage() {
   });
   const friendIds = distinctFriends(requests.data || [], actor.id!);
   const name = (id: string) => users.data?.find((u) => u.id === id)?.name || id;
+  // Render the selected conversation before the general friends screen.
   if (chatId)
     return (
+      // Open the selected conversation and restore the friends page on close.
       <Conversation key={chatId} id={chatId} close={() => setChatId(null)} />
     );
+  // Render the selected person's profile before the friends list.
   if (profile) {
     const u = users.data?.find((x) => x.id === profile);
     return (
+      // Present the selected person's profile and their received reviews.
       <section>
         <button onClick={() => setProfile(null)}>Back to people</button>
         <h3>{u?.name || profile}</h3>
@@ -63,6 +68,7 @@ export default function FriendsPage() {
     );
   }
   return (
+    // Switch among people, friendship requests, and conversations within the friends page.
     <section>
       <h2>Friends</h2>
       <div className="actions">
@@ -80,6 +86,7 @@ export default function FriendsPage() {
             {requests.data
               ?.filter((f) => f.status === "pending")
               .map((f) => (
+                // Represent one pending friend request with the allowed accept or decline action.
                 <p key={f.id}>
                   {name(f.requesterId)} → {name(f.recipientId)}{" "}
                   {f.recipientId === actor.id ? (
@@ -121,6 +128,7 @@ export default function FriendsPage() {
                     .includes(search.toLowerCase()),
               )
               .map((u) => (
+                // Represent a discoverable person with profile, friendship, and chat controls.
                 <article key={u.id}>
                   <strong>{u.name || u.username || u.id}</strong>
                   <p>
@@ -157,6 +165,7 @@ export default function FriendsPage() {
         <QueryState query={chats}>
           {chats.data?.length ? (
             chats.data.map((c) => (
+              // Represent a conversation with its other participant, latest activity, and unread count.
               <article key={c.id}>
                 <strong>{name(c.otherUserId)}</strong>
                 <p>

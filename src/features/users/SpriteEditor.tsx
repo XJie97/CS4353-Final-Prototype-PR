@@ -17,6 +17,7 @@ export function SpriteEditor({ id }: { id: string }) {
     ),
   );
   return (
+    // Edit stored sprite attributes, showing head, torso, and level controls for user sprites.
     <QueryState query={query}>
       {query.data && (
         <form className="stack" onSubmit={formAction((fd) => save.mutate(fd))}>

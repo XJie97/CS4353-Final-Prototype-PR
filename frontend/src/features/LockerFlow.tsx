@@ -43,6 +43,7 @@ export function LockerFlow({
       "12",
   );
 
+  // Block unavailable handovers, invalid stages, and the wrong actor; retain the success screen after completion.
   if (
     !loan ||
     !step ||
@@ -51,6 +52,7 @@ export function LockerFlow({
     (proofActor(loan, step) !== store.activeUserId && phase !== "success")
   ) {
     return (
+      // Explain why this account cannot perform the requested handover stage.
       <Modal title="Handover unavailable" onClose={onClose}>
         <p>
           Only the next participant can complete this handover. Open loan
@@ -63,6 +65,7 @@ export function LockerFlow({
   const expected = handoverCode(loan, step),
     item = store.items.find((i) => i.id === loan.itemId)!;
   return (
+    // Guide the assigned participant through QR presentation, locker confirmation, photo, and success.
     <Modal
       title={phase === "success" ? "Verified successfully" : PROOF_LABELS[step]}
       onClose={onClose}
@@ -112,6 +115,7 @@ export function LockerFlow({
           <form
             onSubmit={async (e) => {
               e.preventDefault();
+              // Require a positive one- or two-digit locker number before continuing.
               if (!/^\d{1,2}$/.test(lockerNumber) || Number(lockerNumber) < 1) {
                 setError("Enter a locker number from 1 to 99.");
                 return;
@@ -181,6 +185,7 @@ export function LockerFlow({
                   code: expected,
                   lockerNumber,
                 });
+                // Keep the handover form open when recording the proof fails.
                 if (!result.ok) setError(result.error);
                 else setPhase("success");
               }}

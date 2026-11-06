@@ -18,6 +18,7 @@ export function HelpPage({
   const offerIds = useRef(new Map<string, string>());
   const loanIds = useRef(new Map<string, string>());
   const retryId = (ids: Map<string, string>, key: string) => {
+    // Allocate one stable record ID per draft key until it is cleared.
     if (!ids.has(key)) ids.set(key, uid());
     return ids.get(key)!;
   };
@@ -32,6 +33,7 @@ export function HelpPage({
     return result.ok;
   };
   return (
+    // Combine the new-help-request form with community requests and personal history.
     <Modal title="Ask for help" onClose={onClose}>
       <p>
         Provisional feature. Requests and offers are stored in the shared
@@ -41,6 +43,7 @@ export function HelpPage({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          // Reset the help-request draft only after a successful save.
           if (
             await act({
               type: "post-help",
@@ -124,6 +127,7 @@ export function HelpPage({
         </p>
       )}
       {requests.map((r) => (
+        // Represent one help request with dates, outcome, and available offer actions.
         <section className="plan-details" key={r.id}>
           <h3>{r.title}</h3>
           <p>{r.description}</p>
@@ -158,6 +162,7 @@ export function HelpPage({
                     onChange={(e) => setLocker(e.target.value)}
                   >
                     {LOCKERS.map((l) => (
+                      // Represent a supported locker location for the loan created by offer selection.
                       <option key={l.id} value={l.id}>
                         {l.label}
                       </option>
@@ -170,6 +175,7 @@ export function HelpPage({
                 {(store.offers ?? [])
                   .filter((o) => o.requestId === r.id && !o.withdrawn)
                   .map((o) => (
+                    // Represent an owner's offered item and the requester's selection action.
                     <div key={o.id}>
                       <p>
                         {store.items.find((i) => i.id === o.itemId)?.name} ·{" "}
@@ -180,6 +186,7 @@ export function HelpPage({
                         className="button"
                         onClick={async () => {
                           const loanId = retryId(loanIds.current, o.id);
+                          // Open the linked loan only after the offer is successfully selected.
                           if (
                             await act({
                               type: "select-offer",
@@ -217,6 +224,7 @@ export function HelpPage({
                         !o.withdrawn,
                     );
                     return (
+                      // Represent one of the owner's eligible items and its offer or withdrawal action.
                       <div key={i.id}>
                         <span>{i.name} </span>
                         {offer ? (

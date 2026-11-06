@@ -43,6 +43,7 @@ export function ProfilePage({
   ).length;
 
   return (
+    // Show profile details, lending statistics, account controls, and editable profile fields.
     <main className="app-scroll">
       <section className="profile-hero">
         <Avatar person={me} size={88} />
@@ -123,6 +124,7 @@ export function ProfilePage({
                 bio,
                 ...(avatar ? { avatar } : {}),
               });
+              // Keep profile edits available and show the error if saving fails.
               if (!result.ok) {
                 setError(result.error);
                 return;
@@ -158,6 +160,7 @@ export function ProfilePage({
                 onChange={(e) => setLocation(e.target.value)}
               >
                 {LOCKERS.map((l) => (
+                  // Represent one supported community location in the profile editor.
                   <option key={l.id}>{l.name}</option>
                 ))}
               </select>

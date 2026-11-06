@@ -53,13 +53,15 @@ export function RouteContent({
         />
       );
     case "share":
-      return <SharePage onLoan={(id) => navigate("loans", id)} />;
+      return /* Render the owner's sharing page and route its loan links to loan details. */ <SharePage onLoan={(id) => navigate("loans", id)} />;
     case "friends":
       return (
+        // Render the friends page with conversation and item navigation callbacks.
         <FriendsPage onChat={(id) => navigate("chats", id)} onItem={onItem} />
       );
     case "me":
       return (
+        // Render the signed-in profile, resetting its local state when the account changes.
         <ProfilePage
           key={store.activeUserId}
           onLoans={() => navigate("loans")}
@@ -69,6 +71,7 @@ export function RouteContent({
       );
     case "chats":
       return (
+        // Render a conversation or conversation list, resetting local state when the peer changes.
         <ChatsPage
           key={route.id ?? "chats"}
           peerId={route.id}
@@ -77,11 +80,12 @@ export function RouteContent({
         />
       );
     case "notifications":
-      return <NotificationsPage navigate={navigate} />;
+      return /* Render notifications with navigation to their related records. */ <NotificationsPage navigate={navigate} />;
     case "borrow":
       return null;
     default:
       return (
+        // Provide a recoverable empty state for an unsupported page.
         <main className="app-scroll">
           <EmptyState title="Page not found" text="Choose a section below." />
         </main>
@@ -134,6 +138,7 @@ function Application() {
       `#${page}${id ? "/" + encodeURIComponent(id) : ""}`,
     );
     setRoute({ page, ...(id ? { id } : {}) });
+    // Delegate an unselected borrow route to the catalog's own navigation.
     if (page === "borrow" && !id) setHomeEpoch((n) => n + 1);
   }
   useEffect(() => {
@@ -171,18 +176,24 @@ function Application() {
                 ? (store.people.find((p) => p.id === route.id)?.name ?? "Chats")
                 : "Chats"
               : "Notifications";
-  if (!configured) return <SignIn setup />;
+  // Show setup instructions when backend credentials are absent.
+  if (!configured) return /* Present backend-setup instructions through the shared sign-in screen. */ <SignIn setup />;
+  // Show the loading screen until the initial session data arrives.
   if (loading)
     return (
+      // Announce initial loading while the community snapshot is being fetched.
       <div className="borrow-app">
         <main className="app-loading" role="status">
           Opening your community…
         </main>
       </div>
     );
-  if (!identity) return <SignIn />;
+  // Show sign-in when no authenticated identity exists.
+  if (!identity) return /* Present assigned-account authentication before rendering private pages. */ <SignIn />;
+  // Show an account error when the session has no matching profile.
   if (!me)
     return (
+      // Explain why the authenticated account cannot load its community profile.
       <div className="borrow-app">
         <main className="app-loading">
           <p role="alert">{storageWarning || "Unable to load your profile."}</p>
@@ -196,6 +207,7 @@ function Application() {
       </div>
     );
   return (
+    // Keep the borrow feature mounted while switching the other application pages.
     <div className="borrow-app">
       <div className="app-feature" hidden={route.page !== "borrow"}>
         <BorrowHome
@@ -300,6 +312,7 @@ function Application() {
 }
 export default function App() {
   return (
+    // Supply shared session, command, and store state to the application.
     <AppProvider>
       <Application />
     </AppProvider>

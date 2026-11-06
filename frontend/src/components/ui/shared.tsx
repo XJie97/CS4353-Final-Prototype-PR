@@ -36,6 +36,7 @@ export function Glyph({
     check: "m4 12 5 5L20 5",
   };
   return (
+    // Draw a small interface glyph using the selected SVG path.
     <svg
       width={size}
       height={size}
@@ -70,6 +71,7 @@ export function Modal({
     return () => node?.close();
   }, []);
   return (
+    // Use a native dialog for modal focus handling, cancellation, and backdrop dismissal.
     <dialog
       className={`app-modal ${className}`}
       ref={dialog}
@@ -79,6 +81,7 @@ export function Modal({
         onClose();
       }}
       onClick={(e) => {
+        // Dismiss only a direct backdrop click, not clicks inside the dialog.
         if (e.target === e.currentTarget) onClose();
       }}
     >
@@ -109,6 +112,7 @@ export function Confirm({
   onConfirm: () => void;
 }) {
   return (
+    // Present a confirm-or-cancel decision with saving-state protection.
     <Modal title={title} onClose={onClose}>
       <p>{text}</p>
       <div className="form-actions">
@@ -163,6 +167,7 @@ export function EmptyState({
   children?: ReactNode;
 }) {
   return (
+    // Explain an empty result and optionally offer a recovery action.
     <div className="app-empty">
       <h3>{title}</h3>
       <p>{text}</p>
@@ -184,6 +189,7 @@ export function Header({
     (n) => n.to === store.activeUserId && !n.read,
   ).length;
   return (
+    // Combine the page title with optional back, chat, and notification controls.
     <header className="app-header">
       {onBack && (
         <button

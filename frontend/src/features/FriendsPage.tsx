@@ -39,6 +39,7 @@ export function FriendsPage({
     message: string,
   ) => {
     const result = await perform(command);
+    // Show the success toast and clear the error only after the friend action succeeds.
     if (result.ok) {
       setError("");
       toast(message);
@@ -49,6 +50,7 @@ export function FriendsPage({
   const personRow = (id: string, action?: React.ReactNode) => {
     const p = store.people.find((p) => p.id === id)!;
     return (
+      // Represent one friend with profile access and conversation or removal actions.
       <div className="friend-card" key={id}>
         <button
           disabled={saving}
@@ -90,6 +92,7 @@ export function FriendsPage({
   ).filter((l) => l.ownerId === profileId);
 
   return (
+    // Group incoming requests, accepted friends, profile details, and community discovery.
     <main className="app-scroll">
       <ErrorText text={error} />
       {incoming.length > 0 && (
@@ -229,6 +232,7 @@ export function FriendsPage({
           text="You can add them again later. Your existing loans and conversations will stay available."
           onClose={() => setRemoving(null)}
           onConfirm={async () => {
+            // Close the removal dialog only after the friendship is successfully removed.
             if (
               await act(
                 { type: "remove-friend", id: removing },
@@ -267,6 +271,7 @@ export function FriendsPage({
           {shared.length ? (
             <div className="mini-item-list">
               {shared.map((item) => (
+                // Open a listing shared by the person whose profile is being viewed.
                 <button
                   disabled={saving}
                   key={item.id}
@@ -287,6 +292,7 @@ export function FriendsPage({
           <h3>Reviews</h3>
           {reviews.length ? (
             reviews.map((loan) => (
+              // Display one completed-loan review received by the selected person.
               <article className="review-card" key={loan.id}>
                 <strong>{"★".repeat(loan.review!.rating)}</strong>
                 <p>{loan.review!.text}</p>

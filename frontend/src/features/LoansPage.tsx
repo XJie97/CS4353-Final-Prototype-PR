@@ -43,9 +43,11 @@ export function LoansPage({
     );
 
   return (
+    // Combine lifecycle tabs with separate borrowing and sharing lists.
     <>
       <div className="section-tabs" role="tablist" aria-label="Loan status">
         {(["Pending", "Active", "Complete"] as const).map((t) => (
+          // Select one lifecycle group and expose its selection to assistive technology.
           <button
             disabled={saving}
             role="tab"
@@ -61,6 +63,7 @@ export function LoansPage({
 
       <main className="app-scroll loan-list">
         {(["borrow", "share"] as const).map((direction) => (
+          // Group loans by whether the active user is borrowing or sharing.
           <section key={direction}>
             <h2>{direction === "borrow" ? "Borrowing" : "Sharing"}</h2>
             {group(direction).length ? (
@@ -68,6 +71,7 @@ export function LoansPage({
                 const item = store.items.find((i) => i.id === loan.itemId)!;
                 const step = nextProof(loan);
                 return (
+                  // Represent one loan with its current status and next available action.
                   <article className="loan-card" key={loan.id}>
                     <div className="loan-card-heading">
                       <button

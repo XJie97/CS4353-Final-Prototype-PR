@@ -34,9 +34,11 @@ export default function BorrowPage() {
     queryFn: () => services.items.getItems(filters),
     enabled: !friendsOnly || friends.isSuccess,
   });
+  // Render item details instead of the catalog while an item is selected.
   if (selected)
-    return <ItemDetails id={selected} close={() => setSelected(null)} />;
+    return /* Open the selected catalog item's details while preserving return-to-list behavior. */ <ItemDetails id={selected} close={() => setSelected(null)} />;
   return (
+    // Present the catalog's search, friendship, tag, and locker filters with matching items.
     <section>
       <h2>Borrow</h2>
       <div className="filter-bar">
@@ -53,6 +55,7 @@ export default function BorrowPage() {
           <select value={locker} onChange={(e) => setLocker(e.target.value)}>
             <option value="">All lockers</option>
             {lockers.data?.map((x) => (
+              // Represent a supported locker in the catalog's location filter.
               <option key={x.id} value={x.id}>
                 {x.name}
               </option>
@@ -74,6 +77,7 @@ export default function BorrowPage() {
         <QueryState query={items}>
           {items.data?.length ? (
             items.data.map((i) => (
+              // Represent one catalog item with availability and an action to open its details.
               <article key={i.id}>
                 <strong>{i.name}</strong>
                 <p>

@@ -72,6 +72,7 @@ export function AppProvider({
   const api = () => service.current ?? (service.current = services());
   // Coalesce overlapping refreshes and ignore results from an earlier session.
   async function refresh() {
+    // Queue another pass rather than start a second simultaneous refresh.
     if (refreshing.current) {
       pendingRefresh.current = true;
       return refreshing.current;
@@ -82,12 +83,14 @@ export function AppProvider({
         pendingRefresh.current = false;
         try {
           const next = await api().load();
+          // Apply loaded data only while mounted and in the same session generation.
           if (mounted.current && epoch === generation.current) {
             current.current = next;
             setStore(next);
             setWarning("");
           }
         } catch (error) {
+          // Show refresh errors only if they still belong to the active session.
           if (mounted.current && epoch === generation.current)
             setWarning(
               error instanceof Error
@@ -105,20 +108,25 @@ export function AppProvider({
     try {
       await run;
     } finally {
+      // Clear the refresh handle only if this is still the tracked run.
       if (refreshing.current === run) refreshing.current = null;
+      // End initial loading only for the still-mounted, unchanged session.
       if (mounted.current && epoch === generation.current) setLoading(false);
     }
   }
   useEffect(() => {
     mounted.current = true;
+    // Skip live backend observation when a test supplies the initial store.
     if (initialStore)
       return () => {
         mounted.current = false;
       };
+    // Avoid creating a backend client without configuration or an injected service.
     if (!configured && !backend) return;
     // Clear account-specific data and retry keys whenever the authenticated user changes.
     const stop = api().observe((next) => {
       const id = next?.id ?? null;
+      // Ignore repeated auth events for the same account.
       if (observedId.current === id) return;
       observedId.current = id;
       generation.current++;
@@ -137,6 +145,7 @@ export function AppProvider({
     };
   }, []);
   useEffect(() => {
+    // Subscribe only for an authenticated live session, not an injected test store.
     if (!identity || initialStore) return;
     void refresh();
     const stop = api().subscribe(() => void refresh());
@@ -150,22 +159,27 @@ export function AppProvider({
     };
   }, [identity?.id]);
   useEffect(() => {
+    // Do not schedule dismissal when there is no toast to display.
     if (!message) return;
     const timer = setTimeout(() => setMessage(""), 5000);
     return () => clearTimeout(timer);
   }, [message]);
   async function perform(command: Command): Promise<Result> {
+    // Reject actions during initial loading or another in-flight action.
     if (acting.current || loading)
       return {
         ok: false,
         error: "Please wait for the current action to finish.",
       };
+    // Reject writes when nobody is signed in.
     if (!identity) return { ok: false, error: "Sign in to continue." };
+    // Require sign-out instead of allowing an in-app account switch.
     if (command.type === "switch-account")
       return { ok: false, error: "Sign out and use your assigned account." };
     // Reuse the request ID and expected revision when retrying the same command.
     const key = JSON.stringify(command);
     let request = requests.current.get(key);
+    // Capture a request ID and expected revision on the first attempt.
     if (!request) {
       const c = command as Command & { loanId?: string; id?: string };
       const target = c.loanId || c.id;
@@ -197,15 +211,18 @@ export function AppProvider({
           ? error.message
           : "Could not save. Your changes have not been confirmed.";
       // Keep the same key only for an uncertain transport failure; a server rejection needs a fresh revision.
+      // Discard retry metadata after a definite rejection; retain it for uncertain network failures.
       if (!/fetch|network|timeout|connection/i.test(text))
         requests.current.delete(key);
       return { ok: false, error: text };
     } finally {
       acting.current = false;
+      // Avoid updating React state after the provider unmounts.
       if (mounted.current) setBusy(false);
     }
   }
   return (
+    // Expose shared app actions and render the dismissible toast above page content.
     <Context.Provider
       value={{
         store,
@@ -239,6 +256,7 @@ export function AppProvider({
 }
 export function useApp() {
   const value = useContext(Context);
+  // Report a missing provider instead of returning an unusable context.
   if (!value) throw new Error("AppProvider is required.");
   return value;
 }

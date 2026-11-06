@@ -56,10 +56,12 @@ for (const [route, expected] of [
     ),
   );
   for (const text of expected)
+    // Verify that each route renders its expected page content.
     assert.ok(
       html.includes(text),
       `${JSON.stringify(route)} must render ${text}`,
     );
+  // Verify that implemented pages replace the generic staging placeholder.
   assert.ok(
     !html.includes("Your community is ready to share."),
     "A real page must replace the staging placeholder",
@@ -71,13 +73,16 @@ for (const src of new Set(
     [...html.matchAll(/src="(\/assets\/[^\"]+)"/g)].map((match) => match[1]),
   ),
 ))
+  // Verify that every referenced public asset exists and is nonempty.
   assert.ok((await stat(join(root, "public", src))).size > 0, src);
 const qr = renderToStaticMarkup(
   createElement(module.QrCode, {
     value: "CS4353:demo-active:borrowerPickup:DEMO-ACTIVE",
   }),
 );
+// Verify that the rendered QR has its accessible handover label.
 assert.ok(qr.includes("Handover QR code"));
+// Verify that the QR contains substantial module geometry rather than an empty image.
 assert.ok((qr.match(/h1v1h-1z/g) || []).length > 100);
 console.log(
   "Rendered UI checks passed: all 8 routed views, local assets, and generated QR matrix.",

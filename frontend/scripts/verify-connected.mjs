@@ -33,6 +33,7 @@ globalThis.BroadcastChannel = class {
   }
   postMessage(data) {
     for (const peer of channels)
+      // Deliver the mock broadcast only to other channels with the same name.
       if (peer !== this && peer.name === this.name)
         queueMicrotask(() => {
           for (const listener of peer.listeners) void listener({ data });
@@ -138,16 +139,21 @@ const backend = makeDemoServices({
     getSession: async () => ({ data: { session: null } }),
   },
   rpc: async (name, args) => {
+    // Return the current remote snapshot for the read RPC.
     if (name === "demo_state")
       return { data: structuredClone(snapshot), error: null };
     calls.push(args);
+    // Hold the mock save open to exercise the pending state.
     if (blockSave)
       await new Promise((resolve) => {
         finishSave = resolve;
       });
+    // Simulate a server rejection before applying the command.
     if (rejectSave) return { error: { message: "Request rejected by server" } };
+    // Ignore a replayed request ID so retries cannot duplicate writes.
     if (savedRequests.has(args.request_id)) return { error: null };
     const c = args.command;
+    // Simulate creation of a help request in the remote snapshot.
     if (c.type === "post-help") {
       snapshot.helpRequests ??= [];
       snapshot.helpRequests.unshift({
@@ -160,6 +166,7 @@ const backend = makeDemoServices({
         status: "open",
       });
     }
+    // Simulate an owner's offer of an item for a help request.
     if (c.type === "offer-help") {
       snapshot.offers.push({
         id: c.id,
@@ -169,8 +176,10 @@ const backend = makeDemoServices({
         withdrawn: false,
       });
     }
+    // Mark the matching offer withdrawn in the mock backend.
     if (c.type === "withdraw-offer")
       snapshot.offers.find((o) => o.id === c.id).withdrawn = true;
+    // Update the completed loan's review in the mock backend.
     if (c.type === "edit-review") {
       const loan = snapshot.loans.find((l) => l.id === c.loanId);
       loan.review = {
@@ -182,6 +191,7 @@ const backend = makeDemoServices({
       loan.revision++;
     }
     savedRequests.add(args.request_id);
+    // Simulate a committed write whose response never reaches the client.
     if (loseResponse) {
       loseResponse = false;
       return { error: { message: "network timeout after commit" } };
@@ -206,22 +216,28 @@ try {
   await fill(document.querySelector("textarea"), "For our presentation");
   rejectSave = true;
   await submit();
+  // Verify that a server rejection is visible to the user.
   assert.match(document.body.textContent, /Request rejected by server/);
+  // Verify that a failed save preserves the typed help-request title.
   assert.equal(
     document.querySelector("input:not([type])").value,
     "Need a camera",
     "failed save preserves draft",
   );
+  // Verify that submitting the form sends a help-request creation command.
   assert.equal(calls[0].command.type, "post-help");
+  // Verify that the save includes an idempotency key for safe retries.
   assert.ok(calls[0].request_id);
   rejectSave = false;
   blockSave = true;
   await submit();
+  // Verify that an in-flight save disables the submit button.
   assert.equal(
     document.querySelector("form button").disabled,
     true,
     "pending remote save disables submit",
   );
+  // Verify that the draft stays visible until remote success is confirmed.
   assert.equal(
     document.querySelector("input:not([type])").value,
     "Need a camera",
@@ -232,11 +248,13 @@ try {
     finishSave();
     await settle();
   });
+  // Verify that a confirmed save clears the help-request draft.
   assert.equal(
     document.querySelector("input:not([type])").value,
     "",
     "successful remote save clears draft",
   );
+  // Verify that refreshing displays the newly saved remote request.
   assert.match(
     document.body.textContent,
     /Need a camera/,
@@ -246,14 +264,17 @@ try {
   await fill(document.querySelector("textarea"), "Response lost after commit");
   loseResponse = true;
   await submit();
+  // Verify that a lost response is reported as an uncertain network failure.
   assert.match(document.body.textContent, /network timeout after commit/);
   const uncertain = calls.at(-1);
   await submit();
+  // Verify that retrying an uncertain save reuses its command and request ID.
   assert.deepEqual(
     calls.at(-1),
     uncertain,
     "retry reuses command ID and request key after an uncertain save",
   );
+  // Verify that an uncertain-save retry creates exactly one help request.
   assert.equal(
     snapshot.helpRequests.filter((r) => r.title === "Retry-safe request")
       .length,
@@ -270,6 +291,7 @@ try {
     compliments: [],
     at: "2026-11-05T02:00:00Z",
   };
+  // Require a completed borrower review in the seed before exercising editing.
   assert.ok(loan, "seed must include the active borrower’s completed review");
   loan.revision = 8;
   await mount(h(ReviewForm, { loanId: loan.id, onClose: noop }), backend);
@@ -279,8 +301,11 @@ try {
   );
   await submit();
   const edit = calls.at(-1);
+  // Verify that editing submits the review-edit command rather than a new review.
   assert.equal(edit.command.type, "edit-review");
+  // Verify that review editing sends the loaded revision for concurrency checks.
   assert.equal(edit.expected_revision, 8);
+  // Verify that the saved review contains the edited text.
   assert.equal(loan.review.text, "Edited through the connected form");
   await unmount();
 
@@ -301,14 +326,18 @@ try {
     button("Withdraw offer").click();
     await settle();
   });
+  // Verify that a lost withdrawal response is reported as an uncertain network failure.
   assert.match(document.body.textContent, /network timeout after commit/);
   await act(async () => {
     button("Offer item").click();
     await settle();
   });
   const reoffered = calls.at(-1).command;
+  // Verify that reoffering still uses the offer-help command.
   assert.equal(reoffered.type, "offer-help");
+  // Verify that reoffering refers to the same item.
   assert.equal(reoffered.itemId, offered.itemId);
+  // Verify that an offer made after withdrawal receives a fresh record ID.
   assert.notEqual(
     reoffered.id,
     offered.id,
@@ -347,15 +376,19 @@ try {
       backend,
       structuredClone(snapshot),
     );
+    // Verify that every handover stage displays its QR code.
     assert.ok(
       document.querySelector('[aria-label="Handover QR code"]'),
       `${stage} displays QR`,
     );
+    // Verify that instructions tell the user to present the code to the locker scanner.
     assert.match(
       document.body.textContent,
       /Show this QR code to the locker scanner/,
     );
+    // Verify that presenting a QR code does not activate an in-app camera preview.
     assert.equal(document.querySelector("video"), null);
+    // Verify that QR presentation requires no manual code entry.
     assert.equal(
       document.querySelector("input"),
       null,
@@ -365,7 +398,9 @@ try {
       button("Simulate locker scan").click();
       await settle();
     });
+    // Verify that locker confirmation leads toward the photo-evidence step.
     assert.match(document.body.textContent, /Continue to item photo/);
+    // Verify that pickup locker numbers are fixed to the preceding drop-off locker.
     assert.equal(
       document.querySelector("input").readOnly,
       index === 1 || index === 3,
@@ -377,6 +412,7 @@ try {
   // Real Supabase Auth clients + separate tab stores: login, sign-out and reload.
   const secondDom = new JSDOM("", { url: "https://local.test/" });
   const authFetch = async (url, options) => {
+    // Return the mocked logout response for Supabase sign-out.
     if (String(url).includes("/logout"))
       return new Response("{}", { status: 200 });
     const email = JSON.parse(options.body).email;
@@ -436,7 +472,9 @@ try {
       password: "test",
     });
     await settle();
+    // Verify that the first tab observes its own signed-in account.
     assert.equal(firstEvents.at(-1), "eric@example.test");
+    // Verify that signing in the first tab leaves the second tab signed out.
     assert.equal(
       secondEvents.at(-1),
       null,
@@ -447,21 +485,27 @@ try {
       password: "test",
     });
     await settle();
+    // Verify that signing in the second tab preserves the first tab's account.
     assert.equal(firstEvents.at(-1), "eric@example.test");
+    // Verify that the second tab observes its own independently signed-in account.
     assert.equal(secondEvents.at(-1), "sarah@example.test");
     await first.auth.signOut({ scope: "local" });
     await settle();
+    // Verify that signing out clears the first tab's identity.
     assert.equal(firstEvents.at(-1), null);
+    // Verify that signing out the first tab preserves the second tab's account.
     assert.equal(
       secondEvents.at(-1),
       "sarah@example.test",
       "sign-out must not change another account",
     );
+    // Verify that the second tab still holds its own authenticated session.
     assert.equal(
       (await second.auth.getSession()).data.session.user.email,
       "sarah@example.test",
     );
     const reloaded = client(secondDom.window.sessionStorage);
+    // Verify that reloading retains the session belonging to that tab.
     assert.equal(
       (await reloaded.auth.getSession()).data.session.user.email,
       "sarah@example.test",
@@ -480,6 +524,7 @@ try {
     "Connected interaction checks passed: Help failure/pending/success, review editing/revisions, all four external-scanner handovers, and real Supabase cross-tab auth isolation/reload.",
   );
 } finally {
+  // Render the requested handover view when a test view is supplied.
   if (view) await act(async () => view.unmount());
   for (const channel of [...channels]) channel.close();
   dom.window.close();

@@ -10,6 +10,7 @@ import type { Loan } from "../core/types";
 function Row({ loan }: { loan: Loan }) {
   const item = useItem(loan.itemId);
   return (
+    // Summarize a loan's item, dates, status, and pending photo evidence in the loan list.
     <article>
       <strong>{item.data?.name || loan.itemId}</strong>
       <p>
@@ -33,8 +34,10 @@ export default function LoansPage({ loanId }: { loanId: string | null }) {
     queryKey: ["loans", "list", actor.id],
     queryFn: () => services.loans.getLoans(),
   });
+  // Render the selected loan's detail view instead of the loan list.
   if (loanId)
     return (
+      // Open loan details from the selected loan deep link.
       <LoanDetails key={loanId} id={loanId} close={() => navigate("loans")} />
     );
   const loans = query.data?.filter(
@@ -46,6 +49,7 @@ export default function LoansPage({ loanId }: { loanId: string | null }) {
           : l.ownerId === actor.id)),
   );
   return (
+    // Filter and list the active user's borrowing and lending records.
     <section>
       <h2>Loans</h2>
       <div className="filter-bar">
@@ -53,6 +57,7 @@ export default function LoansPage({ loanId }: { loanId: string | null }) {
           When
           <select value={filter} onChange={(e) => setFilter(e.target.value)}>
             {["all", "upcoming", "current", "past"].map((s) => (
+              // Represent one temporal filter: all, upcoming, current, or past.
               <option key={s}>{s}</option>
             ))}
           </select>
@@ -61,6 +66,7 @@ export default function LoansPage({ loanId }: { loanId: string | null }) {
           Role
           <select value={role} onChange={(e) => setRole(e.target.value)}>
             {["all", "borrowed", "lent"].map((s) => (
+              // Represent one borrowing-or-sharing role filter option.
               <option key={s}>{s}</option>
             ))}
           </select>
@@ -68,7 +74,7 @@ export default function LoansPage({ loanId }: { loanId: string | null }) {
       </div>
       <QueryState query={query}>
         {loans?.length ? (
-          loans.map((l) => <Row key={l.id} loan={l} />)
+          loans.map((l) => /* Render one matching loan through the reusable summary row. */ <Row key={l.id} loan={l} />)
         ) : (
           <p>No loans.</p>
         )}

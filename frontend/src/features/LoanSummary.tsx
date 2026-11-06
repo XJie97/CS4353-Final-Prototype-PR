@@ -12,6 +12,7 @@ export function LoanSummary({ loan }: { loan: Loan }) {
       (loan.borrowerId === store.activeUserId ? loan.ownerId : loan.borrowerId),
   )!;
   return (
+    // Summarize the item, the other participant, the loan dates, and the exchange location.
     <div className="loan-summary">
       <img src={item.image} alt="" width={160} height={160} />
       <div>

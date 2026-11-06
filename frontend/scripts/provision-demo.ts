@@ -6,6 +6,7 @@ import { createSeed } from "../src/app/seed.ts";
 import { todayLocal } from "../src/app/domain.ts";
 const arg = (key: string) => {
   const i = process.argv.indexOf(key);
+  // Require a value after the requested command-line flag.
   if (i < 0 || !process.argv[i + 1]) throw new Error(`Missing ${key}`);
   return process.argv[i + 1];
 };
@@ -20,6 +21,7 @@ const client = createClient(env.VITE_SUPABASE_URL, key, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 const ok = <T>(r: { data: T; error: unknown }): T => {
+  // Propagate provisioning errors instead of treating a failed query as data.
   if (r.error) throw r.error;
   return r.data;
 };
@@ -34,6 +36,7 @@ const ids: Record<string, string> = {};
 for (const p of seed.people) {
   const email = `${p.id}@cs4353.example.test`;
   let user = users.find((u) => u.email === email);
+  // Create the demo account only when its email is not already registered.
   if (!user) {
     const password = randomBytes(20).toString("base64url") + "aA9!";
     user = ok(
@@ -59,6 +62,7 @@ for (const p of seed.people) {
       ),
   );
 }
+// Stop when this seed version has already been applied.
 if (
   ok(await client.from("demo_seed_versions").select("id").eq("id", "styled-v1"))
     .length
@@ -71,6 +75,7 @@ if (
 const imageCache = new Map<string, string>();
 async function image(source: string, owner: string, scope = "public") {
   const cache = `${owner}/${scope}/${source}`;
+  // Reuse an image already uploaded for this source and scope.
   if (imageCache.has(cache)) return imageCache.get(cache)!;
   const name = source.split("/").at(-1)!;
   const path = `${owner}/${scope}/seed-${name}`;
@@ -78,6 +83,7 @@ async function image(source: string, owner: string, scope = "public") {
   const result = await client.storage
     .from("demo-images")
     .upload(path, bytes, { contentType: "image/png", upsert: false });
+  // Allow an existing object, but reject other storage upload failures.
   if (result.error && !/already exists|duplicate/i.test(result.error.message))
     throw result.error;
   imageCache.set(cache, path);
@@ -103,6 +109,7 @@ const existingLoans = new Set(
   ok(await client.from("demo_loans").select("id")).map((l) => l.id),
 );
 for (const l of seed.loans) {
+  // Preserve loans that already exist in the shared database.
   if (existingLoans.has(l.id)) continue;
   const {
     id,
@@ -137,6 +144,7 @@ for (const l of seed.loans) {
         .insert({ loan_id: id, user_id: ids[a] }),
     );
   for (const [step, proof] of Object.entries(proofs)) {
+    // Skip handover stages without seeded photo evidence.
     if (!proof) continue;
     const { actor, ...data } = proof;
     data.photo = await image(proof.photo, ids[actor], `proof/${id}`);
@@ -146,12 +154,14 @@ for (const l of seed.loans) {
         .insert({ loan_id: id, step, actor: ids[actor], data }),
     );
   }
+  // Insert condition evidence only when the seed loan includes it.
   if (condition)
     ok(
       await client
         .from("demo_conditions")
         .insert({ loan_id: id, data: condition }),
     );
+  // Insert review evidence only when the seed loan includes it.
   if (review)
     ok(await client.from("demo_reviews").insert({ loan_id: id, data: review }));
 }
