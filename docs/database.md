@@ -11,6 +11,39 @@ The ignored `.env` contains the URL and browser-safe publishable key. Privileged
 keys and database passwords must never enter frontend code or Git. Do not expose
 the `private` or `supabase_migrations` schemas through the Data API.
 
+## Connected completion: verified 6 November 2026
+
+Migration `20261106000100_connected_completion.sql` adds `demo_help_requests` and
+`demo_offers`, member-only reads and Realtime publication. Existing `demo_state` and
+`demo_command` RPC names remain unchanged. Help commands enforce roles, request
+closure, listed-item ownership, dates and availability. Request-row locks serialize
+selection/closure/withdrawal; ordinary loan creation and request selection commit
+atomically. Cancellation never reopens selected Help history.
+
+The command dispatcher also supports borrower-only `edit-review` with the existing
+loan revision and request-key rules. An edit can keep, replace or remove its photo
+without reopening the completed loan. `demo_command_base` is an internal helper;
+`anon` and `authenticated` cannot execute it directly.
+
+The migration was rehearsed with all earlier migrations on disposable Supabase
+PostgreSQL 17.11, then tested in a rollback-only transaction against the managed
+project. It was applied with exact SQL stored in migration history in the same
+transaction. Both current suites (`shared_demo.sql`, `feature_frame.sql`) passed
+locally and against managed Supabase after deployment; synthetic fixtures rolled back.
+Local Storage uses a minimal SQL fixture; managed checks exercise the real policies.
+Physical files, cameras and hosted browser acceptance are separate checks.
+
+To repeat the current SQL suites on a disposable, migrated local Supabase stack:
+
+```sh
+supabase db query --file supabase/tests/shared_demo.sql
+supabase db query --file supabase/tests/feature_frame.sql
+```
+
+Use `--remote` only for an explicitly selected managed project. Both scripts create
+synthetic records inside a transaction and finish with rollback; do not remove that
+rollback. `lending.sql` targets a superseded lifecycle and is not the current suite.
+
 ## Connected styled demo: verified 5 November 2026
 
 Migration `20261105000100_shared_demo.sql` is applied. Its exact source and version

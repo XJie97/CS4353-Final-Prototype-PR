@@ -13,25 +13,25 @@ function Scanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void})
         const Constructor=(window as unknown as {
             BarcodeDetector?:new(options:{formats:string[]})=>{
                 detect:(video:HTMLVideoElement)=>Promise<{rawValue:string}[]>}}).BarcodeDetector;
-        
+
         async function start(){
             try {
                 if (!Constructor)
                     throw new Error('QR scanning is not supported by this browser. Enter the code instead.');
                 stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false});
-                
+
                 if (!live){
                     stream.getTracks().forEach(track=>track.stop()); return;
                 }
                 if (!video.current) return;
-                
+
                 video.current.srcObject=stream;
                 await video.current.play();
                 const detector=new Constructor({formats:['qr_code']});
 
                 async function scan(){
                     if (!live||!video.current) return;
-                    try { 
+                    try {
                         const codes=await detector.detect(video.current);
                         if (codes[0]) {
                             onCode(codes[0].rawValue);return;
@@ -41,7 +41,7 @@ function Scanner({onCode,onClose}:{onCode:(code:string)=>void;onClose:()=>void})
                     if (live)
                         timer=setTimeout(scan,250);
                 }
-                    
+
                 void scan();
             }
             catch(error) {
@@ -82,7 +82,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
     const pickup=step==='borrowerPickup'||step==='ownerPickup';
     const previous=loan&&(step==='borrowerPickup'?loan.proofs.ownerDropoff:step==='ownerPickup'?loan.proofs.borrowerDropoff:undefined);
     const [lockerNumber,setLockerNumber]=useState(previous?.lockerNumber??LOCKERS.find(l=>l.id===loan?.lockerId)?.number??'12');
- 
+
     if (!loan||
         !step||
         (!['ready','active','returning'].includes(loan.status)&&phase!=='success')||
@@ -97,7 +97,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
     return (
         <Modal title={phase==='success'?'Verified successfully':PROOF_LABELS[step]} onClose={onClose} className="locker-modal">
         <p className="preview-note">Locker preview: no physical locker is connected.</p>
- 
+
         {phase==='code'&&<>
             <p className="form-item-name">{item.title??item.name}</p>
             <QrCode value={expected}/>
@@ -108,7 +108,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
                 </button>
                 <button disabled={saving} className="button" type="button" onClick={()=>setCode(expected)}>Use preview code</button>
             </div>
-            
+
             {scanning&&
                 <Scanner onClose={()=>setScanning(false)} onCode={value=>{setCode(value);setScanning(false);}}/>}
                 <form onSubmit={async e=>{
@@ -129,7 +129,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
 
             {phase==='locker'&&<>
                 <p className="locker-location">{LOCKERS.find(l=>l.id===loan.lockerId)?.label}</p>
-                <div className="locker-number">Locker 
+                <div className="locker-number">Locker
                     <strong>{lockerNumber.padStart(2,'0')}</strong>
                 </div>
                 <p>{pickup?'Collect the item from the locker shown above.'
@@ -145,7 +145,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
                     setPhase('photo');
                 }}>
                     <label>Locker number
-                        <input type="text" inputMode="numeric" pattern="[0-9]{1,2}" maxLength={2} 
+                        <input type="text" inputMode="numeric" pattern="[0-9]{1,2}" maxLength={2}
                         value={lockerNumber} readOnly={pickup} required onChange={e=>setLockerNumber(e.target.value)}/>
                     </label><ErrorText text={error}/>
                     <button disabled={saving} className="button primary wide" type="submit">Continue to item photo</button>
@@ -154,12 +154,12 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
 
         {phase==='photo'&&<>
             <p>Record the item condition {pickup?'when collecting it':'before closing the locker'}.</p>
-            <PhotoField label="Item condition photo" value={photo} onChange={setPhoto} 
+            <PhotoField label="Item condition photo" value={photo} onChange={setPhoto}
             onBusyChange={setPhotoBusy} required/>
             <ErrorText text={error}/>
             <div className="form-actions">
                 <button disabled={saving} className="button" type="button" onClick={()=>setPhase('locker')}>Back</button>
-                <button className="button primary" type="button" disabled={saving||!photo||photoBusy} 
+                <button className="button primary" type="button" disabled={saving||!photo||photoBusy}
                     onClick={async()=>{
                         const result=await perform({type:'record-proof',loanId,step,photo,code,lockerNumber});
                         if (!result.ok) setError(result.error);
@@ -178,7 +178,7 @@ export function LockerFlow({loanId,onClose,onDone}:{loanId:string;onClose:()=>vo
                 <p className="muted">The loan has been updated and the other participant notified.</p>
                 <button disabled={saving} className="button primary wide" type="button" onClick={onDone}>Back to loan</button>
             </div>}
-            
+
         </Modal>
     );
 }

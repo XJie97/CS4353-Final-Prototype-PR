@@ -1,5 +1,5 @@
 import { helpOutcome, visibleHelpRequests } from "../app/help-view";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useApp, uid } from "../app/context";
 import { LOCKERS, todayLocal } from "../app/domain";
 import { ErrorText, Modal } from "../components/ui/shared";
@@ -14,6 +14,13 @@ export function HelpPage({
   const [history, setHistory] = useState(false);
   const requests = visibleHelpRequests(store, history);
   const [error, setError] = useState("");
+  const [draftId, setDraftId] = useState(uid);
+  const offerIds = useRef(new Map<string, string>());
+  const loanIds = useRef(new Map<string, string>());
+  const retryId = (ids: Map<string, string>, key: string) => {
+    if (!ids.has(key)) ids.set(key, uid());
+    return ids.get(key)!;
+  };
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [start, setStart] = useState(todayLocal());
@@ -37,7 +44,7 @@ export function HelpPage({
           if (
             await act({
               type: "post-help",
-              id: uid(),
+              id: draftId,
               title,
               description,
               start,
@@ -46,6 +53,7 @@ export function HelpPage({
           ) {
             setTitle("");
             setDescription("");
+            setDraftId(uid());
           }
         }}
       >
@@ -145,7 +153,7 @@ export function HelpPage({
                         disabled={saving}
                         className="button"
                         onClick={async () => {
-                          const loanId = uid();
+                          const loanId = retryId(loanIds.current, o.id);
                           if (
                             await act({
                               type: "select-offer",
@@ -171,6 +179,9 @@ export function HelpPage({
                 {store.items
                   .filter((i) => i.listed && i.ownerId === store.activeUserId)
                   .map((i) => {
+                    const offerKey = `${r.id}:${i.id}:${(store.offers ?? []).filter(
+                      (o) => o.requestId === r.id && o.itemId === i.id,
+                    ).length}`;
                     const offer = (store.offers ?? []).find(
                       (o) =>
                         o.requestId === r.id &&
@@ -197,7 +208,7 @@ export function HelpPage({
                             onClick={async () =>
                               act({
                                 type: "offer-help",
-                                id: uid(),
+                                id: retryId(offerIds.current, offerKey),
                                 requestId: r.id,
                                 itemId: i.id,
                               })

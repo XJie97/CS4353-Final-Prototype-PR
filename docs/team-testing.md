@@ -2,8 +2,9 @@
 
 ## Open this version
 
-**Test link:** https://5d8e7fa9.cs4353-demo.pages.dev/  
-**Version:** `4e7afab` under **Me → About this preview**.
+**Previous verified test link:** https://5d8e7fa9.cs4353-demo.pages.dev/
+
+**Previous verified version:** `4e7afab` under **Me → About this preview**.
 
 This is the styled app in `frontend/`, connected to shared Supabase data. No
 installation, Cloudflare login or local environment file is needed to use the hosted
@@ -20,7 +21,7 @@ Ask Colin privately for your assigned Eric, Sarah, Ben or Maya email and passwor
 in with that login; there is no account selector or public signup. Do not paste
 passwords into issues, screenshots or shared documents.
 
-Use one account per browser profile or device. To test both sides yourself, use two
+For the previously verified `4e7afab` build, use one account per browser profile or device. To test both sides yourself, use two
 separate browser profiles, two different browsers, or two devices. Avoid two tabs in the
 same browser profile: there is a known auth-event isolation issue that can show a load
 error after another tab signs in or out. If that happens, reload the affected tab and
@@ -87,7 +88,30 @@ handovers, good-condition return, review, live messages and reload persistence.
 Follow-up checks passed for booking conflicts, plan reapproval, cancellation/date
 release, issue resolution and photo upload at a 390 × 844 Chrome responsive viewport.
 
-Same-profile tab auth isolation has a known issue; use the workaround above. Physical
+Same-profile tab auth isolation failed on `4e7afab`; use the workaround above for that build. The current working candidate includes a fix verified with real Supabase Auth clients in local DOM tests. Your hosted acceptance test must still confirm it in a browser. Physical
 phone behavior and camera scanning are not established by the desktop responsive checks.
 See the [hosting record](hosting.md#focused-preview-checks) for detailed evidence and
 remaining limitations.
+
+
+## Next candidate: acceptance checks for the release owner
+
+The 6 November working candidate adds shared Help requests/offers, borrower review
+editing (including replacement/removal of photos), and isolated tab auth channels.
+The database migration is applied; the frontend changes require a new branch build.
+The fixed URL above does not contain these changes. Open the branch preview only
+after its deployment passes, and record its exact version before testing.
+
+- [ ] Confirm the deployment version matches the feature branch commit.
+- [ ] Repeat the Eric/Sarah journey, chat, reload and phone layout checks above.
+- [ ] Post a Help request; offer a listed item from another account; select it.
+      Confirm exactly one pending loan and selected request history after reload.
+- [ ] Withdraw an offer and offer again; close a request; reject an overlapping booking.
+- [ ] Edit a completed review; retain, replace and remove its photo; reload each result.
+- [ ] Sign different accounts into two same-profile tabs. Sign out of one and confirm
+      the other retains its account and can load/save. Reload both tabs.
+- [ ] Exercise a failed save and retry; confirm the draft survives and no duplicate
+      request/offer/loan appears.
+
+Hosted browser acceptance is intentionally reserved for the release owner. The local
+and database checks do not mark these boxes complete.

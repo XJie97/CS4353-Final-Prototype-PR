@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Command, Store } from '../app/domain';
+import { tabAuthOptions } from './auth.ts';
 export type Identity={id:string;email:string};
 export interface DemoServices {
  configured:boolean;
@@ -10,7 +11,7 @@ export interface DemoServices {
  execute(command:Command,requestId:string,revision:number|null):Promise<void>;
  subscribe(refresh:()=>void):()=>void;
 }
-const tables=['profiles','items','loans','approvals','proofs','conditions','reviews','friendships','messages','notices'];
+const tables=['profiles','items','loans','approvals','proofs','conditions','reviews','friendships','messages','notices','help_requests','offers'];
 const url=import.meta.env?.VITE_SUPABASE_URL;
 const key=import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY;
 export const configured=Boolean(url&&key&&!key.includes('YOUR_'));
@@ -18,7 +19,7 @@ let singleton:DemoServices|undefined;
 export function services():DemoServices {
  if(singleton)return singleton;
  if(!configured)throw new Error('Configure VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY for this demo deployment.');
- const client=createClient(url,key,{auth:{storage:typeof window==='undefined'?undefined:window.sessionStorage,storageKey:'cs4353-connected-auth',persistSession:typeof window!=='undefined',autoRefreshToken:true,detectSessionInUrl:false}});
+ const client=createClient(url,key,{auth:tabAuthOptions(typeof window==='undefined'?undefined:window.sessionStorage)});
  return singleton=makeDemoServices(client);
 }
 export function makeDemoServices(client:SupabaseClient):DemoServices {
@@ -84,7 +85,7 @@ export function makeDemoServices(client:SupabaseClient):DemoServices {
   async execute(command,requestId,revision){
    const c=structuredClone(command) as Command;
    if(c.type==='record-proof')c.photo=await upload(c.photo,`proof/${c.loanId}`);
-   if(c.type==='submit-review'&&c.photo)c.photo=await upload(c.photo,'public');
+   if((c.type==='submit-review'||c.type==='edit-review')&&c.photo)c.photo=await upload(c.photo,'public');
    if(c.type==='update-profile'&&c.avatar)c.avatar=await upload(c.avatar,'public');
    if(c.type==='create-item'||c.type==='edit-item')c.images=await Promise.all(c.images.map(image=>upload(image,'public')));
    const {error}=await client.rpc('demo_command',{command:c,request_id:requestId,expected_revision:revision});

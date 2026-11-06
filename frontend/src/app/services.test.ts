@@ -75,3 +75,23 @@ test('realtime bursts refresh once and unsubscribe cancels pending refreshes',as
  await new Promise(resolve=>setTimeout(resolve,180));
  assert.equal(refreshes,1);assert.equal(removed,1);
 });
+
+test('review edits upload replacement photos and reuse uploads on retries',async()=>{
+ const f=fake();const command={type:'edit-review' as const,loanId:'loan',rating:4,text:'Updated',compliments:[],photo:'data:image/png;base64,eA=='};
+ f.setFail(true);await assert.rejects(f.service.execute(command,'edit-request',12));
+ f.setFail(false);await f.service.execute(command,'edit-request',12);
+ assert.equal(f.uploads(),1);assert.deepEqual(f.calls[0].args,f.calls[1].args);
+ assert.match((f.calls[1].args as {command:{photo:string}}).command.photo,/^eric\/public\//);
+ assert.equal((f.calls[1].args as {expected_revision:number}).expected_revision,12);
+});
+test('review edits retain stored photo paths rather than sending expiring signed URLs',async()=>{
+ const snapshot=createSeed('2026-11-05');const loan=snapshot.loans.find(l=>l.status==='complete')!;
+ loan.review={rating:5,text:'Original',compliments:[],at:'2026-11-05T02:00:00Z',photo:'eric/public/original.jpg'};let sent:unknown;
+ const service=makeDemoServices({
+  rpc:async(name:string,args:unknown)=>{sent=args;return{data:name==='demo_state'?snapshot:null,error:null};},
+  storage:{from:()=>({createSignedUrl:async()=>({data:{signedUrl:'https://images.example/signed'},error:null})})},
+ } as unknown as SupabaseClient);
+ const loaded=await service.load();const photo=loaded.loans.find(l=>l.id===loan.id)!.review!.photo!;
+ await service.execute({type:'edit-review',loanId:loan.id,rating:5,text:'Retained',compliments:[],photo},'request',3);
+ assert.equal((sent as {command:{photo:string}}).command.photo,'eric/public/original.jpg');
+});

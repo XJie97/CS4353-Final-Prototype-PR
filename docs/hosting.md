@@ -12,7 +12,7 @@ the configured backend.
 ## Existing Cloudflare configuration
 
 The Git-connected Pages project already exists. Keep its GitHub integration scoped to
-`colinhia/CS4353-Final-Prototype` and use these verified settings:
+`colinhia/CS4353-Final-Prototype` and use these settings (last verified in Cloudflare on 5 November 2026):
 
 | Setting | Value |
 | --- | --- |
@@ -70,9 +70,10 @@ verify the Git integration.
 The connected styled app uses Supabase `demo_*` tables and private `demo-images`
 Storage. Production and previews configured with the same project share data. A preview
 URL does not isolate its database. Sign in with assigned credentials in separate browser
-profiles or devices. Although auth storage is scoped to each tab, same-profile tabs
-currently share Supabase auth event broadcasts; avoid using them for independent
-accounts until this is fixed. Use **Me → Sign out** when finished. There is no
+profiles or devices. The old `4e7afab` build shares auth events between same-profile tabs. The
+6 November candidate isolates each client channel while retaining tab-scoped tokens
+across reloads. Until that candidate passes hosted acceptance, use separate profiles
+or devices for independent accounts. Use **Me → Sign out** when finished. There is no
 browser-only reset. Coordinate test dates with teammates; existing reservations block
 overlapping dates. Passwords remain in the ignored repository-root `.demo-accounts.txt`
 and must be shared privately, never in bug reports or committed guides.
@@ -130,7 +131,7 @@ four proofs use the synthetic placeholder. The loan is complete with a `[smoke]`
 condition issue and resolution; no review was submitted for this loan. Test records
 remain in shared data; no database reset or cleanup was performed.
 
-### Known auth-event isolation issue
+### Historical auth-event isolation issue (`4e7afab`)
 
 `frontend/src/services/demo.ts` uses `sessionStorage` with the fixed key
 `cs4353-connected-auth`. The installed Supabase Auth client also uses that key for its
@@ -139,3 +140,42 @@ stored tokens therefore do not guarantee independent auth UI state in tabs from 
 browser profile. Use separate profiles or devices for team testing until the app
 isolates those events. Reloading the affected tab restores its own stored session/login
 screen. This follow-up does not change app code.
+
+
+## Pre-merge checklist: 6 November 2026 working candidate
+
+- [x] Implement shared Help post/close/offer/withdraw/select commands, state reads,
+      row policies and Realtime publication in a new migration.
+- [x] Implement borrower-only review edits with revision checks and retry keys;
+      support retained/replacement/removed photos.
+- [x] Isolate each auth client's BroadcastChannel while keeping a stable token
+      location inside its own sessionStorage. Local tests exercise real Supabase
+      Auth clients through independent login, sign-out and reload.
+- [x] Retain Help record IDs across uncertain save retries; verify draft preservation,
+      pending-state controls and one-record recovery after a lost response.
+- [x] Run both app test suites/builds, connected DOM interactions and static rendered checks.
+- [x] Rehearse every migration on a disposable Supabase PostgreSQL 17.11 container.
+      Its Storage SQL fixture models the tables/functions needed by the migrations;
+      managed Supabase rollback tests provide verification against actual Storage RLS.
+- [x] Run `shared_demo.sql` and `feature_frame.sql` locally and on managed Supabase;
+      all synthetic fixtures roll back.
+- [x] Deploy `20261106000100_connected_completion` with its exact source recorded
+      atomically in migration history. Existing demo records are preserved.
+- [x] Remove branch-added trailing whitespace and fix frontend dependency advisories
+      by updating Vite to 8.3.6 and the transitive source-map dependency.
+- [x] Release owner confirmed the Cloudflare Production settings and variables on
+      6 November 2026. This confirmation was provided by the owner; no browser
+      integration or authenticated Cloudflare API was used in this session.
+- [ ] Confirm Preview settings/variables through the successful branch deployment.
+- [ ] Release owner: deploy/test the final feature commit using the [acceptance
+      checklist](team-testing.md#next-candidate-acceptance-checks-for-the-release-owner).
+- [ ] Merge only after hosted acceptance passes and verify the resulting production version.
+
+`npm test` in `frontend/` now includes connected DOM interactions, so the existing
+Cloudflare build command also gates these regressions. These tests use jsdom and
+mocked HTTP responses, not a browser or a live database. Database tests remain a
+separate rollback-only release check. No browser integration was used for this pass.
+
+Reverting frontend code does not remove Help history, offers or edited reviews from
+the shared backend. The new RPCs remain compatible with the previous connected app;
+keep additive schema changes in place when reverting frontend code.

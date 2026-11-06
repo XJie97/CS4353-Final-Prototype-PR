@@ -6,7 +6,7 @@ import { Avatar, ErrorText, Modal } from '../components/ui/shared';
 import { PhotoField } from '../components/ui/PhotoField';
 
 export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:()=>void;onReset:()=>void}) {
- 
+
     const {store,perform,toast,signOut,storageWarning,busy:saving}=useApp();
     const me=store.people.find(p=>p.id===store.activeUserId)!;
     const [editing,setEditing]=useState(false);
@@ -44,10 +44,10 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
                 <span><strong>{friends}</strong>Friends</span>
             </div>
             <div className="profile-links">
-                <button disabled={saving} type="button" onClick={onLoans}>Your loans 
+                <button disabled={saving} type="button" onClick={onLoans}>Your loans
                     <span>›</span>
                 </button>
-                <button disabled={saving} type="button" onClick={onShare}>Manage your shelf 
+                <button disabled={saving} type="button" onClick={onShare}>Manage your shelf
                     <span>›</span>
                 </button>
             </div>
@@ -58,18 +58,18 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
                 {storageWarning&&<ErrorText text={storageWarning}/>}
                 <button disabled={saving} className="button danger" type="button" onClick={()=>void signOut().catch(e=>setError(e.message))}>Sign out</button>
             </section>
-            
+
             {editing&&<Modal title="Edit your profile" onClose={()=>setEditing(false)}>
                 <form onSubmit={async e=>{
                     e.preventDefault();
                     const result=await perform({type:'update-profile',name,username,location,bio,...(avatar?{avatar}:{})});
-                    if(!result.ok) { 
+                    if(!result.ok) {
                         setError(result.error);
                         return;
                     }
                     toast('Profile updated.');setEditing(false);
                 }}>
-                    
+
                     <label>Display name
                         <input value={name} onChange={e=>setName(e.target.value)} maxLength={80} required/>
                     </label>
@@ -86,9 +86,9 @@ export function ProfilePage({onLoans,onShare,onReset}:{onLoans:()=>void;onShare:
                     </label>
 
                     <PhotoField label="Profile photo (optional)" value={avatar} onChange={setAvatar} onBusyChange={setBusy}/>
-                    
+
                     <ErrorText text={error}/>
-                    
+
                     <div className="form-actions">
                         <button disabled={saving} className="button" type="button" onClick={()=>setEditing(false)}>Cancel</button>
                         <button className="button primary" type="submit" disabled={saving||busy}>Save profile</button>
