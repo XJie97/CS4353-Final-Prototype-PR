@@ -139,11 +139,7 @@ test("review edits enforce author ownership and retain completion through reload
   };
   s = applyCommand(s, c, env);
   assert.equal(s.loans.find((v) => v.id === l.id)!.status, "complete");
-  assert.equal(
-    s.loans.find((v) => v.id === l.id)!.review!
-      .text,
-    "Updated",
-  );
+  assert.equal(s.loans.find((v) => v.id === l.id)!.review!.text, "Updated");
   s.activeUserId = l.ownerId;
   assert.throws(() => applyCommand(s, c, env));
 });

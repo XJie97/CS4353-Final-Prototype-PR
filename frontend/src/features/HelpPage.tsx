@@ -95,14 +95,34 @@ export function HelpPage({
             onChange={(e) => setEnd(e.target.value)}
           />
         </label>
-        <button disabled={saving} className="button primary">Post request</button>
+        <button disabled={saving} className="button primary">
+          Post request
+        </button>
       </form>
       <div className="button-row" aria-label="Request views">
-        <button disabled={saving} className="button" aria-pressed={!history} onClick={() => setHistory(false)}>Community requests</button>
-        <button disabled={saving} className="button" aria-pressed={history} onClick={() => setHistory(true)}>Your request history</button>
+        <button
+          disabled={saving}
+          className="button"
+          aria-pressed={!history}
+          onClick={() => setHistory(false)}
+        >
+          Community requests
+        </button>
+        <button
+          disabled={saving}
+          className="button"
+          aria-pressed={history}
+          onClick={() => setHistory(true)}
+        >
+          Your request history
+        </button>
       </div>
       <h3>{history ? "Your request history" : "Community requests"}</h3>
-      {!requests.length && <p>{history ? "No historical requests yet." : "No open requests yet."}</p>}
+      {!requests.length && (
+        <p>
+          {history ? "No historical requests yet." : "No open requests yet."}
+        </p>
+      )}
       {requests.map((r) => (
         <section className="plan-details" key={r.id}>
           <h3>{r.title}</h3>
@@ -111,7 +131,11 @@ export function HelpPage({
             {r.start} → {r.end} · {helpOutcome(store, r)}
           </p>
           {r.loanId && (
-            <button disabled={saving} className="button" onClick={() => onLoan(r.loanId!)}>
+            <button
+              disabled={saving}
+              className="button"
+              onClick={() => onLoan(r.loanId!)}
+            >
               View loan
             </button>
           )}
@@ -121,7 +145,9 @@ export function HelpPage({
                 <button
                   disabled={saving}
                   className="button"
-                  onClick={async () => { await act({ type: "close-help", id: r.id }); }}
+                  onClick={async () => {
+                    await act({ type: "close-help", id: r.id });
+                  }}
                 >
                   Close request
                 </button>
@@ -179,9 +205,11 @@ export function HelpPage({
                 {store.items
                   .filter((i) => i.listed && i.ownerId === store.activeUserId)
                   .map((i) => {
-                    const offerKey = `${r.id}:${i.id}:${(store.offers ?? []).filter(
-                      (o) => o.requestId === r.id && o.itemId === i.id,
-                    ).length}`;
+                    const offerKey = `${r.id}:${i.id}:${
+                      (store.offers ?? []).filter(
+                        (o) => o.requestId === r.id && o.itemId === i.id,
+                      ).length
+                    }`;
                     const offer = (store.offers ?? []).find(
                       (o) =>
                         o.requestId === r.id &&
