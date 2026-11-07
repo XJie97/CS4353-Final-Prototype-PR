@@ -1,4 +1,4 @@
-import { validDate, spriteColourValid, strokesValid, type Store } from './domain.ts';
+import { validDate, type Store } from './domain.ts';
 export function decodeStore(raw:string):Store|null {
  try {
   const s=JSON.parse(raw) as Store;
@@ -7,9 +7,6 @@ export function decodeStore(raw:string):Store|null {
   if(s?.version!==1||!Array.isArray(s.people)||!Array.isArray(s.items)||!Array.isArray(s.loans)||!Array.isArray(s.messages)||!Array.isArray(s.friends)||!Array.isArray(s.notices))return null;
   if(![s.people,s.items,s.loans,s.messages,s.friends,s.notices].every(rows=>unique(rows)))return null;
   const person=(id:unknown)=>s.people.some(p=>p.id===id);
-  // Avatars are optional and newer than saved data: a missing one is normal, and a
-  // malformed one is dropped (the person falls back to the default) rather than failing the load.
-  for(const p of s.people){const sp=p?.sprite;if(sp!==undefined&&!(sp&&spriteColourValid(sp.colour)&&['face-default','face-drawn'].includes(sp.headAssetId)&&text(sp.torsoAssetId)&&Number.isInteger(sp.level)&&(sp.headAssetId!=='face-drawn'||strokesValid(sp.faceStrokes))))delete p.sprite;}
   if(!s.people.every(p=>p&&text(p.name)&&text(p.username)&&text(p.location)&&text(p.bio)&&text(p.colour))||!person(s.activeUserId))return null;
   if(!s.items.every(i=>i&&text(i.name)&&text(i.image)&&text(i.category)&&text(i.location)&&typeof i.listed==='boolean'&&typeof i.isFriend==='boolean'&&Array.isArray(i.images)&&i.images.every(text)&&person(i.ownerId)))return null;
   if(!s.loans.every(l=>{

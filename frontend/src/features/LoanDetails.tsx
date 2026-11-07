@@ -1,3 +1,4 @@
+import { ReviewSummary } from '../components/ui/ReviewCard';
 import { useState } from 'react';
 import { useApp } from '../app/context';
 import { dateLabel, duration, LOCKERS, nextProof, proofActor, PROOF_LABELS, type Loan } from '../app/domain';
@@ -8,7 +9,7 @@ import { LoanSummary } from './LoanSummary';
 
 
 function ConditionForm({loan}:{loan:Loan}) {
-    const {store,perform,toast}=useApp();
+    const {store,perform,toast,busy:saving}=useApp();
     const [condition,setCondition]=useState<'good'|'issue'>('good');
     const [note,setNote]=useState('');
     const [error,setError]=useState('');
@@ -22,9 +23,9 @@ function ConditionForm({loan}:{loan:Loan}) {
     );
 
     return (
-        <form className="plan-details" onSubmit={e=>{
+        <form className="plan-details" onSubmit={async e=>{
             e.preventDefault();
-            const result=perform(loan.condition?.result==='issue'?{type:'resolve-condition',loanId:loan.id,note} :
+            const result=await perform(loan.condition?.result==='issue'?{type:'resolve-condition',loanId:loan.id,note} :
                 {type:'verify-condition',loanId:loan.id,condition,note});
             if(!result.ok) setError(result.error);
             else toast('Item condition updated.');
@@ -43,7 +44,7 @@ function ConditionForm({loan}:{loan:Loan}) {
                 <textarea value={note} onChange={e=>setNote(e.target.value)} maxLength={2000} required={condition==='issue'||loan.condition?.result==='issue'} />
             </label>
             <ErrorText text={error}/>
-            <button className="button primary" type="submit">
+            <button disabled={saving} className="button primary" type="submit">
                 {loan.condition?.result==='issue'?'Mark resolved':'Verify return'}
             </button>
         </form>
@@ -56,7 +57,7 @@ export function LoanDetails(
     {id,onBack,onChat,onHandover,onReview} : 
     {id:string;onBack:()=>void;onChat:(peer:string)=>void;onHandover?:(id:string)=>void;onReview?:(id:string)=>void}) {
 
-    const {store,perform,toast}=useApp();
+    const {store,perform,toast,busy:saving}=useApp();
     const [editing,setEditing]=useState(false);
     const [cancel,setCancel]=useState(false);
     const [error,setError]=useState('');
@@ -65,7 +66,7 @@ export function LoanDetails(
     if (!loan) return (
         <main className="app-scroll">
             <EmptyState title="Loan not found" text="This loan is not available for this account.">
-                <button className="button" type="button" onClick={onBack}>Your loans</button>
+                <button disabled={saving} className="button" type="button" onClick={onBack}>Your loans</button>
             </EmptyState>
         </main>
     );
@@ -74,8 +75,8 @@ export function LoanDetails(
     const peer=loan.ownerId===store.activeUserId?loan.borrowerId:loan.ownerId;
     const isOwner=loan.ownerId===store.activeUserId;
     const step=nextProof(loan);
-    const act=(type:'approve-plan'|'decline-loan'|'cancel-loan')=>{
-        const result=perform({type,loanId:id});
+    const act=async(type:'approve-plan'|'decline-loan'|'cancel-loan')=>{
+        const result=await perform({type,loanId:id});
         if (!result.ok) setError(result.error);
         else {setError('');
             toast(type==='approve-plan'?'Exchange plan approved.':type==='decline-loan'?'Request declined.':'Loan cancelled.');
@@ -110,8 +111,8 @@ export function LoanDetails(
                 <Icon name="map-pin" width={18}/>{LOCKERS.find(l=>l.id===loan.lockerId)?.name}
             </p>
             {!loan.proofs.ownerDropoff&&['requested','arranging','ready'].includes(loan.status)&&<div className="button-row">
-                <button className="button" type="button" onClick={()=>setCancel(true)}>× Cancel</button>
-                <button className="button accent" type="button" onClick={()=>setEditing(true)}>
+                <button disabled={saving} className="button" type="button" onClick={()=>setCancel(true)}>× Cancel</button>
+                <button disabled={saving} className="button accent" type="button" onClick={()=>setEditing(true)}>
                     <Glyph name="edit"/>Edit
                 </button>
             </div>}
@@ -140,11 +141,11 @@ export function LoanDetails(
                                 {index===1&&<>
                                     {plan}
                                     {loan.status==='requested'&&isOwner?<div className="button-row">
-                                        <button className="button" type="button" onClick={()=>act('decline-loan')}>Decline</button>
-                                        <button className="button primary" type="button" onClick={()=>act('approve-plan')}>Accept request</button>
+                                        <button disabled={saving} className="button" type="button" onClick={()=>act('decline-loan')}>Decline</button>
+                                        <button disabled={saving} className="button primary" type="button" onClick={()=>act('approve-plan')}>Accept request</button>
                                     </div> : 
                                     !loan.approvals.includes(store.activeUserId)?
-                                        <button className="button primary" type="button" onClick={()=>act('approve-plan')}>Approve plan</button>:
+                                        <button disabled={saving} className="button primary" type="button" onClick={()=>act('approve-plan')}>Approve plan</button>:
                                         <p className="muted">Your request is with {store.people.find(p=>p.id===peer)?.name}.</p>
                                     }
                                 </>}
@@ -156,7 +157,7 @@ export function LoanDetails(
                                     </details>
                                     {step&&<>
                                         <p>{proofActor(loan,step)===store.activeUserId?PROOF_LABELS[step]:`Waiting for ${store.people.find(p=>p.id===proofActor(loan,step))?.name} to ${PROOF_LABELS[step].toLowerCase()}.`}</p>
-                                        {proofActor(loan,step)===store.activeUserId&&onHandover&&<button className="button primary" type="button" onClick={()=>onHandover(id)}>
+                                        {proofActor(loan,step)===store.activeUserId&&onHandover&&<button disabled={saving} className="button primary" type="button" onClick={()=>onHandover(id)}>
                                             <Glyph name="qr"/>Show QR
                                         </button>}
                                     </>}
@@ -165,24 +166,16 @@ export function LoanDetails(
                                 {index===4&&<ConditionForm loan={loan}/>}
 
                                 {index===5&&(loan.review?<div className="review-card">
-                                    <strong>{'★'.repeat(loan.review.rating)}{'☆'.repeat(5-loan.review.rating)}</strong>
-                                    <p>{loan.review.text}</p>
-                                    <div className="chip-row">
-                                        {loan.review.compliments.map(c=>
-                                            <span className="chip" key={c}>{c}</span>
-                                        )}
-                                    </div>
-                                    
-                                    {loan.review.photo&&<img className="review-photo" src={loan.review.photo} alt="Review attachment"/>}
+                                    <ReviewSummary review={loan.review}/>
                                     
                                     <p className="muted">Review submitted</p>
                                     
-                                    {!isOwner&&onReview&&<button className="button" type="button" onClick={()=>onReview(id)}>Edit review</button>}
+                                    {!isOwner&&onReview&&<button disabled={saving} className="button" type="button" onClick={()=>onReview(id)}>Edit review</button>}
                                     
                                 </div> : 
                                 <>
                                     <p>Thank you for returning the item.</p>
-                                    {!isOwner&&onReview?<button className="button primary" type="button" onClick={()=>onReview(id)}>Leave a review</button> :
+                                    {!isOwner&&onReview?<button disabled={saving} className="button primary" type="button" onClick={()=>onReview(id)}>Leave a review</button> :
                                     <p className="muted">Waiting for the borrower's review.</p>}
                                 </>
                             )}
@@ -193,7 +186,7 @@ export function LoanDetails(
             }
             
             <div className="detail-footer">
-                <button className="button" type="button" onClick={()=>onChat(peer)}>
+                <button disabled={saving} className="button" type="button" onClick={()=>onChat(peer)}>
                     <Icon name="chat" width={35}/>Chat with {store.people.find(p=>p.id===peer)?.name}
                 </button>
             </div>

@@ -1,8 +1,10 @@
 import { Icon } from '../../components/Icon';
 import { UserChip } from '../../components/ui/UserChip';
 import { JourneyStrip } from '../../components/ui/JourneyStrip';
+import { ReviewCard } from '../../components/ui/ReviewCard';
 import { TvSprite } from '../../components/sprites';
 import { useOptionalApp } from '../../app/context';
+import { spriteFor } from '../../app/sprite';
 import { Availability } from './Availability';
 import type { BorrowItem } from './items';
 import { todayLocal } from '../../app/domain';
@@ -11,8 +13,20 @@ export function ItemDetails({ item, onBack, onBorrow, onChat, onViewLoan }: { it
   const app = useOptionalApp();
   const owner = app?.store.people.find(p => p.id === item.ownerId);
   const ownerName = owner?.name ?? item.owner ?? 'owner';
+  const tvColour = app && owner ? spriteFor(app.store, owner.id).bodyColor : undefined;
   const title = item.title ?? item.name;
-  // The viewer's loan that covers today, if they currently have this item.
+  const viewerOwnsItem = !!app && item.ownerId === app.store.activeUserId;
+  const journey = (app?.store.loans ?? [])
+    .filter(l => l.itemId === item.id && l.review)
+    .sort((a, b) => b.review!.at.localeCompare(a.review!.at))
+    .map((l, i) => ({
+      id: l.id,
+      content: <ReviewCard index={i} showAuthor={viewerOwnsItem} review={{
+        id: l.id, rating: l.review!.rating, text: l.review!.text, compliments: l.review!.compliments, photo: l.review!.photo,
+        author: app?.store.people.find(p => p.id === l.borrowerId),
+      }} />,
+    }));
+
   const today = todayLocal();
   const myLoan = app?.store.loans.find(l => l.itemId === item.id && l.borrowerId === app.store.activeUserId
     && !['complete', 'declined', 'cancelled'].includes(l.status) && l.start <= today && today <= l.end);
@@ -31,7 +45,7 @@ export function ItemDetails({ item, onBack, onBorrow, onChat, onViewLoan }: { it
           <p className="details-location"><Icon name="map-pin" width={18} /><span>{item.location}</span></p>
         </div>
         <div className="details-sprite">
-          <TvSprite image={item.image} imageAlt={title} animation="squish" />
+          <TvSprite image={item.image} imageAlt={title} animation="squish" bodyColor={tvColour} />
         </div>
       </div>
 
@@ -39,7 +53,7 @@ export function ItemDetails({ item, onBack, onBorrow, onChat, onViewLoan }: { it
 
       <Availability itemId={item.id} loans={app?.store.loans} me={app?.store.activeUserId} />
 
-      <JourneyStrip />
+      <JourneyStrip entries={journey} />
     </div>
 
     <div className="details-actions">

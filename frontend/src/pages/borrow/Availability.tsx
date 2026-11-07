@@ -45,7 +45,7 @@ export function Availability({ itemId, loans = [], me, today = todayLocal() }: {
     return others.some(l => covers(l, day)) ? 'taken' : 'free';
   }
 
-  // One-line summary, most relevant first.
+  // rOne-line summary, most relevant first
   const myNow = mine.find(l => covers(l, today));
   const myNext = mine.find(l => l.start > today);
   const takenNow = others.find(l => covers(l, today));

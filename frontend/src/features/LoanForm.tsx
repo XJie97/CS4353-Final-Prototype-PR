@@ -9,7 +9,8 @@ export function LoanForm(
     {item,loan,onClose,onDone} : 
     {item:Item;loan?:Loan;onClose:()=>void;onDone:(id:string)=>void}) {
 
-    const {perform,toast}=useApp();
+    const {perform,toast,busy:saving}=useApp();
+    const [newId]=useState(uid);
     const today=todayLocal();
     const [start,setStart]=useState(loan?.start??addDays(today,1));
     const [end,setEnd]=useState(loan?.end??addDays(today,3));
@@ -20,10 +21,10 @@ export function LoanForm(
     return (
         <Modal title={loan?'Modify exchange plan':'Borrow item'} onClose={onClose}>
             <p className="form-item-name">{item.title??item.name}</p>
-            <form onSubmit={event=>{
+            <form onSubmit={async event=>{
                 event.preventDefault();
-                const id=loan?.id??uid();
-                const result=perform(loan ?
+                const id=loan?.id??newId;
+                const result=await perform(loan ?
                     {type:'edit-plan',loanId:id,start,end,lockerId} : 
                     {type:'request-loan',id,itemId:item.id,start,end,lockerId}
                 );
@@ -45,7 +46,7 @@ export function LoanForm(
                     </label>
                 </div>
     
-                <button type="button" className="button subtle" onClick={()=>setPicker('dates')}>
+                <button disabled={saving} type="button" className="button subtle" onClick={()=>setPicker('dates')}>
                     <Glyph name="calendar"/>Choose on calendar
                 </button>
 
@@ -54,7 +55,7 @@ export function LoanForm(
                 }
 
                 <label>Locker location
-                    <button type="button" className="select-button" onClick={()=>setPicker('locker')}>
+                    <button disabled={saving} type="button" className="select-button" onClick={()=>setPicker('locker')}>
                         {LOCKERS.find(l=>l.id===lockerId)?.label??'Choose a locker'}
                         <Glyph name="chevron" size={16}/>
                     </button>
@@ -62,8 +63,8 @@ export function LoanForm(
                 
                 <ErrorText text={error}/>
                 <div className="form-actions">
-                    <button className="button" type="button" onClick={onClose}>Cancel</button>
-                    <button className="button primary" type="submit">{loan?'Propose changes':'Send request'}</button>
+                    <button disabled={saving} className="button" type="button" onClick={onClose}>Cancel</button>
+                    <button disabled={saving} className="button primary" type="submit">{loan?'Propose changes':'Send request'}</button>
                 </div>
             </form>
 
@@ -74,7 +75,7 @@ export function LoanForm(
                 <Modal title="Locker location" onClose={()=>setPicker(null)}>
                     <p className="muted">Use the same location to collect and return this item.</p>
                     <div className="location-list">{LOCKERS.map(locker=>
-                        <button className={`location-option ${lockerId===locker.id?'chosen':''}`} type="button" key={locker.id} onClick={()=>{setLockerId(locker.id);setPicker(null);}}>
+                        <button disabled={saving} className={`location-option ${lockerId===locker.id?'chosen':''}`} type="button" key={locker.id} onClick={()=>{setLockerId(locker.id);setPicker(null);}}>
                             <strong>{locker.label}</strong>
                             <span>{locker.name}</span>
                             {lockerId===locker.id&&<Glyph name="check"/>}</button>)}

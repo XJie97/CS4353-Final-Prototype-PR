@@ -12,8 +12,7 @@ export function currentLoan(item: Item, loans: Loan[], today = todayLocal()) {
   return loans.find(l => l.itemId === item.id && (OUT_STATUSES.includes(l.status) || (PLANNED_STATUSES.includes(l.status) && l.start <= today && today <= l.end)));
 }
 
-/**
- * Where an item stands today:
+/** Where an item stands today:
  * hidden (unlisted) > on loan (handed over, or due to start) > booked (a plan for later) > available.
  */
 export function shelfState(item: Item, loans: Loan[], today = todayLocal()): ShelfState {
@@ -25,7 +24,6 @@ export function shelfState(item: Item, loans: Loan[], today = todayLocal()): She
 
 const LABELS: Record<ShelfState, string> = { available: 'Available', booked: 'Available, loan planned', 'on-loan': 'On loan', hidden: 'Hidden' };
 
-// Row of round thumbnails with a coloured rim per availability.
 export function ShelfStrip({ items, loans, onOpen }: { items: Item[]; loans: Loan[]; onOpen?: (id: string) => void }) {
   if (!items.length) return <p className="muted shelf-strip__empty">Nothing on your shelf yet.</p>;
   const today = todayLocal();

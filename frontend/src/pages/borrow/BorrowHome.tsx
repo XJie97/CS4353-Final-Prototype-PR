@@ -4,6 +4,7 @@ import { Icon } from '../../components/Icon';
 import { NeighborhoodMap } from './NeighborhoodMap';
 import { SearchOverlay } from './SearchOverlay';
 import { ItemDetails } from './ItemDetails';
+import { ItemCard } from './ItemCard';
 import { CategorySelect } from './CategorySelect';
 import { CATEGORIES } from '../../app/categories';
 import { allItems, categories, locations, filterItems, getBrowseItems, type BorrowItem } from './items';
@@ -16,7 +17,6 @@ function itemFromHash(source: BorrowItem[] = allItems) {
 }
 
 export default function BorrowHome({ catalog = allItems, embedded = false, onRequest, onChat, onChatOwner, onViewLoan, onNotifications }: { catalog?: BorrowItem[]; embedded?: boolean; onRequest?: (id: string) => void; onChat?: () => void; onChatOwner?: (ownerId: string) => void; onViewLoan?: (loanId: string) => void; onNotifications?: () => void }) {
-  // Known categories in their standard order, then any others present in the catalog.
   const present = new Set(catalog.map(item => item.category));
   const categories = [...CATEGORIES.filter(c => present.has(c)), ...[...present].filter(c => !(CATEGORIES as string[]).includes(c))];
   const locations = [...new Set(catalog.map(item => item.location))];
@@ -108,6 +108,10 @@ export default function BorrowHome({ catalog = allItems, embedded = false, onReq
             onClick={() => dispatch({ type: 'toggle-friends' })}>
             {filters.friendsOnly && <Icon name="check" width={16} />}Friends only
           </button>
+          <button className="friends-filter available-filter" type="button" aria-pressed={!!filters.availableNow}
+            onClick={() => dispatch({ type: 'toggle-available' })}>
+            {filters.availableNow ? <Icon name="check" width={16} /> : <span className="available-filter__dot" aria-hidden="true" />}Available now
+          </button>
         </div>
 
         <NeighborhoodMap items={mapItems} selected={selected}
@@ -116,11 +120,7 @@ export default function BorrowHome({ catalog = allItems, embedded = false, onReq
         <section className="items-section" aria-label="Items available to borrow">
           <p className="sr-only" role="status" aria-live="polite">{visibleItems.length} items found</p>
           {visibleItems.length > 0 ? <div className="item-grid">
-            {visibleItems.map(item => <button className="item-card" id={`item-${item.id}`} key={item.id} type="button"
-              onClick={() => openItem(item.id)} aria-label={`View ${item.name}`}>
-              <img className="item-photo" src={item.image} alt="" width={166} height={166} />
-              <span className="item-name">{item.name}</span>
-            </button>)}
+            {visibleItems.map(item => <ItemCard key={item.id} item={item} onOpen={() => openItem(item.id)} />)}
           </div> : <div className="empty-state">
             <h2>No items found</h2><p>Try another search or adjust your filters.</p>
             <button type="button" onClick={resetFilters}>Clear filters</button>

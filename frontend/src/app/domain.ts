@@ -1,19 +1,14 @@
 import { validDate, AppError } from './validation.ts';
 import { applyHelp, type HelpCommand, type HelpRequest, type Offer } from './help.ts';
 import type { BorrowItem } from '../pages/borrow/items.ts';
-/**
- * Saved avatar. Field names mirror the Supabase `sprites` row (colour, head_asset_id,
- * torso_asset_id, level) so it maps across directly; only a drawn face needs `faceStrokes`.
- * headAssetId: 'face-default' | 'face-drawn'. Optional: people without one get a default.
- */
-export type PersonSprite = { colour: string; headAssetId: string; torsoAssetId: string; level: number; faceStrokes?: [number, number][][] };
-export type Person = { id: string; name: string; username: string; location: string; bio: string; avatar?: string; colour: string; sprite?: PersonSprite };
-export type Item = BorrowItem & { ownerId: string; listed: boolean; images: string[] };
+export type Person = { revision?: number; id: string; name: string; username: string; location: string; bio: string; avatar?: string; colour: string };
+export type Item = BorrowItem & { revision?: number; ownerId: string; listed: boolean; images: string[] };
 export type ProofStep = 'ownerDropoff' | 'borrowerPickup' | 'borrowerDropoff' | 'ownerPickup';
 export type LoanStatus = 'requested' | 'arranging' | 'ready' | 'active' | 'returning' | 'verifying' | 'complete' | 'declined' | 'cancelled';
 export type Proof = { at: string; photo: string; actor: string; lockerNumber: string };
 export type Review = { rating: number; text: string; compliments: string[]; photo?: string; at: string };
 export type Loan = {
+ revision?: number;
  id: string; itemId: string; ownerId: string; borrowerId: string; start: string; end: string; lockerId: string;
  status: LoanStatus; approvals: string[]; proofs: Partial<Record<ProofStep, Proof>>; code: string; createdAt: string;
  previousPlan?: PlanInput;
@@ -22,7 +17,7 @@ export type Loan = {
 export type Message = { id: string; from: string; to: string; text: string; at: string; read: boolean; loanId?: string };
 export type Friendship = { id: string; from: string; to: string; status: 'pending' | 'accepted' };
 export type Notice = { id: string; to: string; text: string; at: string; read: boolean; loanId?: string; peerId?: string };
-export type Store = { version: 1; helpRequests?: HelpRequest[]; offers?: Offer[]; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
+export type Store = { version: 1; helpRequests?: HelpRequest[]; offers?: Offer[]; receivedReviews?: {id:string;ownerId:string;review:Review}[]; activeUserId: string; people: Person[]; items: Item[]; loans: Loan[]; messages: Message[]; friends: Friendship[]; notices: Notice[] };
 export const LOCKERS = [
  { id: 'clementi', name: 'Clementi', label: 'Clementi Locker', number: '12' },
  { id: 'toa-payoh', name: 'Toa Payoh', label: 'Toa Payoh Locker', number: '08' },
@@ -50,6 +45,19 @@ export function strokesValid(strokes: unknown): strokes is [number,number][][] {
  return Array.isArray(strokes) && strokes.length<=SPRITE_LIMITS.strokes && strokes.every(stroke=>Array.isArray(stroke) && stroke.length>0 && stroke.length<=SPRITE_LIMITS.points
   && stroke.every(pt=>Array.isArray(pt) && pt.length===2 && pt.every(v=>typeof v==='number' && Number.isFinite(v) && v>=SPRITE_LIMITS.min && v<=SPRITE_LIMITS.max)));
 }
+/** 
+ * Saved avatar
+ * headAssetId: 'face-default' | 'face-drawn'
+ */
+export type PersonSprite = { colour: string; headAssetId: string; torsoAssetId: string; level: number; faceStrokes?: [number, number][][] };
+/**
+ * A person with their optional saved avatar. Kept beside Person rather than inside it
+ * (upstream also edits the Person line) so the two branches merge without conflicts. mergescript
+ * The connected demo stores it in demo_profiles.data, so it arrives on each person.
+ */
+export type SpritedPerson = Person & { sprite?: PersonSprite };
+// Reads a person's saved avatar, if they have one.
+export function spriteOf(person: Person | undefined): PersonSprite | undefined { return (person as SpritedPerson | undefined)?.sprite; }
 export function photoValid(photo: string) { return photo.length<=2_000_000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(photo); }
 function requireValue(ok: unknown, message: string): asserts ok { if(!ok)throw new AppError(message); }
 export type PlanInput = { start: string; end: string; lockerId: string };
@@ -71,6 +79,7 @@ export type Command = HelpCommand
  | {type:'request-friend';id:string;to:string}
  | {type:'accept-friend'|'decline-friend'|'remove-friend';id:string}
  | {type:'update-profile';name:string;username:string;location:string;bio:string;avatar?:string}
+ // Added update-sprite
  | {type:'update-sprite';colour:string;face:'default'|'drawn';strokes?:[number,number][][]};
 export type CommandEnv = { id: string; now: string; today: string };
 export function applyCommand(original: Store, command: Command, env: CommandEnv): Store {
@@ -143,7 +152,7 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
    const profile=person(me)!;const username=command.username.trim().toLowerCase();requireValue(command.name.trim().length>0&&command.name.length<=80,'Enter a display name of up to 80 characters.');requireValue(/^[a-z0-9_]{3,24}$/.test(username),'Use 3–24 letters, numbers or underscores for your username.');requireValue(!s.people.some(p=>p.id!==me&&p.username.toLowerCase()===username),'This username is already taken.');requireValue(command.bio.length<=500,'Keep your bio to 500 characters.');requireValue(LOCKERS.some(l=>l.name===command.location),'Choose a community location.');requireValue(!command.avatar||photoValid(command.avatar),'Choose a valid profile photo.');Object.assign(profile,{name:command.name.trim(),username,location:command.location,bio:command.bio.trim()});if(command.avatar)profile.avatar=command.avatar;else delete profile.avatar;break;
   }
   case 'update-sprite':{
-   const profile=person(me)!;requireValue(spriteColourValid(command.colour),'Choose a valid colour.');
+   const profile=person(me) as SpritedPerson;requireValue(spriteColourValid(command.colour),'Choose a valid colour.');
    const drawn=command.face==='drawn';requireValue(!drawn||(strokesValid(command.strokes)&&command.strokes.length>0),'Draw a face, or choose the default face.');
    profile.sprite={colour:command.colour.toUpperCase(),headAssetId:drawn?'face-drawn':'face-default',torsoAssetId:profile.sprite?.torsoAssetId??'plant',level:profile.sprite?.level??0,...(drawn?{faceStrokes:command.strokes}:{})};break;
   }

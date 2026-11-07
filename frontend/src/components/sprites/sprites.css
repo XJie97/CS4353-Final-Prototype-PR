@@ -5,12 +5,11 @@
   display: inline-block;
   line-height: 0;
   vertical-align: bottom;
-  /* How wide the ground shadow is, relative to the sprite */
   --shadow-width: 62%;
 }
 
-/* The part that moves. Squash and stretch from the feet so it stays grounded. */
 .sprite__figure {
+  position: relative;
   display: block;
   width: 100%;
   height: 100%;
@@ -22,7 +21,6 @@
   overflow: visible;
 }
 
-/* Soft oval shadow, centred on the line the feet stand on */
 .sprite__shadow {
   position: absolute;
   left: 50%;
@@ -36,11 +34,9 @@
   pointer-events: none;
 }
 
-/* Head close-ups have no ground to cast a shadow on */
 .sprite--head .sprite__shadow { display: none; }
 .sprite--head svg { overflow: hidden; }
 
-/* TV colours from Figma. Override on a parent to restyle. */
 .sprite--tv {
   --tv-outline: #507631;
   --tv-body-top: #e9f4e0;
@@ -49,9 +45,7 @@
   --shadow-width: 76%;
 }
 
-/* ---------- animations ----------
-   Each cycle is a short burst of motion followed by a long rest,
-   so the sprite feels alive without constantly fidgeting. */
+/* ---------- animations ----------*/
 
 .sprite--squish .sprite__figure { animation: sprite-squish 4s ease-in-out infinite; }
 .sprite--squish .sprite__shadow { animation: sprite-squish-shadow 4s ease-in-out infinite; }
@@ -59,7 +53,6 @@
 .sprite--bounce .sprite__figure { animation: sprite-bounce 3s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 .sprite--bounce .sprite__shadow { animation: sprite-bounce-shadow 3s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
 
-/* The sprout/flower sways gently on top of either animation. */
 .sprite--bounce .sprite__topper,
 .sprite--squish .sprite__topper {
   transform-box: fill-box;

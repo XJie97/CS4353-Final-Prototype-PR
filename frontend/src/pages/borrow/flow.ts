@@ -9,11 +9,11 @@ export type BorrowState = {
   selectedMapId: string;
 };
 export const initialBorrowState: BorrowState = {
-  view: 'browse', filters: { query: '', category: 'all', location: 'all', friendsOnly: false },
+  view: 'browse', filters: { query: '', category: 'all', location: 'all', friendsOnly: false, availableNow: false },
   draftQuery: '', recentSearches: [], itemId: null, selectedMapId: 'jacket',
 };
 export type BorrowAction =
-  | { type: 'open-search' | 'close-search' | 'back-to-results' | 'toggle-friends' | 'reset' }
+  | { type: 'open-search' | 'close-search' | 'back-to-results' | 'toggle-friends' | 'toggle-available' | 'reset' }
   | { type: 'edit-search' | 'set-category' | 'set-location'; value: string }
   | { type: 'submit-search'; query: string }
   | { type: 'open-item' | 'select-map-item'; id: string; knownItemIds?: string[] };
@@ -31,6 +31,7 @@ export function borrowReducer(state: BorrowState, action: BorrowAction): BorrowS
     case 'set-category': return { ...state, filters: { ...state.filters, category: action.value } };
     case 'set-location': return { ...state, filters: { ...state.filters, location: action.value } };
     case 'toggle-friends': return { ...state, filters: { ...state.filters, friendsOnly: !state.filters.friendsOnly } };
+    case 'toggle-available': return { ...state, filters: { ...state.filters, availableNow: !state.filters.availableNow } };
     case 'select-map-item': return { ...state, selectedMapId: action.id };
     case 'open-item': return (allItems.some(item => item.id === action.id) || action.knownItemIds?.includes(action.id)) ? { ...state, view: 'details', itemId: action.id } : state;
     case 'back-to-results': return { ...state, view: 'browse', itemId: null };

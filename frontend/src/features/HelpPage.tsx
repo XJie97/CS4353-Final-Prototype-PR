@@ -1,5 +1,6 @@
+import { UserChip } from "../components/ui/UserChip";
 import { helpOutcome, visibleHelpRequests } from "../app/help-view";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useApp, uid } from "../app/context";
 import { LOCKERS, todayLocal } from "../app/domain";
 import { ErrorText, Modal } from "../components/ui/shared";
@@ -10,34 +11,41 @@ export function HelpPage({
   onClose: () => void;
   onLoan: (id: string) => void;
 }) {
-  const { store, perform } = useApp();
+  const { store, perform, toast, busy: saving } = useApp();
   const [history, setHistory] = useState(false);
   const requests = visibleHelpRequests(store, history);
   const [error, setError] = useState("");
+  const [draftId, setDraftId] = useState(uid);
+  const offerIds = useRef(new Map<string, string>());
+  const loanIds = useRef(new Map<string, string>());
+  const retryId = (ids: Map<string, string>, key: string) => {
+    if (!ids.has(key)) ids.set(key, uid());
+    return ids.get(key)!;
+  };
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [start, setStart] = useState(todayLocal());
   const [end, setEnd] = useState(todayLocal());
   const [locker, setLocker] = useState<string>(LOCKERS[0].id);
-  const act = (c: Parameters<typeof perform>[0]) => {
-    const result = perform(c);
+  const act = async (c: Parameters<typeof perform>[0]) => {
+    const result = await perform(c);
     setError(result.ok ? "" : result.error);
     return result.ok;
   };
   return (
     <Modal title="Ask for help" onClose={onClose}>
       <p>
-        Provisional local preview. Requests and offers stay in this browser. Any
-        other preview owner may offer a listed item.
+        Provisional feature. Requests and offers are stored in the shared
+        database. Any other participant may offer a listed item.
       </p>
       <ErrorText text={error} />
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           if (
-            act({
+            await act({
               type: "post-help",
-              id: uid(),
+              id: draftId,
               title,
               description,
               start,
@@ -46,6 +54,7 @@ export function HelpPage({
           ) {
             setTitle("");
             setDescription("");
+            setDraftId(uid());
           }
         }}
       >
@@ -87,11 +96,11 @@ export function HelpPage({
             onChange={(e) => setEnd(e.target.value)}
           />
         </label>
-        <button className="button primary">Post request</button>
+        <button disabled={saving} className="button primary">Post request</button>
       </form>
       <div className="button-row" aria-label="Request views">
-        <button className="button" aria-pressed={!history} onClick={() => setHistory(false)}>Community requests</button>
-        <button className="button" aria-pressed={history} onClick={() => setHistory(true)}>Your request history</button>
+        <button disabled={saving} className="button" aria-pressed={!history} onClick={() => setHistory(false)}>Community requests</button>
+        <button disabled={saving} className="button" aria-pressed={history} onClick={() => setHistory(true)}>Your request history</button>
       </div>
       <h3>{history ? "Your request history" : "Community requests"}</h3>
       {!requests.length && <p>{history ? "No historical requests yet." : "No open requests yet."}</p>}
@@ -103,7 +112,7 @@ export function HelpPage({
             {r.start} → {r.end} · {helpOutcome(store, r)}
           </p>
           {r.loanId && (
-            <button className="button" onClick={() => onLoan(r.loanId!)}>
+            <button disabled={saving} className="button" onClick={() => onLoan(r.loanId!)}>
               View loan
             </button>
           )}
@@ -111,8 +120,9 @@ export function HelpPage({
             (r.borrowerId === store.activeUserId ? (
               <>
                 <button
+                  disabled={saving}
                   className="button"
-                  onClick={() => act({ type: "close-help", id: r.id })}
+                  onClick={async () => { await act({ type: "close-help", id: r.id }); }}
                 >
                   Close request
                 </button>
@@ -136,16 +146,20 @@ export function HelpPage({
                   .filter((o) => o.requestId === r.id && !o.withdrawn)
                   .map((o) => (
                     <div key={o.id}>
-                      <p>
-                        {store.items.find((i) => i.id === o.itemId)?.name} ·{" "}
-                        {store.people.find((p) => p.id === o.ownerId)?.name}
+                      <p className="offer-line">
+                        <span>{store.items.find((i) => i.id === o.itemId)?.name}</span>
+                        <UserChip
+                          person={store.people.find((p) => p.id === o.ownerId)}
+                          size={24}
+                        />
                       </p>
                       <button
+                        disabled={saving}
                         className="button"
-                        onClick={() => {
-                          const loanId = uid();
+                        onClick={async () => {
+                          const loanId = retryId(loanIds.current, o.id);
                           if (
-                            act({
+                            await act({
                               type: "select-offer",
                               id: o.id,
                               loanId,
@@ -169,6 +183,9 @@ export function HelpPage({
                 {store.items
                   .filter((i) => i.listed && i.ownerId === store.activeUserId)
                   .map((i) => {
+                    const offerKey = `${r.id}:${i.id}:${(store.offers ?? []).filter(
+                      (o) => o.requestId === r.id && o.itemId === i.id,
+                    ).length}`;
                     const offer = (store.offers ?? []).find(
                       (o) =>
                         o.requestId === r.id &&
@@ -180,8 +197,9 @@ export function HelpPage({
                         <span>{i.name} </span>
                         {offer ? (
                           <button
+                            disabled={saving}
                             className="button"
-                            onClick={() =>
+                            onClick={async () =>
                               act({ type: "withdraw-offer", id: offer.id })
                             }
                           >
@@ -189,11 +207,12 @@ export function HelpPage({
                           </button>
                         ) : (
                           <button
+                            disabled={saving}
                             className="button"
-                            onClick={() =>
+                            onClick={async () =>
                               act({
                                 type: "offer-help",
-                                id: uid(),
+                                id: retryId(offerIds.current, offerKey),
                                 requestId: r.id,
                                 itemId: i.id,
                               })

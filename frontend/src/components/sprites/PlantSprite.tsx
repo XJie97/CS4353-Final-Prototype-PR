@@ -3,39 +3,28 @@ import { deriveSpritePalette } from "./palette";
 import type { DrawnStroke, SpriteAnimation, SpriteFace, SpriteTopper } from "./types";
 import "./sprites.css";
 
-/**
- * The plant character from Figma (node 2018:3997 and friends).
- *
- * Every part reads its colour from three CSS variables, so a single
- * `bodyColor` recolours the whole sprite, including a drawn face.
- */
 export type PlantSpriteProps = {
-  /** The one colour the user picks. Mid and outline shades are derived from it. */
+  // Base colour, mid and dark shades are derived from this
   bodyColor?: string;
   topper?: SpriteTopper;
   face?: SpriteFace;
-  /** Rendered width in px. Leave out to fill the parent's width. */
   size?: number;
   animation?: SpriteAnimation;
-  /** Read by screen readers. Pass "" to hide a purely decorative sprite. */
+  //Read by screen readers
   label?: string;
   className?: string;
-  /** "head" frames just the head as a square (used by the face drawing pad). */
   crop?: "full" | "head";
 };
 
-// Artwork coordinates (from Figma, in the body's 579 × 874 export space).
-// The viewBox extends 100 units above the head so the flower fits.
 const VIEW_BOX = "0 -100 579 974";
-/** Square around the head, shared with the drawing pad so coordinates line up. */
 export const HEAD_VIEW_BOX = "74 -12 430 430";
 const ASPECT = 974 / 579;
 
-const FACE_OFFSET = { x: 214, y: 149 };
+export const FACE_OFFSET = { x: 214, y: 149 };
 const SPROUT_OFFSET = { x: 212, y: -49 };
 const FLOWER_OFFSET = { x: 216, y: -100 };
 
-/** Head circle, used to clip drawn faces so strokes never leave the head. */
+// Head circle, used to clip drawn faces so strokes never leave the head
 const HEAD = { cx: 289.5, cy: 198.7, r: 195.5 };
 
 /**
@@ -44,7 +33,7 @@ const HEAD = { cx: 289.5, cy: 198.7, r: 195.5 };
  */
 export const FACE_BOX = { x: 140, y: 70, w: 300, h: 260 };
 
-const STROKE = 6; // matches the Figma outline weight
+const STROKE = 6;
 
 export function PlantSprite({
   bodyColor = "#F7C8FF",
@@ -71,7 +60,6 @@ export function PlantSprite({
       className={["sprite", `sprite--${animation}`, crop === "head" && "sprite--head", className].filter(Boolean).join(" ")}
       style={style}
     >
-      {/* The shadow stays on the ground while the figure above it moves */}
       <span className="sprite__shadow" aria-hidden="true" />
       <span className="sprite__figure">
       <svg
@@ -103,7 +91,6 @@ export function PlantSprite({
 
         {topper === "sprout" && (
           <g transform={`translate(${SPROUT_OFFSET.x} ${SPROUT_OFFSET.y})`}>
-            {/* Inner group so the CSS sway doesn't override the position */}
             <g className="sprite__topper">
               <Sprout />
             </g>
@@ -111,7 +98,6 @@ export function PlantSprite({
         )}
         {topper === "flower" && (
           <g transform={`translate(${FLOWER_OFFSET.x} ${FLOWER_OFFSET.y})`}>
-            {/* Inner group so the CSS sway doesn't override the position */}
             <g className="sprite__topper">
               <Flower />
             </g>
@@ -148,7 +134,7 @@ function Body() {
   );
 }
 
-function DefaultFace() {
+export function DefaultFace({ stroke = STROKE }: { stroke?: number }) {
   return (
     <g>
       <ellipse cx="16.4429" cy="23.9937" rx="16.4429" ry="23.9936" fill="var(--sprite-outline)" />
@@ -157,7 +143,7 @@ function DefaultFace() {
         d="M21.0537 97.4928C37.4882 132.12 85.1311 144.495 116.339 122.243"
         fill="none"
         stroke="var(--sprite-outline)"
-        strokeWidth={STROKE}
+        strokeWidth={stroke}
         strokeLinecap="round"
       />
       <ellipse
@@ -167,7 +153,7 @@ function DefaultFace() {
         ry="12.7966"
         fill="none"
         stroke="var(--sprite-outline)"
-        strokeWidth={STROKE}
+        strokeWidth={stroke}
       />
     </g>
   );
@@ -206,9 +192,9 @@ function Flower() {
   );
 }
 
-function DrawnFace({ strokes }: { strokes: DrawnStroke[] }) {
+export function DrawnFace({ strokes, stroke = STROKE }: { strokes: DrawnStroke[]; stroke?: number }) {
   return (
-    <g fill="none" stroke="var(--sprite-outline)" strokeWidth={STROKE} strokeLinecap="round" strokeLinejoin="round">
+    <g fill="none" stroke="var(--sprite-outline)" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round">
       {strokes.map((stroke, i) => (
         <path key={i} d={strokeToPath(stroke)} />
       ))}
@@ -216,13 +202,12 @@ function DrawnFace({ strokes }: { strokes: DrawnStroke[] }) {
   );
 }
 
-/** Maps normalised 0–1 points into the face box and smooths them into a path. */
 export function strokeToPath(stroke: DrawnStroke): string {
   const pts = stroke.map(([x, y]) => [FACE_BOX.x + x * FACE_BOX.w, FACE_BOX.y + y * FACE_BOX.h]);
   if (pts.length === 0) return "";
   const r = (n: number) => Math.round(n * 10) / 10;
   if (pts.length === 1) {
-    // A single tap becomes a dot.
+    // A single tap becomes a dot
     const [x, y] = pts[0];
     return `M${r(x)} ${r(y)}l0.01 0`;
   }
@@ -237,14 +222,10 @@ export function strokeToPath(stroke: DrawnStroke): string {
   return d + `L${r(lx)} ${r(ly)}`;
 }
 
-/**
- * Just the sprout or flower, framed for a close-up (e.g. a growth badge).
- * Uses the same colours as the full sprite.
- */
+
 export function PlantTopper({ bodyColor = "#F7C8FF", topper, size = 64, className }: { bodyColor?: string; topper: "sprout" | "flower"; size?: number; className?: string }) {
   const palette = useMemo(() => deriveSpritePalette(bodyColor), [bodyColor]);
   const style = { "--sprite-body": palette.body, "--sprite-mid": palette.mid, "--sprite-outline": palette.outline, width: size, height: size } as CSSProperties;
-  // Square frames around each part's artwork, with a little breathing room.
   const viewBox = topper === "sprout" ? "-17 -44 160 160" : "-23 -19 160 160";
   return (
     <span className={["sprite-topper", className].filter(Boolean).join(" ")} style={style}>

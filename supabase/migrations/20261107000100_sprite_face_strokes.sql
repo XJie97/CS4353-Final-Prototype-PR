@@ -1,4 +1,4 @@
--- Optional hand-drawn face for user sprites (avatar editor).
+--  Optional hand-drawn face for user sprites (avatar editor).
 --
 -- Additive only: one new nullable column, a validator and a column grant.
 -- Existing sprite rows keep face_strokes = null, the assign_sprite() trigger is
@@ -41,7 +41,7 @@ comment on function private.valid_face_strokes(jsonb) is
 
 alter table public.sprites add column face_strokes jsonb;
 
--- Only user sprites can have a face; null always passes, so existing rows are valid.
+--  Only user sprites can have a face; null always passes, so existing rows are valid.
 alter table public.sprites add constraint sprites_face_strokes_valid check (
   face_strokes is null or (category = 'user' and private.valid_face_strokes(face_strokes))
 );
@@ -49,5 +49,5 @@ alter table public.sprites add constraint sprites_face_strokes_valid check (
 comment on column public.sprites.face_strokes is
   'Optional hand-drawn face (array of strokes of [x, y] points). Shown when head_asset_id = ''face-drawn''.';
 
--- Same narrow access as the other editable sprite columns (row policies still apply).
+--  Same narrow access as the other editable sprite columns (row policies still apply).
 grant update (face_strokes) on public.sprites to authenticated;

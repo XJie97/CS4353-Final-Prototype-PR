@@ -46,3 +46,15 @@ test('unmatched search is empty and clearing filters restores all items', () => 
   assert.equal(filterItems(sampleItems, all).length, 6);
   assert.equal(sampleItems.length, 6);
 });
+
+test('"Available now" hides items that are out on loan today, and combines with other filters', () => {
+  const items = [
+    { id: 'a', name: 'Drill', category: 'Tools', location: 'Clementi', isFriend: true, image: '', availability: 'available' as const },
+    { id: 'b', name: 'Drum', category: 'Tools', location: 'Clementi', isFriend: false, image: '', availability: 'on-loan' as const, backOn: '2026-11-12' },
+    { id: 'c', name: 'Dryer', category: 'Home', location: 'Clementi', isFriend: true, image: '', availability: 'booked' as const },
+    { id: 'd', name: 'Desk', category: 'Home', location: 'Clementi', isFriend: false, image: '' },
+  ];
+  assert.deepEqual(filterItems(items, { ...all, availableNow: true }).map(i => i.id), ['a', 'c', 'd']);
+  assert.deepEqual(filterItems(items, { ...all, availableNow: true, friendsOnly: true }).map(i => i.id), ['a', 'c']);
+  assert.equal(filterItems(items, all).length, 4);
+});

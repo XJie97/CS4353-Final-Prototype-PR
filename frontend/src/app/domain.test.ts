@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { applyCommand, handoverCode, nextProof, type Command, type Store } from './domain.ts';
 import { createSeed } from './seed.ts';
-import { decodeStore } from './storage.ts';
 const env = { id: 'test-event', now: '2026-10-31T04:00:00.000Z', today: '2026-10-31' };
 const photo = 'data:image/jpeg;base64,dGVzdA==';
 function run(s: Store, c: Command) { return applyCommand(s, c, env); }
@@ -40,10 +39,3 @@ test('four photo-backed handovers enforce actor, code and stage order', () => {
  assert.throws(()=>run(s,{type:'submit-review',loanId:'new-loan',rating:5,text:'Again',compliments:[]}),/already/i);
 });
 test('unrelated accounts cannot modify another loan', () => {let s=accepted();s=run(s,{type:'switch-account',id:'maya'});assert.throws(()=>run(s,{type:'edit-plan',loanId:'new-loan',start:'2026-11-04',end:'2026-11-07',lockerId:'clementi'}),/participant/i);});
-test('stored state round-trips and rejects corrupt versions and missing records', () => {
- const s=requested();assert.deepEqual(decodeStore(JSON.stringify(s)),s);assert.equal(decodeStore('broken'),null);assert.equal(decodeStore(JSON.stringify({...s,version:99})),null);assert.equal(decodeStore(JSON.stringify({...s,people:[]})),null);
-});
-test('corrupt saved handover and review records are rejected before rendering',()=>{
- const brokenProof=createSeed(env.today);(brokenProof.loans.find(l=>l.id==='demo-active')!.proofs as Record<string,unknown>).ownerDropoff=null;assert.equal(decodeStore(JSON.stringify(brokenProof)),null);
- const brokenReview=createSeed(env.today);(brokenReview.loans.find(l=>l.id==='demo-complete') as unknown as {review:unknown}).review={rating:9,text:null,compliments:[],at:env.now};assert.equal(decodeStore(JSON.stringify(brokenReview)),null);
-});

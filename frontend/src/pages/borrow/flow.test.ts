@@ -49,3 +49,12 @@ test('empty results reset to the home screen without a stale item selection', ()
   assert.equal(getBrowseItems(state.filters).length, 6);
   assert.equal(state.itemId, null);
 });
+
+test('the "Available now" toggle switches on and off, and reset clears it', () => {
+  let state = borrowReducer(initialBorrowState, { type: 'toggle-available' });
+  assert.equal(state.filters.availableNow, true);
+  state = borrowReducer(state, { type: 'toggle-available' });
+  assert.equal(state.filters.availableNow, false);
+  state = borrowReducer(borrowReducer(state, { type: 'toggle-available' }), { type: 'reset' });
+  assert.equal(state.filters.availableNow, false);
+});

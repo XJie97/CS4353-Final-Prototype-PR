@@ -2,6 +2,7 @@ import { useApp } from '../app/context';
 import { dateLabel, LOCKERS, type Loan } from '../app/domain';
 import { Icon } from '../components/Icon';
 import { Glyph } from '../components/ui/shared';
+import { UserChip } from '../components/ui/UserChip';
 
 
 export function LoanSummary({loan}:{loan:Loan}) {
@@ -24,8 +25,7 @@ export function LoanSummary({loan}:{loan:Loan}) {
                     {LOCKERS.find(l=>l.id===loan.lockerId)?.name}
                 </p>
                 <p>
-                    <Icon name="owner" width={17.625} height={18.656}/>
-                    {peer.name}
+                    <UserChip person={peer} size={24}/>
                 </p>
             </div>
         </div>

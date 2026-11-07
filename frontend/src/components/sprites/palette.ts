@@ -1,15 +1,6 @@
-/**
- * Derives the sprite's three colours from one user-picked body colour.
- *
- * The ratios are measured from the pink sprite in Figma:
- *   body    #F7C8FF  oklch(0.891 0.089 321)
- *   mid     #BC6DCA  oklch(0.656 0.157 321)  -> ~74% lightness, ~1.76x chroma
- *   outline #791E89  oklch(0.431 0.177 321)  -> ~48% lightness, ~2.0x chroma
- * Working in OKLCH keeps the hue steady, so every colour darkens the same way.
- */
-
 export type SpritePalette = { body: string; mid: string; outline: string };
 
+// Derive mid and dark colours from base colour
 const MID = { l: 0.736, c: 1.76, maxC: 0.2 };
 const OUTLINE = { l: 0.484, c: 2.0, maxC: 0.19 };
 
@@ -22,19 +13,55 @@ export function deriveSpritePalette(bodyHex: string): SpritePalette {
   };
 }
 
-/** Swatches that all produce a readable outline. Use these for the picker. */
+
 export const SPRITE_SWATCHES = [
-  "#F7C8FF", // pink (Figma default)
+  "#F7C8FF", // pink
   "#C6F3A2", // green
   "#BFE3FF", // blue
   "#FFE6A3", // yellow
   "#FFC9B8", // peach
-  "#D9CCFF", // lavender
-  "#B8F0E6", // mint
+  "#D9CCFF", // purple
+  "#B8F0E6", // turquoise
   "#E5E5E5", // grey
 ] as const;
 
-// ---------- colour maths (sRGB <-> OKLCH), no dependencies ----------
+export type SpriteSwatch = (typeof SPRITE_SWATCHES)[number];
+
+/** 
+ * The fixed palette colour closest to any hex colour (by OKLab distance).
+ * Colours saved before the palette was fixed are shown as their nearest swatch.
+ */
+export function nearestSwatch(hex: string): SpriteSwatch {
+  const up = normaliseHex(hex);
+  const exact = SPRITE_SWATCHES.find((c) => c === up);
+  if (exact) return exact;
+  const lab = (h: string) => { const [L, C, H] = hexToOklch(h); return [L, C * Math.cos(H), C * Math.sin(H)]; };
+  const [l, a, b] = lab(up);
+  let best: SpriteSwatch = SPRITE_SWATCHES[0];
+  let bestD = Infinity;
+  for (const c of SPRITE_SWATCHES) {
+    const [l2, a2, b2] = lab(c);
+    const d = (l - l2) ** 2 + (a - a2) ** 2 + (b - b2) ** 2;
+    if (d < bestD) { bestD = d; best = c; }
+  }
+  return best;
+}
+
+/** 
+ * TV colours from the owner's body colour, matching the Figma TV: the body runs
+ * from a lighter tint at the top to the body colour at the bottom, with the same
+ * outline as the plant sprite.
+ */
+export function deriveTvPalette(bodyHex: string): { top: string; bottom: string; outline: string } {
+  const [L, C, H] = hexToOklch(bodyHex);
+  return {
+    top: oklchToHex(Math.min(0.97, L + (1 - L) * 0.55), C * 0.45, H),
+    bottom: normaliseHex(bodyHex),
+    outline: deriveSpritePalette(bodyHex).outline,
+  };
+}
+
+//  ---------- colour maths (sRGB <-> OKLCH), no dependencies ----------
 
 function normaliseHex(hex: string): string {
   let h = hex.trim().replace(/^#/, "");
@@ -77,7 +104,7 @@ function oklchToLinearRgb(L: number, C: number, H: number): [number, number, num
 
 const inGamut = (rgb: number[]) => rgb.every((v) => v >= -1e-4 && v <= 1 + 1e-4);
 
-/** Converts to hex, lowering chroma if needed so the colour stays displayable. */
+/**  Converts to hex, lowering chroma if needed so the colour stays displayable. */
 function oklchToHex(L: number, C: number, H: number): string {
   let rgb = oklchToLinearRgb(L, C, H);
   if (!inGamut(rgb)) {
@@ -100,7 +127,7 @@ function oklchToHex(L: number, C: number, H: number): string {
   );
 }
 
-/**
+/** 
  * A soft pastel body colour from any accent colour (e.g. a person's profile
  * colour), so every user gets a sensible default sprite before customising it.
  */
