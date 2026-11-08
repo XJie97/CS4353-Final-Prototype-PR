@@ -40,7 +40,12 @@ export function handoverCode(loan: Loan,step: ProofStep) { return `CS4353:${loan
 export function loanGroup(loan: Loan): 'Pending'|'Active'|'Complete' { return ['requested','arranging'].includes(loan.status)?'Pending':['complete','declined','cancelled'].includes(loan.status)?'Complete':'Active'; }
 export function areFriends(s: Store,a: string,b: string) { return s.friends.some(f=>f.status==='accepted'&&((f.from===a&&f.to===b)||(f.to===a&&f.from===b))); }
 export const SPRITE_LIMITS = { strokes: 40, points: 400, min: -0.5, max: 1.5 };
-export function spriteColourValid(colour: unknown) { return typeof colour==='string' && /^#[0-9A-Fa-f]{6}$/.test(colour); }
+/**  Sprite colours are one of these names (same list as public.sprite_colour in the database). The hex for each is in components/sprites/palette.ts. */
+export const SPRITE_COLOURS = ['pink', 'green', 'blue', 'yellow', 'peach', 'purple', 'turquoise', 'grey'] as const;
+export type SpriteColour = (typeof SPRITE_COLOURS)[number];
+export function spriteColourValid(colour: unknown): colour is SpriteColour { return typeof colour==='string' && (SPRITE_COLOURS as readonly string[]).includes(colour); }
+//  Colour for someone who hasn't picked one: chosen from their id, so it's always the same for the same person.
+export function defaultSpriteColour(id: string): SpriteColour { let h=0;for(const ch of id)h=(h*31+ch.charCodeAt(0))>>>0;return SPRITE_COLOURS[h%SPRITE_COLOURS.length]; }
 export function strokesValid(strokes: unknown): strokes is [number,number][][] {
  return Array.isArray(strokes) && strokes.length<=SPRITE_LIMITS.strokes && strokes.every(stroke=>Array.isArray(stroke) && stroke.length>0 && stroke.length<=SPRITE_LIMITS.points
   && stroke.every(pt=>Array.isArray(pt) && pt.length===2 && pt.every(v=>typeof v==='number' && Number.isFinite(v) && v>=SPRITE_LIMITS.min && v<=SPRITE_LIMITS.max)));
@@ -49,7 +54,7 @@ export function strokesValid(strokes: unknown): strokes is [number,number][][] {
  * Saved avatar
  * headAssetId: 'face-default' | 'face-drawn'
  */
-export type PersonSprite = { colour: string; headAssetId: string; torsoAssetId: string; level: number; faceStrokes?: [number, number][][] };
+export type PersonSprite = { colour: SpriteColour; headAssetId: string; torsoAssetId: string; level: number; faceStrokes?: [number, number][][] };
 /**
  * A person with their optional saved avatar. Kept beside Person rather than inside it
  * (upstream also edits the Person line) so the two branches merge without conflicts. mergescript
@@ -80,7 +85,7 @@ export type Command = HelpCommand
  | {type:'accept-friend'|'decline-friend'|'remove-friend';id:string}
  | {type:'update-profile';name:string;username:string;location:string;bio:string;avatar?:string}
  // Added update-sprite
- | {type:'update-sprite';colour:string;face:'default'|'drawn';strokes?:[number,number][][]};
+ | {type:'update-sprite';colour:SpriteColour;face:'default'|'drawn';strokes?:[number,number][][]};
 export type CommandEnv = { id: string; now: string; today: string };
 export function applyCommand(original: Store, command: Command, env: CommandEnv): Store {
  if(['post-help','close-help','offer-help','withdraw-offer','select-offer'].includes(command.type))return applyHelp(original,command as HelpCommand,env,applyCommand);
@@ -154,7 +159,7 @@ export function applyCommand(original: Store, command: Command, env: CommandEnv)
   case 'update-sprite':{
    const profile=person(me) as SpritedPerson;requireValue(spriteColourValid(command.colour),'Choose a valid colour.');
    const drawn=command.face==='drawn';requireValue(!drawn||(strokesValid(command.strokes)&&command.strokes.length>0),'Draw a face, or choose the default face.');
-   profile.sprite={colour:command.colour.toUpperCase(),headAssetId:drawn?'face-drawn':'face-default',torsoAssetId:profile.sprite?.torsoAssetId??'plant',level:profile.sprite?.level??0,...(drawn?{faceStrokes:command.strokes}:{})};break;
+   profile.sprite={colour:command.colour,headAssetId:drawn?'face-drawn':'face-default',torsoAssetId:profile.sprite?.torsoAssetId??'plant',level:profile.sprite?.level??0,...(drawn?{faceStrokes:command.strokes}:{})};break;
   }
   case 'send-message':{
    requireValue(command.text.trim().length>0&&command.text.length<=2000,'Write a message of up to 2000 characters.');requireValue(command.to!==me,'You cannot message yourself.');requireValue(person(command.to),'This person could not be found.');

@@ -1,10 +1,10 @@
 --  Avatar editing for the connected demo (upstream's demo_* tables).
 --
 -- New RPC public.demo_update_sprite(sprite, request_id): the signed-in demo member
--- saves their own avatar (a palette colour, and the default or a hand-drawn face).
+-- saves their own avatar (one of the palette colours, and the default or a hand-drawn face).
 -- It is stored as "sprite" inside their demo_profiles.data, so demo_state() returns
 -- it on each person with no other change. Same shape as the app's PersonSprite:
---   {"colour":"#BFE3FF","headAssetId":"face-default"|"face-drawn","torsoAssetId":"plant","level":0,"faceStrokes":[...]}
+--   {"colour":"blue","headAssetId":"face-default"|"face-drawn","torsoAssetId":"plant","level":0,"faceStrokes":[...]}
 --
 -- Additive and data-safe:
 --  * No table, column, policy or existing function is changed. demo_command and
@@ -13,7 +13,8 @@
 --  * update-profile in demo_command keeps other keys in data, so it never removes the sprite.
 --  * Reuses private.valid_face_strokes() (20261107000100) for drawn faces, and
 --    upstream's demo_requests table so a retried request isn't applied twice.
--- Input from the client: {"colour":"#RRGGBB","face":"default"|"drawn","strokes":[[[x,y],...],...]}
+-- Input from the client: {"colour":"<a public.sprite_colour name>","face":"default"|"drawn","strokes":[[[x,y],...],...]}
+-- Colour names come from public.sprite_colour (20261107000200), the same eight options as the app.
 
 create function public.demo_update_sprite(sprite jsonb, request_id uuid) returns void
 language plpgsql security definer set search_path = '' as $$
@@ -34,7 +35,7 @@ begin
     return;
   end if;
   if jsonb_typeof(sprite) is distinct from 'object' then raise exception 'Choose a valid colour.'; end if;
-  if colour is null or colour !~ '^#[0-9A-Fa-f]{6}$' then raise exception 'Choose a valid colour.'; end if;
+  if colour is null or not (colour = any(pg_catalog.enum_range(null::public.sprite_colour)::text[])) then raise exception 'Choose a valid colour.'; end if;
   if face is null or face not in ('default', 'drawn') then raise exception 'Choose the default face or draw one.'; end if;
   if face = 'drawn' and not coalesce(private.valid_face_strokes(sprite->'strokes'), false) then
     raise exception 'Draw a face, or choose the default face.';
@@ -42,7 +43,7 @@ begin
   --  Keeps any torso/level already saved; a default face drops the old drawing.
   update public.demo_profiles p
   set data = jsonb_set(p.data, '{sprite}', jsonb_build_object(
-        'colour', upper(colour),
+        'colour', colour,
         'headAssetId', case when face = 'drawn' then 'face-drawn' else 'face-default' end,
         'torsoAssetId', coalesce(p.data #>> '{sprite,torsoAssetId}', 'plant'),
         'level', coalesce((p.data #>> '{sprite,level}')::integer, 0))

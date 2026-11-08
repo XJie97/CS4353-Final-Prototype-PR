@@ -3,6 +3,6 @@ export type { PlantSpriteProps } from "./PlantSprite";
 export { SpriteAvatar } from "./SpriteAvatar";
 export { TvSprite } from "./TvSprite";
 export type { TvSpriteProps } from "./TvSprite";
-export { deriveSpritePalette, deriveTvPalette, nearestSwatch, pastelFrom, SPRITE_SWATCHES } from "./palette";
+export { deriveSpritePalette, deriveTvPalette, SWATCH_HEX } from "./palette";
 export type { SpritePalette } from "./palette";
 export type { DrawnStroke, PlantSpriteConfig, SpriteAnimation, SpriteFace, SpriteTopper } from "./types";

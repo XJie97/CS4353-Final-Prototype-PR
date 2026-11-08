@@ -1,3 +1,4 @@
+import type { SpriteColour } from "../../app/domain";
 export type SpritePalette = { body: string; mid: string; outline: string };
 
 // Derive mid and dark colours from base colour
@@ -14,38 +15,17 @@ export function deriveSpritePalette(bodyHex: string): SpritePalette {
 }
 
 
-export const SPRITE_SWATCHES = [
-  "#F7C8FF", // pink
-  "#C6F3A2", // green
-  "#BFE3FF", // blue
-  "#FFE6A3", // yellow
-  "#FFC9B8", // peach
-  "#D9CCFF", // purple
-  "#B8F0E6", // turquoise
-  "#E5E5E5", // grey
-] as const;
-
-export type SpriteSwatch = (typeof SPRITE_SWATCHES)[number];
-
-/** 
- * The fixed palette colour closest to any hex colour (by OKLab distance).
- * Colours saved before the palette was fixed are shown as their nearest swatch.
- */
-export function nearestSwatch(hex: string): SpriteSwatch {
-  const up = normaliseHex(hex);
-  const exact = SPRITE_SWATCHES.find((c) => c === up);
-  if (exact) return exact;
-  const lab = (h: string) => { const [L, C, H] = hexToOklch(h); return [L, C * Math.cos(H), C * Math.sin(H)]; };
-  const [l, a, b] = lab(up);
-  let best: SpriteSwatch = SPRITE_SWATCHES[0];
-  let bestD = Infinity;
-  for (const c of SPRITE_SWATCHES) {
-    const [l2, a2, b2] = lab(c);
-    const d = (l - l2) ** 2 + (a - a2) ** 2 + (b - b2) ** 2;
-    if (d < bestD) { bestD = d; best = c; }
-  }
-  return best;
-}
+/**  The hex value drawn for each sprite colour name (the names are SPRITE_COLOURS in app/domain.ts). */
+export const SWATCH_HEX = {
+  pink: "#F7C8FF",
+  green: "#C6F3A2",
+  blue: "#BFE3FF",
+  yellow: "#FFE6A3",
+  peach: "#FFC9B8",
+  purple: "#D9CCFF",
+  turquoise: "#B8F0E6",
+  grey: "#E5E5E5",
+} as const satisfies Record<SpriteColour, string>;
 
 /** 
  * TV colours from the owner's body colour, matching the Figma TV: the body runs
@@ -127,11 +107,3 @@ function oklchToHex(L: number, C: number, H: number): string {
   );
 }
 
-/** 
- * A soft pastel body colour from any accent colour (e.g. a person's profile
- * colour), so every user gets a sensible default sprite before customising it.
- */
-export function pastelFrom(hex: string): string {
-  const [, C, H] = hexToOklch(hex);
-  return oklchToHex(0.9, Math.min(Math.max(C * 0.45, 0.04), 0.09), H);
-}

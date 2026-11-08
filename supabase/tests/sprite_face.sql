@@ -19,7 +19,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub','40000000-0000-0000-0000-000000000001',true);
 
 --  The owner can save a drawn face together with the usual columns.
-update public.sprites set colour='#BFE3FF',head_asset_id='face-drawn',face_strokes='[[[0.2,0.3],[0.25,0.4]],[[0.7,0.3]]]'
+update public.sprites set colour='blue',head_asset_id='face-drawn',face_strokes='[[[0.2,0.3],[0.25,0.4]],[[0.7,0.3]]]'
  where id=(select sprite_id from face_ids where user_id=auth.uid());
 select pg_temp.ok((select jsonb_array_length(face_strokes)=2 and head_asset_id='face-drawn' from public.sprites where id=(select sprite_id from face_ids where user_id=auth.uid())),'owner saves a drawn face');
 

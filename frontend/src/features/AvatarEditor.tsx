@@ -2,14 +2,15 @@ import { useState } from 'react';
 import { useApp } from '../app/context';
 import { spriteFor } from '../app/sprite';
 import { ErrorText } from '../components/ui/shared';
-import { PlantSprite, SPRITE_SWATCHES } from '../components/sprites';
+import { PlantSprite, SWATCH_HEX } from '../components/sprites';
+import { SPRITE_COLOURS, type SpriteColour } from '../app/domain';
 import type { DrawnStroke } from '../components/sprites/types';
 import { FaceDrawingPad } from './FaceDrawingPad';
 
 export function AvatarEditor({ onBack }: { onBack: () => void }) {
   const { store, perform, toast, busy: saving } = useApp();
   const current = spriteFor(store, store.activeUserId);
-  const [colour, setColour] = useState<string>(current.bodyColor);
+  const [colour, setColour] = useState<SpriteColour>(current.colour);
   const [face, setFace] = useState<'default' | 'drawn'>(current.face.kind === 'drawn' ? 'drawn' : 'default');
   const [strokes, setStrokes] = useState<DrawnStroke[]>(current.face.kind === 'drawn' ? current.face.strokes : []);
   const [error, setError] = useState('');
@@ -25,14 +26,14 @@ export function AvatarEditor({ onBack }: { onBack: () => void }) {
   return <main className="app-scroll avatar-editor" aria-label="Edit avatar">
 
     <div className="avatar-editor__stage">
-      <PlantSprite bodyColor={colour} topper={current.topper} face={previewFace} size={120} animation="squish" label="Avatar preview" />
+      <PlantSprite bodyColor={SWATCH_HEX[colour]} topper={current.topper} face={previewFace} size={120} animation="squish" label="Avatar preview" />
     </div>
 
     <section className="avatar-editor__section" aria-labelledby="avatar-colour">
       <h3 id="avatar-colour">Colour</h3>
       <div className="swatches" role="radiogroup" aria-label="Body colour">
-        {SPRITE_SWATCHES.map(c => <button key={c} type="button" role="radio" aria-checked={colour === c} aria-label={c}
-          className="swatch" style={{ background: c }} onClick={() => setColour(c)} />)}
+        {SPRITE_COLOURS.map(c => <button key={c} type="button" role="radio" aria-checked={colour === c} aria-label={c}
+          className="swatch" style={{ background: SWATCH_HEX[c] }} onClick={() => setColour(c)} />)}
       </div>
     </section>
 
@@ -40,15 +41,15 @@ export function AvatarEditor({ onBack }: { onBack: () => void }) {
       <h3 id="avatar-face">Face</h3>
       <div className="face-choice" role="radiogroup" aria-label="Face">
         <button type="button" role="radio" aria-checked={face === 'default'} className="face-choice__option" onClick={() => setFace('default')}>
-          <PlantSprite crop="head" bodyColor={colour} topper="none" face={{ kind: 'default' }} size={56} label="" />
+          <PlantSprite crop="head" bodyColor={SWATCH_HEX[colour]} topper="none" face={{ kind: 'default' }} size={56} label="" />
           <span>Default</span>
         </button>
         <button type="button" role="radio" aria-checked={face === 'drawn'} className="face-choice__option" onClick={() => setFace('drawn')}>
-          <PlantSprite crop="head" bodyColor={colour} topper="none" face={strokes.length ? { kind: 'drawn', strokes } : { kind: 'none' }} size={56} label="" />
+          <PlantSprite crop="head" bodyColor={SWATCH_HEX[colour]} topper="none" face={strokes.length ? { kind: 'drawn', strokes } : { kind: 'none' }} size={56} label="" />
           <span>Draw your own</span>
         </button>
       </div>
-      {face === 'drawn' && <FaceDrawingPad bodyColor={colour} topper={current.topper} strokes={strokes} onChange={setStrokes} />}
+      {face === 'drawn' && <FaceDrawingPad bodyColor={SWATCH_HEX[colour]} topper={current.topper} strokes={strokes} onChange={setStrokes} />}
     </section>
 
     <ErrorText text={error} />
