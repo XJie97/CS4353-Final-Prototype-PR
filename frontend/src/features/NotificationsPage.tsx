@@ -1,41 +1,83 @@
-import { useApp } from '../app/context';
-import type { Page } from '../app/routes';
-import { EmptyState } from '../components/ui/shared';
+import { useApp } from "../app/context";
+import type { Page } from "../app/routes";
+import { EmptyState } from "../components/ui/shared";
 
-export function NotificationsPage({navigate}:{navigate:(page:Page,id?:string)=>void}) {
- const {store,perform,toast,busy:saving}=useApp();
- const notices=store.notices.filter(n=>n.to===store.activeUserId);
- return (
+export function NotificationsPage({
+  navigate,
+}: {
+  navigate: (page: Page, id?: string) => void;
+}) {
+  const { store, perform, toast, busy: saving } = useApp();
+  const notices = store.notices.filter((n) => n.to === store.activeUserId);
+  return (
+    // Present read and unread updates with links to their related loan or conversation.
     <main className="app-scroll">
-        <div className="section-heading">
-            <h2>Updates</h2>
-            
-            {notices.some(n=>!n.read)&&
-                <button disabled={saving} type="button" className="button" onClick={async()=>{const r=await perform({type:'read-notices'});if(!r.ok)toast(r.error);}}>Mark all read</button>}
+      <div className="section-heading">
+        <h2>Updates</h2>
+
+        {notices.some((n) => !n.read) && (
+          <button
+            disabled={saving}
+            type="button"
+            className="button"
+            onClick={async () => {
+              const r = await perform({ type: "read-notices" });
+              // Report a failure to mark the notification list as read.
+              if (!r.ok) toast(r.error);
+            }}
+          >
+            Mark all read
+          </button>
+        )}
+      </div>
+
+      {notices.length ? (
+        <div className="notification-list">
+          {notices.map((notice) => (
+            // Represent one notification and visually distinguish unread updates.
+            <button
+              disabled={saving}
+              className={`notification-row ${notice.read ? "" : "unread"}`}
+              key={notice.id}
+              type="button"
+              onClick={async () => {
+                const result = await perform({
+                  type: "read-notices",
+                  id: notice.id,
+                });
+                // Navigate from a notice only after its read status is saved.
+                if (!result.ok) {
+                  toast(result.error);
+                  return;
+                }
+                notice.loanId
+                  ? navigate("loans", notice.loanId)
+                  : notice.peerId
+                    ? navigate("chats", notice.peerId)
+                    : navigate("friends");
+              }}
+            >
+              <span className="notification-dot" />
+              <span>
+                <strong>{notice.text}</strong>
+                <time dateTime={notice.at}>
+                  {new Intl.DateTimeFormat("en-SG", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }).format(new Date(notice.at))}
+                </time>
+              </span>
+            </button>
+          ))}
         </div>
-        
-        {notices.length? <div className="notification-list">
-            {notices.map(notice=>
-                <button 
-                    disabled={saving}
-                    className={`notification-row ${notice.read?'':'unread'}`} 
-                    key={notice.id}
-                    type="button" 
-                    onClick={async()=>{const result=await perform({type:'read-notices',id:notice.id});
-                        if(!result.ok){toast(result.error);return;}
-                        notice.loanId?navigate('loans',notice.loanId):
-                        notice.peerId?navigate('chats',notice.peerId):
-                        navigate('friends');}}
-                >
-                        
-                    <span className="notification-dot"/>
-                    <span>
-                        <strong>{notice.text}</strong>
-                        <time dateTime={notice.at}>
-                        {new Intl.DateTimeFormat('en-SG',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}).format(new Date(notice.at))}</time>
-                    </span>
-                </button>)
-            }
-        </div> : <EmptyState title="You're all caught up" text="Loan requests, messages and community updates will appear here."/>}
+      ) : (
+        <EmptyState
+          title="You're all caught up"
+          text="Loan requests, messages and community updates will appear here."
+        />
+      )}
     </main>
-);}
+  );
+}

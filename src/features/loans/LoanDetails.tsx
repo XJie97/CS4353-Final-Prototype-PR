@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { QRCodeSVG } from "qrcode.react";
+import { CameraCapture } from "../../core/CameraCapture";
 import { services } from "../../core/services";
 import { useAuth } from "../auth/context";
 import { useItem, useLoan, useUser } from "../../core/hooks";
@@ -58,15 +59,18 @@ export function LoanDetails({ id, close }: { id: string; close: () => void }) {
     setCapture(true);
   });
   useEffect(() => {
+    // Show the pending evidence stage only to the participant assigned to capture it.
     if (loan?.pendingPhoto && stepActor(loan, loan.pendingPhoto) === actor.id)
       setCapture(true);
   }, [loan?.pendingPhoto, actor.id]);
+  // Reopen the capture form only for the actor responsible for the pending photo.
   if (
     capture &&
     loan?.pendingPhoto &&
     stepActor(loan, loan.pendingPhoto) === actor.id
   )
     return (
+      // Resume the required evidence form for the actor assigned to the pending photo.
       <PhotoCapture
         loan={loan}
         step={loan.pendingPhoto}
@@ -74,6 +78,7 @@ export function LoanDetails({ id, close }: { id: string; close: () => void }) {
       />
     );
   return (
+    // Present the selected loan's plan, handover actions, proof status, and optional review.
     <section>
       <button onClick={close}>Back to loans</button>
       <QueryState query={query}>
@@ -121,6 +126,7 @@ export function LoanDetails({ id, close }: { id: string; close: () => void }) {
                   <button
                     disabled={cancel.isPending}
                     onClick={() => {
+                      // Cancel the loan only after the user confirms releasing the reservation dates.
                       if (
                         confirm(
                           "Cancel this loan? Reservation dates will be released.",
@@ -166,6 +172,7 @@ export function LoanDetails({ id, close }: { id: string; close: () => void }) {
                     required
                   >
                     {item.data?.lockerIds.map((x) => (
+                      // Represent an available locker location for the exchange plan.
                       <option value={x} key={x}>
                         location{x}
                       </option>
@@ -210,6 +217,7 @@ export function LoanDetails({ id, close }: { id: string; close: () => void }) {
             <details>
               <summary>Handoff evidence</summary>
               {STEPS.map((s) => (
+                // Show whether one handover stage has its required photo evidence.
                 <p key={s}>
                   {STEP_LABELS[s]}:{" "}
                   {loan.photos[s] ? (
@@ -249,6 +257,7 @@ function PhotoCapture({
   step: PhotoStep;
   back: () => void;
 }) {
+  const [captured, setCaptured] = useState<File | null>(null);
   const saved = useRef<string | null>(null);
   const file = useRef<File | null>(null);
   const input = useRef<HTMLHeadingElement>(null);
@@ -256,24 +265,28 @@ function PhotoCapture({
     input.current?.focus();
   }, []);
   const save = useCommand("handoff", async (fd: FormData) => {
-    const chosen = fileValue(fd, "image");
-    if (!chosen) throw new Error("Choose an image.");
+    const chosen = captured;
+    if (!chosen) throw new Error("Capture an image first.");
     const answers = fd.getAll("answers").map(String);
+    // Require every checklist answer before the owner's final pickup evidence.
     if (
       step === "owner_pickup" &&
       loan.checklist.items.some((x) => !answers.includes(x.id))
     )
       throw new Error("Complete all return checklist entries.");
+    // Clear cached evidence when the user chooses a different photo.
     if (file.current !== chosen) {
       saved.current = null;
       file.current = chosen;
     }
+    // Upload evidence only when no successful storage path has been cached.
     if (!saved.current)
       saved.current = await services.handoff.uploadPhoto(loan.id, step, chosen);
     await services.handoff.recordPhoto(loan.id, step, saved.current, answers);
     back();
   });
   return (
+    // Capture a stage's evidence photo and any required final-return checklist answers.
     <section>
       <button disabled={save.isPending} onClick={back}>
         Back to loan (photo remains pending)
@@ -282,8 +295,8 @@ function PhotoCapture({
         Photo: {STEP_LABELS[step]}
       </h3>
       <p>
-        The scan already advanced the status. Save this photo before the next
-        handoff.
+        The scan already advanced the status. Point your camera at the item in
+        the locker, take the photo, and save it before the next handoff.
       </p>
       {step === "owner_pickup" && (
         <p>
@@ -291,14 +304,12 @@ function PhotoCapture({
         </p>
       )}
       <form className="stack" onSubmit={formAction((fd) => save.mutate(fd))}>
-        <label>
-          Photo of item inside locker
-          <ImageInput required />
-        </label>
+        <CameraCapture onChange={setCaptured} />
         {step === "owner_pickup" && (
           <fieldset>
             <legend>Return checklist (version {loan.checklist.version})</legend>
             {loan.checklist.items.map((c) => (
+              // Represent one required condition-checklist answer for the owner's final pickup.
               <label className="inline" key={c.id}>
                 <input type="checkbox" name="answers" value={c.id} required />
                 {c.label}
@@ -306,7 +317,9 @@ function PhotoCapture({
             ))}
           </fieldset>
         )}
-        <button disabled={save.isPending}>Save handoff photo</button>
+        <button disabled={save.isPending || !captured}>
+          Save handoff photo
+        </button>
         <MutationState mutation={save} />
       </form>
     </section>
@@ -321,7 +334,9 @@ function LoanReview({ loan }: { loan: Loan }) {
   const save = useCommand("reviews", async (fd: FormData) => {
     const f = fileValue(fd, "image");
     let path = review.data?.imagePath || null;
+    // Upload a review image only when a file was selected.
     if (f) {
+      // Reuse a review-photo upload unless the selected file changes.
       if (upload.current?.file !== f)
         upload.current = {
           file: f,
@@ -340,6 +355,7 @@ function LoanReview({ loan }: { loan: Loan }) {
     services.reviews.deleteReview(review.data!.id),
   );
   return (
+    // Present the optional review form and deletion control for a completed loan.
     <section>
       <h4>Optional review</h4>
       <QueryState query={review}>
@@ -360,6 +376,7 @@ function LoanReview({ loan }: { loan: Loan }) {
           <fieldset>
             <legend>Compliments</legend>
             {COMPLIMENTS.map((c) => (
+              // Represent one predefined review compliment as a checkbox.
               <label className="inline" key={c}>
                 <input
                   name="compliments"
@@ -386,6 +403,7 @@ function LoanReview({ loan }: { loan: Loan }) {
           <button
             disabled={remove.isPending}
             onClick={() => {
+              // Delete the review only after explicit confirmation in the dialog.
               if (confirm("Delete your review?")) remove.mutate();
             }}
           >

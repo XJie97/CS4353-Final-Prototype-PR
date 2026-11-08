@@ -19,6 +19,7 @@ export function HelpPage({
   const offerIds = useRef(new Map<string, string>());
   const loanIds = useRef(new Map<string, string>());
   const retryId = (ids: Map<string, string>, key: string) => {
+    // Allocate one stable record ID per draft key until it is cleared.
     if (!ids.has(key)) ids.set(key, uid());
     return ids.get(key)!;
   };
@@ -33,6 +34,7 @@ export function HelpPage({
     return result.ok;
   };
   return (
+    // Combine the new-help-request form with community requests and personal history.
     <Modal title="Ask for help" onClose={onClose}>
       <p>
         Provisional feature. Requests and offers are stored in the shared
@@ -42,6 +44,7 @@ export function HelpPage({
       <form
         onSubmit={async (e) => {
           e.preventDefault();
+          // Reset the help-request draft only after a successful save.
           if (
             await act({
               type: "post-help",
@@ -96,15 +99,36 @@ export function HelpPage({
             onChange={(e) => setEnd(e.target.value)}
           />
         </label>
-        <button disabled={saving} className="button primary">Post request</button>
+        <button disabled={saving} className="button primary">
+          Post request
+        </button>
       </form>
       <div className="button-row" aria-label="Request views">
-        <button disabled={saving} className="button" aria-pressed={!history} onClick={() => setHistory(false)}>Community requests</button>
-        <button disabled={saving} className="button" aria-pressed={history} onClick={() => setHistory(true)}>Your request history</button>
+        <button
+          disabled={saving}
+          className="button"
+          aria-pressed={!history}
+          onClick={() => setHistory(false)}
+        >
+          Community requests
+        </button>
+        <button
+          disabled={saving}
+          className="button"
+          aria-pressed={history}
+          onClick={() => setHistory(true)}
+        >
+          Your request history
+        </button>
       </div>
       <h3>{history ? "Your request history" : "Community requests"}</h3>
-      {!requests.length && <p>{history ? "No historical requests yet." : "No open requests yet."}</p>}
+      {!requests.length && (
+        <p>
+          {history ? "No historical requests yet." : "No open requests yet."}
+        </p>
+      )}
       {requests.map((r) => (
+        // Represent one help request with dates, outcome, and available offer actions.
         <section className="plan-details" key={r.id}>
           <h3>{r.title}</h3>
           <p>{r.description}</p>
@@ -112,7 +136,11 @@ export function HelpPage({
             {r.start} → {r.end} · {helpOutcome(store, r)}
           </p>
           {r.loanId && (
-            <button disabled={saving} className="button" onClick={() => onLoan(r.loanId!)}>
+            <button
+              disabled={saving}
+              className="button"
+              onClick={() => onLoan(r.loanId!)}
+            >
               View loan
             </button>
           )}
@@ -122,7 +150,9 @@ export function HelpPage({
                 <button
                   disabled={saving}
                   className="button"
-                  onClick={async () => { await act({ type: "close-help", id: r.id }); }}
+                  onClick={async () => {
+                    await act({ type: "close-help", id: r.id });
+                  }}
                 >
                   Close request
                 </button>
@@ -133,6 +163,7 @@ export function HelpPage({
                     onChange={(e) => setLocker(e.target.value)}
                   >
                     {LOCKERS.map((l) => (
+                      // Represent a supported locker location for the loan created by offer selection.
                       <option key={l.id} value={l.id}>
                         {l.label}
                       </option>
@@ -145,6 +176,7 @@ export function HelpPage({
                 {(store.offers ?? [])
                   .filter((o) => o.requestId === r.id && !o.withdrawn)
                   .map((o) => (
+                    // Represent an owner's offered item and the requester's selection action.
                     <div key={o.id}>
                       <p className="offer-line">
                         <span>{store.items.find((i) => i.id === o.itemId)?.name}</span>
@@ -158,6 +190,7 @@ export function HelpPage({
                         className="button"
                         onClick={async () => {
                           const loanId = retryId(loanIds.current, o.id);
+                          // Open the linked loan only after the offer is successfully selected.
                           if (
                             await act({
                               type: "select-offer",
@@ -183,9 +216,11 @@ export function HelpPage({
                 {store.items
                   .filter((i) => i.listed && i.ownerId === store.activeUserId)
                   .map((i) => {
-                    const offerKey = `${r.id}:${i.id}:${(store.offers ?? []).filter(
-                      (o) => o.requestId === r.id && o.itemId === i.id,
-                    ).length}`;
+                    const offerKey = `${r.id}:${i.id}:${
+                      (store.offers ?? []).filter(
+                        (o) => o.requestId === r.id && o.itemId === i.id,
+                      ).length
+                    }`;
                     const offer = (store.offers ?? []).find(
                       (o) =>
                         o.requestId === r.id &&
@@ -193,6 +228,7 @@ export function HelpPage({
                         !o.withdrawn,
                     );
                     return (
+                      // Represent one of the owner's eligible items and its offer or withdrawal action.
                       <div key={i.id}>
                         <span>{i.name} </span>
                         {offer ? (

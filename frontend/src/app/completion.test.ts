@@ -35,13 +35,18 @@ test("help offer selection creates ordinary loan once", () => {
     lockerId: "clementi",
   };
   s = applyCommand(s, choose, env);
+  // Verify that selecting an offer creates a normal pending loan.
   assert.equal(s.loans.find((l) => l.id === "chosen")?.status, "requested");
+  // Verify that selecting an offer records the help request as selected.
   assert.equal(s.helpRequests![0].status, "selected");
+  // Verify that the same offer cannot be selected twice.
   assert.throws(() => applyCommand(s, choose, env));
 });
 test("help rejects wrong roles, duplicate, expired and reversed requests", () => {
   const s = fixture();
+  // Verify that a different account cannot close the request.
   assert.throws(() => applyCommand(s, { type: "close-help", id: "help" }, env));
+  // Verify that a different account cannot select the offer.
   assert.throws(() =>
     applyCommand(
       s,
@@ -49,6 +54,7 @@ test("help rejects wrong roles, duplicate, expired and reversed requests", () =>
       env,
     ),
   );
+  // Verify that an item cannot have duplicate active offers for one request.
   assert.throws(() =>
     applyCommand(
       s,
@@ -61,9 +67,11 @@ test("help rejects wrong roles, duplicate, expired and reversed requests", () =>
       env,
     ),
   );
+  // Verify that a request cannot end before its start date.
   assert.throws(() =>
     applyCommand(s, { ...post, id: "bad", end: "2026-12-01" }, env),
   );
+  // Verify that a request cannot start in the past.
   assert.throws(() =>
     applyCommand(s, { ...post, id: "bad", start: "2020-01-01" }, env),
   );
@@ -72,6 +80,7 @@ test("withdrawal, closure and intervening bookings prevent selection", () => {
   let s = fixture();
   s = applyCommand(s, { type: "withdraw-offer", id: "offer" }, env);
   s = applyCommand(s, { type: "switch-account", id: "eric" }, env);
+  // Verify that a withdrawn offer cannot be selected.
   assert.throws(() =>
     applyCommand(
       s,
@@ -80,6 +89,7 @@ test("withdrawal, closure and intervening bookings prevent selection", () => {
     ),
   );
   s = applyCommand(s, { type: "close-help", id: "help" }, env);
+  // Verify that closing a request records its closed status.
   assert.equal(s.helpRequests![0].status, "closed");
   s = fixture();
   s = applyCommand(s, { type: "switch-account", id: "eric" }, env);
@@ -95,6 +105,7 @@ test("withdrawal, closure and intervening bookings prevent selection", () => {
     },
     env,
   );
+  // Verify that an intervening booking prevents selection of an overlapping offer.
   assert.throws(
     () =>
       applyCommand(
@@ -122,7 +133,9 @@ test("multiple offers remain separate until borrower selection", () => {
     },
     env,
   );
+  // Verify that distinct items can remain available as separate offers.
   assert.equal(s.offers!.length, 2);
+  // Verify that receiving offers alone does not select or close the request.
   assert.equal(s.helpRequests![0].status, "open");
 });
 test("review edits enforce author ownership and retain completion through reload", () => {
@@ -138,13 +151,12 @@ test("review edits enforce author ownership and retain completion through reload
     compliments: ["As described"],
   };
   s = applyCommand(s, c, env);
+  // Verify that editing a review preserves the loan's completed status.
   assert.equal(s.loans.find((v) => v.id === l.id)!.status, "complete");
-  assert.equal(
-    s.loans.find((v) => v.id === l.id)!.review!
-      .text,
-    "Updated",
-  );
+  // Verify that the edited review text survives serialization and reload.
+  assert.equal(s.loans.find((v) => v.id === l.id)!.review!.text, "Updated");
   s.activeUserId = l.ownerId;
+  // Verify that another account cannot edit the borrower's review.
   assert.throws(() => applyCommand(s, c, env));
 });
 test("counterproposal stores immediate previous values without changing old records", () => {
@@ -174,10 +186,12 @@ test("counterproposal stores immediate previous values without changing old reco
     env,
   );
   const l = s.loans.find((l) => l.id === "diff")!;
+  // Verify that a counterproposal retains the immediately preceding plan values.
   assert.deepEqual(l.previousPlan, {
     start: "2026-12-20",
     end: "2026-12-22",
     lockerId: "clementi",
   });
+  // Verify that a counterproposal clears prior approvals except for its author.
   assert.deepEqual(l.approvals, ["sarah"]);
 });

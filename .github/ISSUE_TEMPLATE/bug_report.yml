@@ -6,7 +6,7 @@ body:
     id: url
     attributes:
       label: Demo URL
-      description: Paste the production or pull-request preview URL.
+      description: Paste the exact production or branch preview URL.
     validations:
       required: true
   - type: input
@@ -19,7 +19,7 @@ body:
   - type: dropdown
     id: account
     attributes:
-      label: Preview account
+      label: Signed-in demo account
       options:
         - Eric
         - Sarah
@@ -31,7 +31,7 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-      description: Include account switches and whether you started from reset data.
+      description: Include the account, item/loan, dates, and whether separate browser profiles/devices were used. Data is shared; there is no browser-only reset.
     validations:
       required: true
   - type: textarea
@@ -57,4 +57,4 @@ body:
     id: screenshot
     attributes:
       label: Screenshot or recording
-      description: Attach a screenshot here if possible. Include any visible error message.
+      description: Attach a screenshot here if possible. Include any visible error message. Do not include passwords, tokens or private image URLs.

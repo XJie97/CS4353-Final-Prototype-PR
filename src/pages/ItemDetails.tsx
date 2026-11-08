@@ -47,6 +47,7 @@ export function ItemDetails({ id, close }: { id: string; close: () => void }) {
   });
   const [showPlan, setShowPlan] = useState(false);
   return (
+    // Present the item's listing, photos, owner controls, and loan-request form.
     <section>
       <button onClick={close}>Back to list</button>
       <QueryState query={item}>
@@ -64,6 +65,7 @@ export function ItemDetails({ id, close }: { id: string; close: () => void }) {
             </p>
             <QueryState query={images}>
               {images.data?.map((x) => (
+                // Resolve one private listing photo to a temporary view link.
                 <FileLink key={x.id} bucket="item-images" path={x.path} />
               ))}
             </QueryState>
@@ -73,6 +75,7 @@ export function ItemDetails({ id, close }: { id: string; close: () => void }) {
                   className="stack"
                   onSubmit={formAction((fd) => {
                     const f = fileValue(fd, "image");
+                    // Upload an additional listing image only when the picker supplies a file.
                     if (f) addPhoto.mutate(f);
                   })}
                 >
@@ -142,6 +145,7 @@ export function ItemDetails({ id, close }: { id: string; close: () => void }) {
                       Locker
                       <select name="locker" required>
                         {item.data.lockerIds.map((x) => (
+                          // Represent a locker supported by this listing in the loan-request form.
                           <option key={x} value={x}>
                             location{x}
                           </option>

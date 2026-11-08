@@ -68,6 +68,21 @@ const initial: Loan = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  Object.defineProperty(navigator, "mediaDevices", {
+    configurable: true,
+    value: {
+      getUserMedia: vi
+        .fn()
+        .mockResolvedValue({ getTracks: () => [{ stop: vi.fn() }] }),
+    },
+  });
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+  vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+    drawImage: vi.fn(),
+  } as unknown as CanvasRenderingContext2D);
+  vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(
+    "data:image/jpeg;base64,cGhvdG8=",
+  );
   fake.loan = structuredClone(initial);
   fake.upload.mockResolvedValue("loan/photo.png");
   fake.record.mockResolvedValue(undefined);
@@ -107,19 +122,26 @@ it("opens the required photo after bypass and resumes it when revisiting the loa
   await u.click(
     await screen.findByRole("button", { name: "Bypass: simulate locker scan" }),
   );
+  // Verify that a pending owner-dropoff proof opens the matching photo form.
   expect(
     await screen.findByRole("heading", { name: "Photo: Owner dropoff" }),
   ).toBeTruthy();
+  expect(screen.getByLabelText("Live camera preview")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Capture image" })).toBeTruthy();
+  expect(document.querySelector('input[type="file"]')).toBeNull();
   expect(fake.upload).not.toHaveBeenCalled();
   await u.click(
     screen.getByRole("button", {
       name: "Back to loan (photo remains pending)",
     }),
   );
+  // Verify that pending photo evidence remains visible on the loan detail screen.
   expect(await screen.findByText(/Pending photo: Owner dropoff/)).toBeTruthy();
+  // Verify that a pending photo prevents requesting a fresh QR handover.
   expect(screen.queryByRole("button", { name: "Get QR" })).toBeNull();
   view.unmount();
   mount();
+  // Verify that the pending photo form can be reopened without scanning again.
   expect(
     await screen.findByRole("heading", { name: "Photo: Owner dropoff" }),
   ).toBeTruthy();
@@ -138,26 +160,18 @@ it("requires the final checklist and retries photo finalization without uploadin
     .mockRejectedValueOnce(new Error("Temporary connection failure"))
     .mockResolvedValueOnce(undefined);
   mount();
+  // Verify that returned loans still explain any required final photo evidence.
   expect(
     await screen.findByText(
       "The loan is already Returned/Past. Final evidence is still required.",
     ),
   ).toBeTruthy();
-  const chosen = new File(["photo"], "item.png", { type: "image/png" });
-  await u.upload(screen.getByLabelText("Photo of item inside locker"), chosen);
-  // jsdom does not serialize user-event's synthetic FileList into FormData.
-  const NativeFormData = FormData;
-  vi.spyOn(globalThis, "FormData").mockImplementation(function (
-    form?: HTMLFormElement,
-  ) {
-    const data = new NativeFormData(form);
-    data.set("image", chosen);
-    return data;
-  });
-  expect(
-    (screen.getByLabelText("Photo of item inside locker") as HTMLInputElement)
-      .files?.length,
-  ).toBe(1);
+  const preview = screen.getByLabelText("Live camera preview");
+  Object.defineProperty(preview, "videoWidth", { value: 640 });
+  Object.defineProperty(preview, "videoHeight", { value: 480 });
+  fireEvent.canPlay(preview);
+  await u.click(screen.getByRole("button", { name: "Capture image" }));
+  expect(screen.getByAltText("Captured item inside locker")).toBeTruthy();
   const checks = within(
     screen.getByRole("group", { name: "Return checklist (version 1)" }),
   ).getAllByRole("checkbox");
@@ -170,6 +184,7 @@ it("requires the final checklist and retries photo finalization without uploadin
       }) as HTMLButtonElement
     ).form!,
   );
+  // Verify that failed evidence recording is displayed as an alert.
   expect((await screen.findByRole("alert")).textContent).toContain(
     "Temporary connection failure",
   );
@@ -181,12 +196,42 @@ it("requires the final checklist and retries photo finalization without uploadin
     ).form!,
   );
   await screen.findByRole("button", { name: "Resume photo" });
+  // Verify that retrying evidence recording does not upload the same file again.
   expect(fake.upload).toHaveBeenCalledTimes(1);
+  // Verify that the retry actually calls evidence recording again.
   expect(fake.record).toHaveBeenNthCalledWith(
     2,
     "loan",
     "owner_pickup",
     "loan/photo.png",
     ["item", "parts", "condition"],
+  );
+});
+it("stops the camera when leaving the photo section", async () => {
+  const stop = vi.fn();
+  vi.mocked(navigator.mediaDevices.getUserMedia).mockResolvedValue({
+    getTracks: () => [{ stop }],
+  } as unknown as MediaStream);
+  fake.loan = { ...initial, pendingPhoto: "owner_dropoff" };
+  const view = mount();
+  await screen.findByLabelText("Live camera preview");
+  await vi.waitFor(() =>
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalled(),
+  );
+  view.unmount();
+  expect(stop).toHaveBeenCalled();
+});
+it("allows retrying camera permission failures", async () => {
+  vi.mocked(navigator.mediaDevices.getUserMedia).mockRejectedValueOnce(
+    new Error("Permission denied"),
+  );
+  fake.loan = { ...initial, pendingPhoto: "owner_dropoff" };
+  mount();
+  expect((await screen.findByRole("alert")).textContent).toContain(
+    "Allow camera access",
+  );
+  await userEvent.click(screen.getByRole("button", { name: "Retry camera" }));
+  await vi.waitFor(() =>
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledTimes(2),
   );
 });

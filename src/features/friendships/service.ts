@@ -20,6 +20,7 @@ export function makeFriendshipsService(api: DataGateway) {
       );
     },
     async requestFriend(actorId: string, recipientId: string) {
+      // Reject a friendship request addressed to the current user.
       if (actorId === recipientId) throw new Error("Choose another user.");
       await api.insert("friendships", {
         requester_id: actorId,

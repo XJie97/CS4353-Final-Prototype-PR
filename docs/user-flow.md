@@ -1,19 +1,26 @@
 # How to use the community lending app
 
 This guide follows the styled app in `frontend/`, available at
-http://localhost:3001 when running locally. It explains the current preview's
+https://cs4353-demo.pages.dev/ or http://localhost:3001 when running locally.
+It explains the current demo's
 screens and actions. The separate Supabase functionality frame on port 3000 has
 a different handover process; its instructions are in the repository README.
 
+For the hosted link, account setup and reporting instructions, start with [Group
+testing](team-testing.md).
+
 ## Start with an account
 
-Choose Eric, Sarah, Ben or Maya using **Preview account** above the bottom
-navigation. Switching accounts lets you experience both sides of an exchange:
-the owner shares an item, and the borrower receives and returns it.
+Sign in with your assigned Eric, Sarah, Ben or Maya demo email and password. Credentials
+are distributed privately; do not put them in bug reports. For a two-person walkthrough,
+use separate browser profiles or devices and sign in as Eric in one and Sarah in the
+other. Each tab has its own stored session and isolated auth channel.
 
-Your changes are saved in this browser. Reloading normally restores your progress.
-Another device or browser will have its own preview. If a storage warning appears,
-keep the tab open because your latest changes may only last for that session.
+Changes are saved to Supabase and shared with other testers. Realtime updates refresh
+connected sessions. Reload to verify persistence. Login storage is tab-scoped;
+separate profiles or devices are also useful for comparing two accounts side by side.
+Use **Me → Sign out** when finished. Different deployment URLs can share the same
+backend and activity.
 
 ## Find your way around
 
@@ -78,24 +85,24 @@ There are four handovers, always in this order:
 
 For each handover:
 
-1. Press **Show QR**. In this preview, select **Use preview code**, then
-   **Verify code**. Alternatively, enter the matching handover code or use
-   **Scan QR** if your browser supports camera scanning.
-2. Check the locker location and number. For dropoff, record the locker number;
-   for pickup, the number is taken from the preceding dropoff.
+1. Press **Show QR** and present the displayed code to the external locker
+   scanner. The locker device is not implemented; select **Simulate locker scan**
+   to bypass it in this preview. The app does not scan the code with your camera.
+2. The scan assigns an available locker. Check the locker location and the
+   assigned number.
 3. Press **Continue to item photo** and add a photo showing the item's condition.
 4. Press **Confirm drop-off** or **Confirm pickup**. The success screen confirms
    the recorded handover. Press **Back to loan** to follow its progress.
 
 The code must match this loan and this handover step. Each step needs its own
 photo, and the next participant cannot skip ahead. In this styled preview, the
-handover is recorded when you confirm the photo; verifying a code alone does
+handover is recorded when you confirm the photo; simulating the locker scan alone does
 not complete it. Closing an unfinished handover means you need to start that
 step again.
 
-Photos accept JPEG, PNG or WebP files up to 5 MB. Camera scanning depends on
-browser support and permission; the preview-code/manual-entry option is always
-available. These actions simulate the exchange: no physical locker opens.
+Photos accept JPEG, PNG or WebP files up to 5 MB. The displayed QR is intended
+for an external locker scanner. These actions simulate the exchange: no physical
+locker opens.
 
 ## Verify the return and leave a review
 
@@ -131,44 +138,46 @@ In **Friends**, send a request to another person. The recipient can accept or
 decline it; the sender can cancel a pending request. You can also remove an
 accepted friendship, view another person's profile and listings, or open a chat.
 
-Chats show messages with the other person and cards for your shared loans.
-Those cards provide shortcuts to loan details and eligible plan changes.
-Unread indicators help you find new messages; opening a thread marks incoming
-messages as read. Notifications direct you to the related conversation, loan or
-friend requests. Messages and notices are local preview activity, so use account
-switching in this browser to see the recipient's view.
+Chats show messages with the other person and cards for your shared loans. Those cards
+provide shortcuts to loan details and eligible plan changes. Unread indicators help you
+find new messages; opening a thread marks incoming messages as read. Notifications
+direct you to the related conversation, loan or friend requests. Messages and notices
+are shared activity. Check the recipient’s separate signed-in session to verify
+delivery.
 
-## Update your profile or start again
+## Update your profile or sign out
 
 In **Me**, press **Edit profile** to change your display name, username, community,
 bio and optional profile photo. Save to update the profile. The page also shows
 your item, completed-loan and friend counts, with shortcuts to your loans and shelf.
 
-To restart the demonstration, choose **Reset preview data** in Me and confirm.
-This restores the sample accounts and removes the listings, photos, messages,
-reviews and loan changes saved in this browser's preview. This cannot be undone.
+Use **Me → Sign out** to end the current tab’s session. Shared listings, messages,
+photos and loans remain saved. There is no browser-only reset; coordinate new runs with
+teammates and select available dates.
 
 ## A suggested first walkthrough
 
 Try Eric borrowing Sarah's Cake stand:
 
 1. As Eric, find Cake stand in Borrow and request future dates and a locker.
-2. Switch to Sarah and accept the request in Loans → Pending → Sharing.
-3. As Sarah, complete the owner dropoff using the preview code and a photo.
-4. Switch to Eric and complete pickup, then return, with a photo for each.
-5. Switch to Sarah, collect the return and verify its condition.
-6. Switch to Eric and leave an optional review under Loans → Complete.
+2. In Sarah’s session, accept the request in Loans → Pending → Sharing.
+3. As Sarah, complete the owner dropoff using **Show QR → Simulate locker scan** and a photo.
+4. In Eric’s session, complete pickup, then return, with a photo for each.
+5. In Sarah’s session, collect the return and verify its condition.
+6. In Eric’s session, leave an optional review under Loans → Complete.
 
 You can pause after any completed action and reopen the loan later. Its details
 show the current stage and the participant responsible for the next step.
 
 ## Testing a hosted version
 
-Open the public demo at **https://cs4353-demo.pages.dev/**. The
-[hosting guide](hosting.md) describes deployments and previews.
-Use the stable demo for main, or a pull request preview link to test a proposed
-change. Each URL may have separate browser data; switching URLs can show different
-progress. Deployments do not automatically reset your saved activity.
+Use **https://cs4353-demo.pages.dev/** for the current demo built from `main`.
+Future feature branches have separate Cloudflare preview URLs; copy the exact URL
+and displayed version when reporting a bug. The fixed `4e7afab` preview in the
+[hosting guide](hosting.md) is historical and does not include all current changes.
+
+All connected builds using the same Supabase project share activity. Deployments and URL
+changes do not reset it.
 
 For a bug report, copy the URL and the version under **Me → About this preview**,
 then use the repository's **Demo bug report** template. Include your preview account,

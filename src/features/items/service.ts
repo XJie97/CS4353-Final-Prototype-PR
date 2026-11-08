@@ -54,6 +54,7 @@ export function makeItemsService(api: DataGateway) {
     },
     async getItem(id: string) {
       const [r] = await api.list("item_catalog", { eq: { id } });
+      // Return no item when the requested ID is absent from the catalog.
       if (!r) return null;
       const links = await api.list("item_lockers", { eq: { item_id: id } });
       return itemFrom(
@@ -67,6 +68,7 @@ export function makeItemsService(api: DataGateway) {
       tags: string[],
       lockerIds: number[],
     ) {
+      // Require at least one locker before creating a listing.
       if (!lockerIds.length) throw new Error("Select at least one locker.");
       const response = await api.rpc<{ id: string } | { id: string }[]>(
         "create_item",
@@ -78,6 +80,7 @@ export function makeItemsService(api: DataGateway) {
         },
       );
       const result = Array.isArray(response) ? response[0] : response;
+      // Reject a create-item response that does not include the new item's ID.
       if (!result?.id)
         throw new Error(
           "Item response was incomplete. Refresh to check the saved item.",
