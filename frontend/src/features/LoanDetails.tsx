@@ -1,3 +1,4 @@
+import { ReviewSummary } from "../components/ui/ReviewCard";
 import { useState } from "react";
 import { useApp } from "../app/context";
 import {
@@ -351,27 +352,7 @@ export function LoanDetails({
                   {index === 5 &&
                     (loan.review ? (
                       <div className="review-card">
-                        <strong>
-                          {"★".repeat(loan.review.rating)}
-                          {"☆".repeat(5 - loan.review.rating)}
-                        </strong>
-                        <p>{loan.review.text}</p>
-                        <div className="chip-row">
-                          {loan.review.compliments.map((c) => (
-                            // Display one compliment attached to the borrower's review.
-                            <span className="chip" key={c}>
-                              {c}
-                            </span>
-                          ))}
-                        </div>
-
-                        {loan.review.photo && (
-                          <img
-                            className="review-photo"
-                            src={loan.review.photo}
-                            alt="Review attachment"
-                          />
-                        )}
+                        <ReviewSummary review={loan.review} />
 
                         <p className="muted">Review submitted</p>
 

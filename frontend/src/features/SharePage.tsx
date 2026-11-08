@@ -3,6 +3,8 @@ import { useApp } from "../app/context";
 import { type Item } from "../app/domain";
 import { EmptyState, Glyph } from "../components/ui/shared";
 import { ListingForm } from "./ListingForm";
+import { CategoryIcon } from "../components/ui/CategoryIcon";
+import { Icon } from "../components/Icon";
 
 export function SharePage({ onLoan }: { onLoan: (id: string) => void }) {
   const { store, perform, toast, busy: saving } = useApp();
@@ -40,8 +42,15 @@ export function SharePage({ onLoan }: { onLoan: (id: string) => void }) {
                 <img src={item.image} alt={item.name} width={84} height={84} />
                 <div>
                   <h3>{item.name}</h3>
-                  <p>
-                    {item.category} · {item.location}
+                  <p className="shelf-card__meta">
+                    <span>
+                      <CategoryIcon category={item.category} size={14} />
+                      {item.category}
+                    </span>
+                    <span>
+                      <Icon name="map-pin" width={14} />
+                      {item.location}
+                    </span>
                   </p>
                   <span className="status-label">
                     {!item.listed

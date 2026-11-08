@@ -260,3 +260,8 @@ export function useApp() {
   if (!value) throw new Error("AppProvider is required.");
   return value;
 }
+
+// For components that also render outside AppProvider (e.g. standalone Borrow screens).
+export function useOptionalApp() {
+  return useContext(Context);
+}

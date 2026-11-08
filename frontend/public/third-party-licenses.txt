@@ -22,3 +22,14 @@
  */
 
 
+
+/*
+ * Font Awesome Free 7 - solid icons (@fortawesome/free-solid-svg-icons)
+ *
+ * Copyright (c) Fonticons, Inc. (https://fontawesome.com)
+ * Icons: CC BY 4.0 License (https://creativecommons.org/licenses/by/4.0/)
+ * Code: MIT License (https://opensource.org/licenses/MIT)
+ * Full license: https://fontawesome.com/license/free
+ *
+ * Used for item category icons (see src/app/categories.ts) and the review stickers.
+ */

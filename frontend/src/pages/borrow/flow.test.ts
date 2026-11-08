@@ -95,3 +95,12 @@ test("empty results reset to the home screen without a stale item selection", ()
   // Verify that reset clears the stale detail-item selection.
   assert.equal(state.itemId, null);
 });
+
+test('the "Available now" toggle switches on and off, and reset clears it', () => {
+  let state = borrowReducer(initialBorrowState, { type: 'toggle-available' });
+  assert.equal(state.filters.availableNow, true);
+  state = borrowReducer(state, { type: 'toggle-available' });
+  assert.equal(state.filters.availableNow, false);
+  state = borrowReducer(borrowReducer(state, { type: 'toggle-available' }), { type: 'reset' });
+  assert.equal(state.filters.availableNow, false);
+});

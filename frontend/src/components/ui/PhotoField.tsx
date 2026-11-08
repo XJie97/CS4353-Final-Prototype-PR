@@ -1,18 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { prepareImage } from "../../app/images";
-import { ErrorText, Glyph } from "./shared";
+import { ErrorText, Glyph, ProfilePhoto } from "./shared";
+/** Photo picker with a preview. Pass `rim` (a sprite body colour) to preview a profile picture as a rimmed circle. */
 export function PhotoField({
   label,
   value,
   onChange,
   required = false,
   onBusyChange,
+  rim,
 }: {
   label: string;
   value?: string;
   onChange: (value: string) => void;
   required?: boolean;
   onBusyChange?: (busy: boolean) => void;
+  rim?: string;
 }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -74,7 +77,17 @@ export function PhotoField({
       {busy && <p role="status">Preparing photo…</p>}
       {value ? (
         <div className="photo-preview">
-          <img src={value} alt={label} />
+          {rim ? (
+            <ProfilePhoto
+              src={value}
+              bodyColor={rim}
+              size={120}
+              label={label}
+              className="photo-preview__profile"
+            />
+          ) : (
+            <img src={value} alt={label} />
+          )}
           <button
             type="button"
             className="button"

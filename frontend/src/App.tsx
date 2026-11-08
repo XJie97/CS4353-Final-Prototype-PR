@@ -1,3 +1,7 @@
+// Changed: renders AppShell (AppShell.tsx) with the backend from services/backend.ts
+// Kept Application() unchanged to prevent merge conflicts
+import { AppShell } from "./AppShell";
+import { appBackend } from "./services/backend";
 import { HelpPage } from "./features/HelpPage";
 import { useEffect, useMemo, useState } from "react";
 import { AppProvider, useApp } from "./app/context";
@@ -310,11 +314,12 @@ function Application() {
     </div>
   );
 }
+// export default function App(){return <AppProvider><Application/></AppProvider>;}
 export default function App() {
   return (
     // Supply shared session, command, and store state to the application.
-    <AppProvider>
-      <Application />
+    <AppProvider backend={appBackend()}>
+      <AppShell />
     </AppProvider>
   );
 }

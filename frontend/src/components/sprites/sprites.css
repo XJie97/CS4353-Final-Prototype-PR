@@ -1,0 +1,98 @@
+/* Shared sprite styles. Colours come from CSS variables set on .sprite. */
+
+.sprite {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+  vertical-align: bottom;
+  --shadow-width: 62%;
+}
+
+.sprite__figure {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+}
+
+.sprite svg {
+  display: block;
+  overflow: visible;
+}
+
+.sprite__shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -4%;
+  width: var(--shadow-width);
+  height: 9%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 22%), rgb(0 0 0 / 0%));
+  transform: translateX(-50%);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+}
+
+.sprite--head .sprite__shadow { display: none; }
+.sprite--head svg { overflow: hidden; }
+
+.sprite--tv {
+  --tv-outline: #507631;
+  --tv-body-top: #e9f4e0;
+  --tv-body-bottom: #c6f3a2;
+  --tv-screen: #ffffff;
+  --shadow-width: 76%;
+}
+
+/* ---------- animations ----------*/
+
+.sprite--squish .sprite__figure { animation: sprite-squish 4s ease-in-out infinite; }
+.sprite--squish .sprite__shadow { animation: sprite-squish-shadow 4s ease-in-out infinite; }
+
+.sprite--bounce .sprite__figure { animation: sprite-bounce 3s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+.sprite--bounce .sprite__shadow { animation: sprite-bounce-shadow 3s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+
+.sprite--bounce .sprite__topper,
+.sprite--squish .sprite__topper {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: sprite-sway 6s ease-in-out infinite;
+}
+
+@keyframes sprite-squish {
+  0%, 40%, 100% { transform: scale(1, 1); }
+  10%            { transform: scale(1.07, 0.93); }  /* squash */
+  20%           { transform: scale(0.96, 1.05); }  /* stretch */
+  30%           { transform: scale(1.02, 0.985); } /* settle */
+}
+@keyframes sprite-squish-shadow {
+  0%, 40%, 100% { transform: translateX(-50%) scaleX(1); opacity: 1; }
+  10%            { transform: translateX(-50%) scaleX(1.08); opacity: 1; }
+  20%           { transform: translateX(-50%) scaleX(0.94); opacity: 0.85; }
+}
+
+@keyframes sprite-bounce {
+  0%, 53.3%, 100% { transform: translateY(0) scale(1, 1); }
+  6.7%            { transform: translateY(0) scale(1.06, 0.94); }   /* crouch */
+  24%           { transform: translateY(-12%) scale(0.97, 1.03); } /* airborne */
+  41.3%           { transform: translateY(0) scale(1.08, 0.92); }   /* land */
+  48%           { transform: translateY(0) scale(0.98, 1.02); }
+}
+@keyframes sprite-bounce-shadow {
+  0%, 53.3%, 100% { transform: translateX(-50%) scale(1); opacity: 1; }
+  24%           { transform: translateX(-50%) scale(0.7); opacity: 0.5; }  /* smaller while in the air */
+  41.3%           { transform: translateX(-50%) scale(1.08); opacity: 1; }
+}
+
+@keyframes sprite-sway {
+  0%, 100% { transform: rotate(-5deg); }
+  50%      { transform: rotate(5deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sprite *,
+  .sprite .sprite__topper {
+    animation: none !important;
+  }
+}

@@ -1,3 +1,4 @@
+import { UserChip } from "../components/ui/UserChip";
 import { helpOutcome, visibleHelpRequests } from "../app/help-view";
 import { useRef, useState } from "react";
 import { useApp, uid } from "../app/context";
@@ -177,9 +178,12 @@ export function HelpPage({
                   .map((o) => (
                     // Represent an owner's offered item and the requester's selection action.
                     <div key={o.id}>
-                      <p>
-                        {store.items.find((i) => i.id === o.itemId)?.name} ·{" "}
-                        {store.people.find((p) => p.id === o.ownerId)?.name}
+                      <p className="offer-line">
+                        <span>{store.items.find((i) => i.id === o.itemId)?.name}</span>
+                        <UserChip
+                          person={store.people.find((p) => p.id === o.ownerId)}
+                          size={24}
+                        />
                       </p>
                       <button
                         disabled={saving}

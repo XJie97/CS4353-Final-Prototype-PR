@@ -193,6 +193,78 @@ export function areFriends(s: Store, a: string, b: string) {
       ((f.from === a && f.to === b) || (f.to === a && f.from === b)),
   );
 }
+export const SPRITE_LIMITS = { strokes: 40, points: 400, min: -0.5, max: 1.5 };
+/**  Sprite colours are one of these names (same list as public.sprite_colour in the database). The hex for each is in components/sprites/palette.ts. */
+export const SPRITE_COLOURS = [
+  "pink",
+  "green",
+  "blue",
+  "yellow",
+  "peach",
+  "purple",
+  "turquoise",
+  "grey",
+] as const;
+export type SpriteColour = (typeof SPRITE_COLOURS)[number];
+export function spriteColourValid(colour: unknown): colour is SpriteColour {
+  return (
+    typeof colour === "string" &&
+    (SPRITE_COLOURS as readonly string[]).includes(colour)
+  );
+}
+//  Colour for someone who hasn't picked one: chosen from their id, so it's always the same for the same person.
+export function defaultSpriteColour(id: string): SpriteColour {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return SPRITE_COLOURS[h % SPRITE_COLOURS.length];
+}
+export function strokesValid(
+  strokes: unknown,
+): strokes is [number, number][][] {
+  return (
+    Array.isArray(strokes) &&
+    strokes.length <= SPRITE_LIMITS.strokes &&
+    strokes.every(
+      (stroke) =>
+        Array.isArray(stroke) &&
+        stroke.length > 0 &&
+        stroke.length <= SPRITE_LIMITS.points &&
+        stroke.every(
+          (pt) =>
+            Array.isArray(pt) &&
+            pt.length === 2 &&
+            pt.every(
+              (v) =>
+                typeof v === "number" &&
+                Number.isFinite(v) &&
+                v >= SPRITE_LIMITS.min &&
+                v <= SPRITE_LIMITS.max,
+            ),
+        ),
+    )
+  );
+}
+/**
+ * Saved avatar
+ * headAssetId: 'face-default' | 'face-drawn'
+ */
+export type PersonSprite = {
+  colour: SpriteColour;
+  headAssetId: string;
+  torsoAssetId: string;
+  level: number;
+  faceStrokes?: [number, number][][];
+};
+/**
+ * A person with their optional saved avatar. Kept beside Person rather than inside it
+ * (upstream also edits the Person line) so the two branches merge without conflicts. mergescript
+ * The connected demo stores it in demo_profiles.data, so it arrives on each person.
+ */
+export type SpritedPerson = Person & { sprite?: PersonSprite };
+// Reads a person's saved avatar, if they have one.
+export function spriteOf(person: Person | undefined): PersonSprite | undefined {
+  return (person as SpritedPerson | undefined)?.sprite;
+}
 export function photoValid(photo: string) {
   return (
     photo.length <= 2_000_000 &&
@@ -265,6 +337,13 @@ export type Command =
       location: string;
       bio: string;
       avatar?: string;
+    }
+  // Added update-sprite
+  | {
+      type: "update-sprite";
+      colour: SpriteColour;
+      face: "default" | "drawn";
+      strokes?: [number, number][][];
     };
 export type CommandEnv = { id: string; now: string; today: string };
 // Validate and apply commands to a copy so failed operations leave the original store intact.
@@ -816,6 +895,23 @@ export function applyCommand(
       // Replace the avatar only when the command supplies one.
       if (command.avatar) profile.avatar = command.avatar;
       else delete profile.avatar;
+      break;
+    }
+    case "update-sprite": {
+      const profile = person(me) as SpritedPerson;
+      requireValue(spriteColourValid(command.colour), "Choose a valid colour.");
+      const drawn = command.face === "drawn";
+      requireValue(
+        !drawn || (strokesValid(command.strokes) && command.strokes.length > 0),
+        "Draw a face, or choose the default face.",
+      );
+      profile.sprite = {
+        colour: command.colour,
+        headAssetId: drawn ? "face-drawn" : "face-default",
+        torsoAssetId: profile.sprite?.torsoAssetId ?? "plant",
+        level: profile.sprite?.level ?? 0,
+        ...(drawn ? { faceStrokes: command.strokes } : {}),
+      };
       break;
     }
     case "send-message": {

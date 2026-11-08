@@ -8,6 +8,8 @@ export type BorrowItem = {
   owner?: string;
   description?: string;
   title?: string;
+  availability?: "available" | "booked" | "on-loan";
+  backOn?: string;
 };
 
 export type BorrowFilters = {
@@ -15,6 +17,7 @@ export type BorrowFilters = {
   category: string;
   location: string;
   friendsOnly: boolean;
+  availableNow?: boolean;
 };
 
 const placeholder = "/assets/item-placeholder.png";
@@ -94,7 +97,8 @@ export function filterItems(
       item.name.toLocaleLowerCase().startsWith(prefix) &&
       (filters.category === "all" || item.category === filters.category) &&
       (filters.location === "all" || item.location === filters.location) &&
-      (!filters.friendsOnly || item.isFriend),
+      (!filters.friendsOnly || item.isFriend) &&
+      (!filters.availableNow || item.availability !== "on-loan"),
   );
 }
 
@@ -204,7 +208,8 @@ export function getBrowseItems(
     !filters.query.trim() &&
     filters.category === "all" &&
     filters.location === "all" &&
-    !filters.friendsOnly;
+    !filters.friendsOnly &&
+    !filters.availableNow;
   const source = catalog
     ? isHome
       ? [

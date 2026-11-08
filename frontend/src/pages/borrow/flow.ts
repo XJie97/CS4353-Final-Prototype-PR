@@ -10,7 +10,13 @@ export type BorrowState = {
 };
 export const initialBorrowState: BorrowState = {
   view: "browse",
-  filters: { query: "", category: "all", location: "all", friendsOnly: false },
+  filters: {
+    query: "",
+    category: "all",
+    location: "all",
+    friendsOnly: false,
+    availableNow: false,
+  },
   draftQuery: "",
   recentSearches: [],
   itemId: null,
@@ -23,6 +29,7 @@ export type BorrowAction =
         | "close-search"
         | "back-to-results"
         | "toggle-friends"
+        | "toggle-available"
         | "reset";
     }
   | { type: "edit-search" | "set-category" | "set-location"; value: string }
@@ -78,6 +85,14 @@ export function borrowReducer(
       return {
         ...state,
         filters: { ...state.filters, friendsOnly: !state.filters.friendsOnly },
+      };
+    case "toggle-available":
+      return {
+        ...state,
+        filters: {
+          ...state.filters,
+          availableNow: !state.filters.availableNow,
+        },
       };
     case "select-map-item":
       return { ...state, selectedMapId: action.id };

@@ -1,4 +1,5 @@
 import { Icon } from "../../components/Icon";
+import { CategoryIcon } from "../../components/ui/CategoryIcon";
 import type { BorrowItem } from "./items";
 
 type Props = {
@@ -40,11 +41,11 @@ export function NeighborhoodMap({
           key={item.id}
           type="button"
           className={`map-pin map-pin--${index + 1}`}
-          aria-label={`Show ${item.name} in ${item.location}`}
+          aria-label={`Show ${item.name} (${item.category}) in ${item.location}`}
           aria-pressed={selected?.id === item.id}
           onClick={() => onSelect(item)}
         >
-          <Icon name="shirt" width={20} />
+          <CategoryIcon category={item.category} size={20} />
         </button>
       ))}
       {selected && (

@@ -1,8 +1,17 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { Icon } from "../Icon";
-import { useApp } from "../../app/context";
+import { useApp, useOptionalApp } from "../../app/context";
+import { spriteFor } from "../../app/sprite";
+import { SpriteAvatar } from "../sprites/SpriteAvatar";
+import { deriveSpritePalette, SWATCH_HEX } from "../sprites/palette";
 import type { Page } from "../../app/routes";
-import type { Person } from "../../app/domain";
+import { defaultSpriteColour, spriteOf, type Person } from "../../app/domain";
 export function Glyph({
   name,
   size = 20,
@@ -126,27 +135,80 @@ export function Confirm({
     </Modal>
   );
 }
+/**
+ * A person's round avatar. Their profile picture if they've added one (rimmed in
+ * their sprite colour), otherwise their sprite colour and face.
+ */
 export function Avatar({
   person,
   size = 36,
+  label,
+  prefer = "photo",
 }: {
   person: Person;
   size?: number;
+  label?: string;
+  prefer?: "photo" | "sprite";
 }) {
-  return person.avatar ? (
-    <img
-      className="avatar"
-      style={{ width: size, height: size }}
-      src={person.avatar}
-      alt={person.name}
+  const app = useOptionalApp();
+  const sprite = app
+    ? spriteFor(app.store, person.id)
+    : {
+        bodyColor:
+          SWATCH_HEX[
+            spriteOf(person)?.colour ?? defaultSpriteColour(person.id)
+          ],
+        face: { kind: "default" } as const,
+      };
+  if (prefer === "photo" && person.avatar)
+    return (
+      <ProfilePhoto
+        src={person.avatar}
+        bodyColor={sprite.bodyColor}
+        size={size}
+        label={label}
+      />
+    );
+  return (
+    <SpriteAvatar
+      bodyColor={sprite.bodyColor}
+      face={sprite.face}
+      size={size}
+      label={label}
     />
-  ) : (
+  );
+}
+/** A profile picture in a circle, with a rim in the person's sprite colour (and its outline colour around that). */
+export function ProfilePhoto({
+  src,
+  bodyColor,
+  size = 36,
+  label,
+  className = "",
+}: {
+  src: string;
+  bodyColor: string;
+  size?: number;
+  label?: string;
+  className?: string;
+}) {
+  const palette = deriveSpritePalette(bodyColor);
+  const style = {
+    width: size,
+    height: size,
+    borderWidth: Math.max(2, Math.round(size / 14)),
+    "--rim": palette.body,
+    "--rim-outline": palette.outline,
+  } as CSSProperties;
+  return (
     <span
-      className="avatar"
-      style={{ width: size, height: size, background: person.colour }}
-      aria-hidden="true"
+      className={`avatar photo-avatar ${className}`}
+      style={style}
+      role={label ? "img" : undefined}
+      aria-label={label}
+      aria-hidden={label ? undefined : true}
     >
-      {person.name.slice(0, 1).toUpperCase()}
+      <img src={src} alt="" draggable={false} />
     </span>
   );
 }

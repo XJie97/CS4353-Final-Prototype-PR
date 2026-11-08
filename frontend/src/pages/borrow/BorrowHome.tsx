@@ -4,6 +4,9 @@ import { Icon } from "../../components/Icon";
 import { NeighborhoodMap } from "./NeighborhoodMap";
 import { SearchOverlay } from "./SearchOverlay";
 import { ItemDetails } from "./ItemDetails";
+import { ItemCard } from "./ItemCard";
+import { CategorySelect } from "./CategorySelect";
+import { CATEGORIES } from "../../app/categories";
 import {
   allItems,
   categories,
@@ -28,15 +31,23 @@ export default function BorrowHome({
   embedded = false,
   onRequest,
   onChat,
+  onChatOwner,
+  onViewLoan,
   onNotifications,
 }: {
   catalog?: BorrowItem[];
   embedded?: boolean;
   onRequest?: (id: string) => void;
   onChat?: () => void;
+  onChatOwner?: (ownerId: string) => void;
+  onViewLoan?: (loanId: string) => void;
   onNotifications?: () => void;
 }) {
-  const categories = [...new Set(catalog.map((item) => item.category))];
+  const present = new Set(catalog.map((item) => item.category));
+  const categories = [
+    ...CATEGORIES.filter((c) => present.has(c)),
+    ...[...present].filter((c) => !(CATEGORIES as string[]).includes(c)),
+  ];
   const locations = [...new Set(catalog.map((item) => item.location))];
   const [state, dispatch] = useReducer(
     borrowReducer,
@@ -193,22 +204,11 @@ export default function BorrowHome({
             : "Borrow from your community"}
         </h1>
         <div className="filter-bar" role="group" aria-label="Filter items">
-          <label className="select-field">
-            <span className="sr-only">Category</span>
-            <select
-              value={filters.category}
-              onChange={(event) =>
-                dispatch({ type: "set-category", value: event.target.value })
-              }
-            >
-              <option value="all">All Categories</option>
-              {categories.map((value) => (
-                // Represent one category present in the current catalog.
-                <option key={value}>{value}</option>
-              ))}
-            </select>
-            <Icon name="chevron-down" width={16} />
-          </label>
+          <CategorySelect
+            value={filters.category}
+            categories={categories}
+            onChange={(value) => dispatch({ type: "set-category", value })}
+          />
           <label className="select-field select-field--location">
             <span className="sr-only">Location</span>
             <Icon name="map-pin" width={18} />
@@ -235,6 +235,19 @@ export default function BorrowHome({
             {filters.friendsOnly && <Icon name="check" width={16} />}Friends
             only
           </button>
+          <button
+            className="friends-filter available-filter"
+            type="button"
+            aria-pressed={!!filters.availableNow}
+            onClick={() => dispatch({ type: "toggle-available" })}
+          >
+            {filters.availableNow ? (
+              <Icon name="check" width={16} />
+            ) : (
+              <span className="available-filter__dot" aria-hidden="true" />
+            )}
+            Available now
+          </button>
         </div>
 
         <NeighborhoodMap
@@ -257,23 +270,11 @@ export default function BorrowHome({
             <div className="item-grid">
               {visibleItems.map((item) => (
                 // Represent a borrowable item card and open its detail view when selected.
-                <button
-                  className="item-card"
-                  id={`item-${item.id}`}
+                <ItemCard
                   key={item.id}
-                  type="button"
-                  onClick={() => openItem(item.id)}
-                  aria-label={`View ${item.name}`}
-                >
-                  <img
-                    className="item-photo"
-                    src={item.image}
-                    alt=""
-                    width={166}
-                    height={166}
-                  />
-                  <span className="item-name">{item.name}</span>
-                </button>
+                  item={item}
+                  onOpen={() => openItem(item.id)}
+                />
               ))}
             </div>
           ) : (
@@ -292,6 +293,8 @@ export default function BorrowHome({
           item={detailsItem}
           onBack={backToResults}
           onBorrow={onRequest ? () => onRequest(detailsItem.id) : undefined}
+          onChat={onChatOwner}
+          onViewLoan={onViewLoan}
         />
       )}
       {!embedded && <BottomNavigation onBorrow={resetFilters} />}

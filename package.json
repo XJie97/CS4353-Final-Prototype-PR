@@ -8,7 +8,10 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "vitest run --environment jsdom",
-    "format": "prettier --write src vite.config.ts tsconfig.json package.json"
+    "format": "prettier --write src vite.config.ts tsconfig.json package.json",
+    "db:link": "npx --yes supabase@2 link --project-ref ejgvfgvrmcwrixxdvwwt",
+    "db:migrate:dry": "npx --yes supabase@2 db push --dry-run",
+    "db:migrate": "npx --yes supabase@2 db push"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

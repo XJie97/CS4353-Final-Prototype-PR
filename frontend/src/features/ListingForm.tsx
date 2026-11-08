@@ -3,15 +3,7 @@ import { useApp, uid } from "../app/context";
 import { LOCKERS, type Item } from "../app/domain";
 import { ErrorText, Modal } from "../components/ui/shared";
 import { PhotoField } from "../components/ui/PhotoField";
-const CATEGORIES = [
-  "Home",
-  "Electronics",
-  "Party Supplies",
-  "Outdoors",
-  "Clothing",
-  "Tools",
-  "Sports",
-];
+import { CATEGORIES } from "../app/categories";
 
 export function ListingForm({
   item,
